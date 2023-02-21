@@ -1,0 +1,14 @@
+﻿title,soil-moisture-jun-2018-density-exp
+authors,"Amy Kendig, Chris Wojan"
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20180605 - 201806
+entered-original,DensityExperiment_SoilM_20180605.20180606
+scanned-original,soil-moisture-jun-2018-density-exp
+,
+columns,meaning
+date,date data were collected
+site,experimental site (D1 - 4)
+plot,"experimental plot, which corresponds to planting treatment (1 - 10)"
+treatment,"fungicide treatment (water, fungicide)"
+soil_moisture.vwc.1,soil moisture (volumetric water content)
+soil_moisture.period.1,soil moisture (period)

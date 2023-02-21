@@ -1,0 +1,13 @@
+﻿title,ev_biomass_dec_2019_fungicide_exp
+authors,"Zobia Chanda, Liliana Benitez, Vida Svahnstrom, Amy Kendig"
+location,"University of Florida, Gainesville, FL, USA"
+date,20191220
+scanned-original,ev_biomass_dec_2019_fungicide_exp
+,
+columns,meaning
+treatment,"fungicide treatment (water, fungicide)"
+pot,pot ID (1 - 10)
+sp,"species (Ev = Elymus virginicus, Mv = Microstegium vimineum)"
+biomass_type,pre-drying state of biomass (dead or live)
+weight.g,weight of aboveground biomass after oven drying (g)
+notes,notes

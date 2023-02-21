@@ -1,0 +1,17 @@
+﻿title,all_replacement_2019_density_exp
+authors,Christopher Wojan
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20190515 - 20190831
+scanned-original,all_replacement_2019_density_exp
+entered-original,Density_Exp_Plant_Replace_Record_2019.xlsx
+scan-notes,"Scanned original does not include all data, some was recorded on the focal disease data sheets, and 20190623 was entered directly into excel"
+,
+columns,meaning
+site,experimental site (D1 - 4)
+plot,"experimental plot, which corresponds to planting treatment (1 - 10)"
+treatment,"fungicide treatment (water, fungicide)"
+sp,"species (Ev = Elymus virginicus, Mv = Microstegium vimineum)"
+age,seedling or adult
+ID,"plant ID (A = focal adult, 1 - 3 = focal seedlings, Bg = background)"
+focal,indicator variable of whether or not the plant is a focal
+replace_date,date that the plant was replaced due to mortality (yyyymmdd)

@@ -1,0 +1,292 @@
+﻿Directory,Code,Outputs,Dependency,Dependency file,Dependency source
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,cc,canopy_cover_jul_2018_density_exp.csv,data
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,be,plot_edge_mv_weight_early_aug_2018_density_exp.csv,data
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,bj,plot_edge_mv_weight_jul_2018_density_exp.csv,data
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,bl,plot_edge_mv_weight_late_aug_2018_density_exp.csv,data
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,bs,plot_edge_mv_weight_sep_2018_density_exp.csv,data
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,plots,plot_treatments_for_analyses_2018_2019_density_exp.csv,data
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,sj,soil_moisture_jun_2018_density_exp.csv,data
+data-processing-1,covariate_data_processing_2018_density_exp.R,data,so,soil_moisture_oct_2018_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,dla,all_disease_seeds_late_aug_2018_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,biomass,ev_biomass_seeds_oct_2019_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,ds,ev_disease_seeds_sep_2018_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,de,ev_seed_subset_2018_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,seeds,ev_seed_subset_2019_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,dla,ev_seeds_2018_litter_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,dea,ev_seeds_early_aug_2018_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,di,ev_spikelets_2018_density_litter_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,spikelets,ev_spikelets_2019_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,plants_eau,focal_disease_early_aug_2019_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,plants_jul,focal_disease_jul_2019_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,plants_jun,focal_disease_jun_2019_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,plants_lau,focal_disease_late_aug_2019_density_exp.csv,data
+data-processing-1,ev_seeds_data_processing_2018_2019_density_exp.R,data,plants_sep,focal_disease_sep_2019_density_exp.csv,data
+data-processing-1,focal_growth_data_processing_2018_density_exp.R,data,fjl,focal_size_disease_jul_2018_density_exp.csv,data
+data-processing-1,focal_growth_data_processing_2018_density_exp.R,data,fjn,focal_size_disease_jun_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,dt_late_aug,all_disease_seeds_late_aug_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,dt_sep_ev,ev_disease_seeds_sep_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,ls_ev_jul,ev_leaf_scans_jul_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,ls_ev_late_aug,ev_leaf_scans_late_aug_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,ls_ev_sep,ev_leaf_scans_sep_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,dt_jul,focal_size_disease_jul_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,dt_sep_mv,mv_disease_sep_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,ls_mv_jul,mv_leaf_scans_jul_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,ls_mv_late_aug,mv_leaf_scans_late_aug_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2018_density_exp.R,data,ls_mv_sep,mv_leaf_scans_sep_2018_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,dt_may,ev_disease_may_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_ev_early_aug,ev_leaf_scans_early_aug_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_ev_jul,ev_leaf_scans_jul_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_ev_jun,ev_leaf_scans_jun_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_ev_late_aug,ev_leaf_scans_late_aug_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_ev_may,ev_leaf_scans_may_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_ev_sep,ev_leaf_scans_sep_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,dt_early_aug,focal_disease_early_aug_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,dt_jul,focal_disease_jul_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,dt_jun,focal_disease_jun_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,dt_late_aug,focal_disease_late_aug_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,dt_sep,focal_disease_sep_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_mv_early_aug,mv_leaf_scans_early_aug_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_mv_jul,mv_leaf_scans_jul_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_mv_jun,mv_leaf_scans_jun_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_mv_late_aug,mv_leaf_scans_late_aug_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_mv_may,mv_leaf_scans_may_2019_density_exp.csv,data
+data-processing-1,leaf_scans_data_processing_2019_density_exp.R,data,ls_mv_sep,mv_leaf_scans_sep_2019_density_exp.csv,data
+data-processing-1,mv_seeds_biomass_data_processing_2018_density_exp.R,data,bag,mv_bag_seed_2018_density_exp.csv,data
+data-processing-1,mv_seeds_biomass_data_processing_2018_density_exp.R,data,bio,mv_biomass_oct_2018_density_exp.csv,data
+data-processing-1,mv_seeds_data_processing_2019_density_exp.R,data,bag_notes,focal_disease_sep_2019_density_exp.csv,data
+data-processing-1,mv_seeds_data_processing_2019_density_exp.R,data,bag_seeds,mv_bag_seeds_2019_density_exp.csv,data
+data-processing-1,mv_seeds_data_processing_2019_density_exp.R,data,bio_seeds,mv_biomass_seeds_2019_density_exp.csv,data
+data-processing-1,mv_seeds_data_processing_2019_density_exp.R,data,bio_seeds_conv,mv_biomass_seeds_counted_2019_density_exp.csv,data
+data-processing-1,temp_humidity_data_processing_2019_density_exp.R,data,dat,temp-humidity-density-exp-20191025,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,ala,all_disease_seeds_late_aug_2018_density_exp.csv,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,es,ev_disease_seeds_sep_2018_density_exp.csv,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,ew,ev_winter_survival_apr_2019_density_exp.csv,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,fjl,focal_size_disease_jul_2018_density_exp.csv,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,fjn,focal_size_disease_jun_2018_density_exp.csv,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,fea,focal_status_early_aug_2018_density_exp.csv,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,ms,mv_disease_sep_2018_density_exp.csv,data
+data-processing-2,all_survival_data_processing_2018_density_exp.R,data,eseeds,ev_processed_seeds_both_year_conversion_2018_density_exp.csv,ev_seeds_data_processing_2018_2019_density_exp.R
+data-processing-2,plot_data_processing_2019_density_exp.R,data,bgBioD2Dat,bg_biomass_2019_density_exp.csv,data
+data-processing-2,plot_data_processing_2019_density_exp.R,data,evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
+data-processing-2,plot_data_processing_2019_density_exp.R,data,mvBioD2Dat,mv_biomass_seeds_2019_density_exp.csv,data
+data-processing-2,plot_data_processing_2019_density_exp.R,data,evSeedD2Dat,ev_processed_seeds_both_year_conversion_2019_density_exp.csv,ev_seeds_data_processing_2018_2019_density_exp.R
+data-processing-2,plot_data_processing_2019_density_exp.R,data,mvSeedD2Dat,mv_plant_level_seeds_2019_density_exp.csv,mv_seeds_data_processing_2019_density_exp.R
+model-fitting,ev_establishment_2019_litter_exp.R,"model, data",germ_jun,both_germination_disease_jun_2019_litter_exp.csv,data
+model-fitting,ev_establishment_2019_litter_exp.R,"model, data",plots,litter_weight_apr_2019_litter_exp.csv,data
+model-fitting,focal_growth_2018_2019_density_exp.R,"models, data,
+Table S3,
+Figure S7-S11",evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
+model-fitting,focal_growth_2018_2019_density_exp.R,"models, data,
+Table S3,
+Figure S7-S10",mvBioD2Dat,mv_biomass_seeds_2019_density_exp.csv,data
+model-fitting,focal_growth_2018_2019_density_exp.R,"models, data,
+Table S3,
+Figure S7-S8",plots,plot_treatments_2018_2019_density_exp.csv,data
+model-fitting,focal_growth_2018_2019_density_exp.R,"models, data,
+Table S3,
+Figure S7-S9",tillerD1Dat,focal_processed_growth_2018_density_exp.csv,focal_growth_data_processing_2018_density_exp.R
+model-fitting,focal_growth_2018_2019_density_exp.R,"models, data,
+Table S3,
+Figure S7-S12",plotBioD2Dat,plot_biomass_2019_density_exp.csv,plot_data_processing_2019_density_exp.R
+model-fitting,focal_seed_2018_2019_density_exp.R,"models, data, 
+Table S10",survD1Dat,all_processed_survival_2018_density_exp.csv,all_survival_data_processing_2018_density_exp.R
+model-fitting,focal_seed_2018_2019_density_exp.R,"models, data, 
+Table S5",plots,plot_treatments_2018_2019_density_exp.csv,data
+model-fitting,focal_seed_2018_2019_density_exp.R,"models, data, 
+Table S8",evSeedD1Dat,ev_processed_seeds_both_year_conversion_2018_density_exp.csv,ev_seeds_data_processing_2018_2019_density_exp.R
+model-fitting,focal_seed_2018_2019_density_exp.R,"models, data, 
+Table S9",evSeedD2Dat,ev_processed_seeds_both_year_conversion_2019_density_exp.csv,ev_seeds_data_processing_2018_2019_density_exp.R
+model-fitting,focal_seed_2018_2019_density_exp.R,"models, data, 
+Table S11",tillerD1Dat,focal_processed_growth_2018_density_exp.csv,focal_growth_data_processing_2018_density_exp.R
+model-fitting,focal_seed_2018_2019_density_exp.R,"models, data, 
+Table S6",mvSeedD1Dat,mv_processed_seeds_2018_density_exp.csv,mv_seeds_biomass_data_processing_2018_density_exp.R
+model-fitting,focal_seed_2018_2019_density_exp.R,"models, data, 
+Table S7",mvSeedD2Dat,mv_plant_level_seeds_2019_density_exp.csv,mv_seeds_data_processing_2019_density_exp.R
+model-fitting,fungicide_effects_greenhouse_2019.R,"models,
+Tables S20–S23",ev_dat,ev_biomass_dec_2019_fungicide_exp.csv,data
+model-fitting,fungicide_effects_greenhouse_2019.R,"models,
+Tables S20–S22",mv_dat,mv_biomass_seeds_height_jun_2019_fungicide_exp.csv,data
+model-fitting,germination_2018_2019_density_exp.R,"models, data,
+Tables S17-S18,
+Figure S7",evGermDat,ev_germination_2018_2019_density_exp.csv,data
+model-fitting,germination_2018_2019_density_exp.R,"models, data,
+Tables S17-S18,
+Figure S5",mvGermD1Dat1,mv_germination_disease_set_1_2018_density_exp.csv,data
+model-fitting,germination_2018_2019_density_exp.R,"models, data,
+Tables S17-S18,
+Figure S6",mvGermD1Dat2,mv_germination_disease_set_2_2018_density_exp.csv,data
+model-fitting,litter_reu_establishment_analysis.R,models,EvEstDat,litter_reu_ev_establishment_data.csv,data
+model-fitting,litter_reu_establishment_analysis.R,models,MvEstDat,litter_reu_mv_establishment_data.csv,data
+model-fitting,mv_litter_establishment_model_2018_litter_exp.R,"model, data",estL1Dat,both_germination_disease_jul_2018_litter_exp.csv,data
+model-fitting,mv_litter_establishment_model_2018_litter_exp.R,"model, data",plotsL,plot_treatments_2018_litter_exp.csv,data
+model-fitting,mv_plot_biomass_seeds_density_2019_density_exp.R,"models, data",plots,plot_treatments_2018_2019_density_exp.csv,data
+model-fitting,mv_plot_biomass_seeds_density_2019_density_exp.R,"models, data",plotD2Dat,mv_plot_biomass_seeds_2019_density_exp.csv,plot_data_processing_2019_density_exp.R
+model-fitting,seeds_per_biomass_2018_2019_density_exp.R,models,evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
+model-fitting,seeds_per_biomass_2018_2019_density_exp.R,models,mvBioD2Dat,mv_biomass_seeds_2019_density_exp.csv,data
+model-fitting,seeds_per_biomass_2018_2019_density_exp.R,models,evSeedD2Dat,ev_processed_seeds_both_year_conversion_2019_density_exp.csv,ev_seeds_data_processing_2018_2019_density_exp.R
+model-fitting,seeds_per_biomass_2018_2019_density_exp.R,models,mvSeedD2Dat,mv_plant_level_seeds_2019_density_exp.csv,mv_seeds_data_processing_2019_density_exp.R
+model-fitting,survival_2018_2019_density_exp.R,"models, data",survD1Dat,all_processed_survival_2018_density_exp.csv,all_survival_data_processing_2018_density_exp.R
+model-fitting,survival_2018_2019_density_exp.R,"models, data",survD2Dat,all_replacement_2019_density_exp.csv,data
+model-fitting,survival_2018_2019_density_exp.R,"models, data",plots,plot_treatments_2018_2019_density_exp.csv,data
+figure-prep,model_parameters_2018_2019_density_exp.R,data,ev_fung_gh,ev_biomass_dec_2019_fungicide_exp.csv,data
+figure-prep,model_parameters_2018_2019_density_exp.R,data,evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
+figure-prep,model_parameters_2018_2019_density_exp.R,data,mvBioD2Dat,mv_biomass_seeds_2019_density_exp.csv,data
+figure-prep,model_parameters_2018_2019_density_exp.R,data,growthD2Mod2,focal_growth_biomass_model_2019_density_exp.rda,focal_growth_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,trans_mod_coef,focal_severity_model_coefficients_2019_dens_exp.csv,focal_severity_model_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,evGermMod,ev_germination_fungicide_model_2018_2019_density_exp.rda,germination_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,mvGermD1Mod2,mv_germination_fungicide_model_2018_density_exp.rda,germination_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,ev_bh_mod,litter_reu_ev_establishment_model.rda,litter_reu_establishment_analysis.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,mv_bh_mod,litter_reu_mv_establishment_model.rda,litter_reu_establishment_analysis.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,mvBioDensMod,mv_plot_biomass_density_model_2019_dens_exp.rda,mv_plot_biomass_seeds_density_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,evASeedsBioD2Mod2,evA_seeds_per_biomass_untransformed_model_2019_density_exp.rda,seeds_per_biomass_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,evSSeedsBioD2Mod2,evS_seeds_per_biomass_untransformed_model_2019_density_exp.rda,seeds_per_biomass_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,mvSeedsBioD2Mod2,mv_seeds_per_biomass_untransformed_model_2019_density_exp.rda,seeds_per_biomass_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,adultSurvD1Mod2,ev_adult_survival_fungicide_model_2018_2019_density_exp.rda,survival_2018_2019_density_exp.R
+figure-prep,model_parameters_2018_2019_density_exp.R,data,survFungD2Mod,survival_fungicide_model_2019_density_exp.rda,survival_2018_2019_density_exp.R
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S21",cont_A_mod,continuous_A_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S18",cont_AF_mod,continuous_AF_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S17",cont_AFP_mod,continuous_AFP_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S19",cont_AP_mod,continuous_AP_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S22",cont_F_mod,continuous_F_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S20",cont_FP_mod,continuous_FP_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S23",cont_P_mod,continuous_P_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S24",disc_AFP_mod,discrete_model.R,code
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S15",cont_parms,continuous_model_parameters_2018_2019_density_exp.csv,model_parameters_2018_2019_density_exp.R
+figures-tables,discrete_continuous_model_simulations.R,"Figure 5,
+Figures S9-S12,
+& S16",disc_parms,discrete_model_parameters_2018_2019_density_exp.csv,model_parameters_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S35",growthD2Mod2,focal_growth_biomass_model_2019_density_exp.rda,focal_growth_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S34",growthD2Dat2,focal_growth_density_data_2019_density_exp.csv,focal_growth_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S33",growthD2Mod,focal_growth_density_model_2019_density_exp.rda,focal_growth_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S37",seedD2Dat3,focal_seed_density_data_2019_density_exp.csv,focal_seed_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S36",seedD2Mod,focal_seed_density_model_2019_density_exp.rda,focal_seed_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S23",sevD2Mod_sev_dens_aug,focal_severity_model_aug_2019_dens_exp.rda,focal_severity_model_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S25",sevD2Dat3_aug2,focal_severity_model_data_aug_2019_dens_exp.csv,focal_severity_model_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S26",sevD2Dat3_jul2,focal_severity_model_data_jul_2019_dens_exp.csv,focal_severity_model_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S24",sevD2Mod_sev_dens_jul,focal_severity_model_jul_2019_dens_exp.rda,focal_severity_model_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S29",evGermMod,ev_germination_fungicide_model_2018_2019_density_exp.rda,germination_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S30",evGermDat2,ev_germination_fungicide_model_data_2018_2019_density_exp.rda,germination_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S27",mvGermD1Mod2,mv_germination_fungicide_model_2018_density_exp.rda,germination_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S28",mvGermD1Dat,mv_germination_fungicide_model_data_2018_density_exp.csv,germination_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S31",survFungD2Mod,survival_fungicide_model_2019_density_exp.rda,survival_2018_2019_density_exp.R
+figures-tables,disease_treatment_effects_2018_2019_density_exp.R,"Figure 4,
+Tables S4, S6, S15-S16,
+S19, S32",survD2Dat2,survival_fungicide_model_data_2019_density_exp.csv,survival_2018_2019_density_exp.R
+figures-tables,ev_plot_biomass_seeds_density_2019_density_exp.R,"Figure S6, 
+Tables S1-S2",evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
+figures-tables,ev_plot_biomass_seeds_density_2019_density_exp.R,"Figure S6, 
+Tables S1-S4",plots,plot_treatments_2018_2019_density_exp.csv,data
+figures-tables,ev_plot_biomass_seeds_density_2019_density_exp.R,"Figure S6, 
+Tables S1-S3",evSeedD2Dat,ev_processed_seeds_both_year_conversion_2019_density_exp.csv,ev_seeds_data_processing_2018_2019_density_exp.R
+figures-tables,focal_severity_model_2018_2019_density_exp.R,"Figure 3,
+Figure S2-S4,
+Tables S10–S14 & S28",envD1Dat,covariates_2018_density_exp.csv,covariate_data_processing_2018_density_exp.R
+figures-tables,focal_severity_model_2018_2019_density_exp.R,"Figure 3,
+Figure S2-S4,
+Tables S10–S14 & S27",plots,plot_treatments_2018_2019_density_exp.csv,data
+figures-tables,focal_severity_model_2018_2019_density_exp.R,"Figure 3,
+Figure S2-S4,
+Tables S10–S14 & S24",sevD1Dat,focal_leaf_scans_2018_density_exp.csv,leaf_scans_data_processing_2018_density_exp.R
+figures-tables,focal_severity_model_2018_2019_density_exp.R,"Figure 3,
+Figure S2-S4,
+Tables S10–S14 & S25",sevD2Dat,all_leaf_scans_2019_density_exp.csv,leaf_scans_data_processing_2019_density_exp.R
+figures-tables,focal_severity_model_2018_2019_density_exp.R,"Figure 3,
+Figure S2-S4,
+Tables S10–S14 & S26",edgeSevD2Dat,mv_edge_leaf_scans_2019_density_exp.csv,leaf_scans_data_processing_2019_density_exp.R
+figures-tables,focal_severity_model_2018_2019_density_exp.R,"Figure 3,
+Figure S2-S4,
+Tables S10–S14 & S29",envD2Dat,temp_humidity_monthly_2019_density_exp.csv,temp_humidity_data_processing_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S9",plots,plot_treatments_2018_2019_density_exp.csv,data
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S10",evEstL2BhMod2,ev_litter_establishment_bh_model_2019_litter_exp.rda,ev_establishment_2019_litter_exp
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S11",evLitDat,ev_litter_establishment_data_2018_litter_exp.csv,ev_establishment_2019_litter_exp
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S12",growthD1Dat,focal_growth_density_data_2018_density_exp.csv,focal_growth_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S13",growthD2Dat,focal_growth_density_data_2019_density_exp.csv,focal_growth_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S14",growthD1Mod,focal_growth_density_model_2018_density_exp.rda,focal_growth_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S15",growthD2Mod,focal_growth_density_model_2019_density_exp.rda,focal_growth_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S18",seedD1Dat,focal_seed_density_data_2018_density_exp.csv,focal_seed_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S19",seedD2Dat,focal_seed_density_data_2019_density_exp.csv,focal_seed_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S16",seedD1Mod,focal_seed_density_model_2018_density_exp.rda,focal_seed_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S17",seedD2Mod,focal_seed_density_model_2019_density_exp.rda,focal_seed_2018_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S20",mvLitDat,mv_litter_establishment_data_2018_litter_exp.csv,mv_litter_establishment_model_2018_litter_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S21",mvEstL1Mod2,mv_litter_establishment_model_2018_litter_exp.rda,mv_litter_establishment_model_2018_litter_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S22",mvBioDensMod,mv_plot_biomass_density_model_2019_dens_exp.rda,mv_plot_biomass_seeds_density_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S24",mvSeedDensMod,mv_plot_seed_density_model_2019_dens_exp.rda,mv_plot_biomass_seeds_density_2019_density_exp.R
+figures-tables,mv_density_figure_2018_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1– S2 & S7–S23",plotD2Dat,mv_plot_biomass_seeds_2019_density_exp.csv,plot_data_processing_2019_density_exp.R

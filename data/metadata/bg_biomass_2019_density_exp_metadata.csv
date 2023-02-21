@@ -1,0 +1,15 @@
+﻿title,bg_biomass_2019_density_exp
+authors,"Amy Kendig, Chris Wojan, Thomas Thrasher, Keith Clay, Quynh Quach"
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20201119
+scanned-original,Quynh Quach
+,
+columns,meaning
+site,experimental site (D1 - 4)
+plot,"experimental plot, which corresponds to planting treatment (1 - 10)"
+treatment,"fungicide treatment (water, fungicide)"
+oven_in_date,date samples were put into over (month/day/year)
+oven_out_date,date samples were taken out of over (month/day/year)
+total_weight.g,weight of biomass and paper bag (g)
+bag_weight.g,weight of paper bag (g)
+biomass.g,weight of biomass (g)

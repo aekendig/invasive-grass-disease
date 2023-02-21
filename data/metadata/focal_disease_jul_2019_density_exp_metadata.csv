@@ -1,0 +1,20 @@
+﻿title,focal_disease_jul_2019_density_exp
+authors,"Christopher Wojan, Thomas Thrasher"
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20190702 - 20190705
+scanned-original,focal_disease_jul_2019_density_exp
+entered-original,Density_Exp_Focal_Tiller_Infec_Jul2019
+,
+columns,meaning
+date,date that data were collected
+site,experimental site (D1 - 4)
+plot,"experimental plot, which corresponds to planting treatment (1 - 10)"
+treatment,"fungicide treatment (water, fungicide)"
+sp,"species (Ev = Elymus virginicus, Mv = Microstegium vimineum)"
+ID,"plant ID (A = focal adult, 1 - 3 = focal seedlings)"
+leaves_tot,number of leaves on a tiller
+leaves_infec,number of leaves with at least two lesions on that same tiller
+Bp_spots,indicator variable of whether or not individuals appeared to have Bipolaris infection (leopard-like spots)
+scan,indicator variable of whether or not a leaf was collected for scanning
+seeds_collected,indicator variable of whether or not seeds were collected from Ev
+field_notes,

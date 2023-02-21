@@ -1,0 +1,97 @@
+year,site,plot,treatment,age,seeds_planted,week_2_emerg,week_3_emerg,week_3_cut_tops,week_4_emerg,week_4_cut_tops,week_4_soil_germ,notes,week_3_new_emerg,week_4_new_emerg,germinants,germination,fungicide,plotf,yearf
+2018,D4,10,control,adult,30,1,2,0,3,0,2,NA,2,3,6,0.2,0,D410w,0
+2018,D4,10,control,seedling,30,7,2,2,2,2,2,NA,0,0,9,0.3,0,D410w,0
+2018,D4,4,fungicide,adult,30,2,0,0,0,0,0,NA,0,0,2,0.06666666666666667,1,D44f,0
+2018,D4,4,control,adult,23,6,2,1,2,1,0,NA,1,1,7,0.30434782608695654,0,D44w,0
+2018,D4,7,fungicide,adult,30,8,8,6,8,6,0,lost emergents and cut-tops between 3 and 4 weeks,2,2,10,0.3333333333333333,1,D47f,0
+2018,D4,7,fungicide,seedling,9,2,0,0,1,0,0,NA,0,1,3,0.3333333333333333,1,D47f,0
+2018,D4,7,control,adult,30,19,2,2,2,2,0,lost cut-tops,0,0,19,0.6333333333333333,0,D47w,0
+2018,D4,7,control,seedling,30,8,1,0,2,0,0,NA,1,2,10,0.3333333333333333,0,D47w,0
+2018,D3,10,fungicide,adult,21,0,1,0,1,0,0,"gained a cut-top between 3 and 4 week checks, but there were no week 2 emergents, must have been misclassified",1,1,1,0.047619047619047616,1,D310f,0
+2018,D3,10,control,adult,30,8,3,0,4,0,0,NA,3,4,12,0.4,0,D310w,0
+2018,D3,10,control,seedling,21,0,0,0,0,0,0,NA,0,0,0,0,0,D310w,0
+2018,D3,1,fungicide,adult,30,0,0,0,0,0,0,NA,0,0,0,0,1,D31f,0
+2018,D3,1,control,adult,30,4,6,1,6,1,0,NA,5,5,9,0.3,0,D31w,0
+2018,D3,4,fungicide,adult,30,1,2,1,2,1,0,lost cut-top between 3 and 4 weeks,1,1,2,0.06666666666666667,1,D34f,0
+2018,D3,7,fungicide,adult,30,5,0,0,0,0,0,NA,0,0,5,0.16666666666666666,1,D37f,0
+2018,D3,7,control,adult,30,4,3,1,4,1,0,NA,2,3,7,0.23333333333333334,0,D37w,0
+2018,D2,10,fungicide,adult,30,17,6,1,6,1,0,NA,5,5,22,0.7333333333333333,1,D210f,0
+2018,D2,10,fungicide,seedling,9,0,0,0,0,0,0,NA,0,0,0,0,1,D210f,0
+2018,D2,10,control,adult,30,5,1,0,1,0,0,NA,1,1,6,0.2,0,D210w,0
+2018,D2,10,control,seedling,30,2,1,0,1,0,0,NA,1,1,3,0.1,0,D210w,0
+2018,D2,1,fungicide,adult,30,0,1,0,1,0,0,NA,1,1,1,0.03333333333333333,1,D21f,0
+2018,D2,1,control,adult,30,5,3,0,6,0,1,NA,3,6,12,0.4,0,D21w,0
+2018,D2,1,control,seedling,10,0,0,0,0,0,0,NA,0,0,0,0,0,D21w,0
+2018,D2,4,fungicide,adult,30,1,1,0,2,0,0,NA,1,2,3,0.1,1,D24f,0
+2018,D2,4,control,adult,30,0,0,0,0,0,0,NA,0,0,0,0,0,D24w,0
+2018,D2,4,control,seedling,19,7,3,1,3,1,0,lost cut-top between 3 and 4 weeks,2,2,9,0.47368421052631576,0,D24w,0
+2018,D2,7,fungicide,adult,30,0,0,0,2,0,0,NA,0,2,2,0.06666666666666667,1,D27f,0
+2018,D2,7,fungicide,seedling,30,3,2,0,6,0,0,NA,2,6,9,0.3,1,D27f,0
+2018,D2,7,control,seedling,16,1,0,0,1,0,0,NA,0,1,2,0.125,0,D27w,0
+2018,D1,10,fungicide,adult,28,4,4,1,4,1,0,NA,3,3,7,0.25,1,D110f,0
+2018,D1,10,control,adult,30,2,1,0,1,0,0,NA,1,1,3,0.1,0,D110w,0
+2018,D1,1,fungicide,adult,30,1,0,0,1,0,0,NA,0,1,2,0.06666666666666667,1,D11f,0
+2018,D1,1,control,adult,24,4,1,0,2,0,0,NA,1,2,6,0.25,0,D11w,0
+2018,D1,1,control,seedling,3,0,0,0,0,0,0,NA,0,0,0,0,0,D11w,0
+2018,D1,4,fungicide,adult,30,0,0,0,0,0,0,NA,0,0,0,0,1,D14f,0
+2018,D1,4,control,adult,30,2,2,1,2,1,0,NA,1,1,3,0.1,0,D14w,0
+2018,D1,7,fungicide,adult,30,0,0,0,0,0,0,NA,0,0,0,0,1,D17f,0
+2018,D1,7,fungicide,seedling,13,0,0,0,0,0,0,NA,0,0,0,0,1,D17f,0
+2018,D1,7,control,adult,30,0,0,0,0,0,0,NA,0,0,0,0,0,D17w,0
+2018,D1,7,control,seedling,8,0,0,0,0,0,0,NA,0,0,0,0,0,D17w,0
+2019,D4,1,fungicide,adult,30,9,3,0,5,0,0,NA,3,5,14,0.4666666666666667,1,D41f,1
+2019,D4,1,fungicide,seedling,21,1,0,0,0,0,0,NA,0,0,1,0.047619047619047616,1,D41f,1
+2019,D4,1,control,adult,30,0,1,0,6,0,0,NA,1,6,6,0.2,0,D41w,1
+2019,D4,1,control,seedling,30,12,4,4,7,4,0,lost cut-top between 3 and 4 weeks,0,3,15,0.5,0,D41w,1
+2019,D4,4,fungicide,adult,9,1,3,1,3,1,0,NA,2,2,3,0.3333333333333333,1,D44f,1
+2019,D4,4,control,seedling,30,6,3,1,4,1,0,NA,2,3,9,0.3,0,D44w,1
+2019,D4,7,fungicide,adult,30,0,0,0,0,0,0,NA,0,0,0,0,1,D47f,1
+2019,D4,7,fungicide,seedling,30,1,0,0,0,0,0,NA,0,0,1,0.03333333333333333,1,D47f,1
+2019,D4,7,control,adult,30,0,0,0,0,0,0,NA,0,0,0,0,0,D47w,1
+2019,D4,7,control,seedling,30,14,4,2,5,2,0,"gained a cut-top between 3 and 4 week checks, must have missed one at three week check",2,3,17,0.5666666666666667,0,D47w,1
+2019,D4,10,fungicide,adult,30,1,2,0,2,0,0,NA,2,2,3,0.1,1,D410f,1
+2019,D4,10,fungicide,seedling,30,0,2,0,3,0,0,NA,2,3,3,0.1,1,D410f,1
+2019,D4,10,control,adult,30,2,1,0,1,0,0,NA,1,1,3,0.1,0,D410w,1
+2019,D4,10,control,seedling,30,2,1,0,1,0,0,NA,1,1,3,0.1,0,D410w,1
+2019,D3,1,fungicide,adult,30,0,0,0,3,0,0,NA,0,3,3,0.1,1,D31f,1
+2019,D3,1,fungicide,seedling,30,0,0,0,0,0,0,NA,0,0,0,0,1,D31f,1
+2019,D3,1,control,adult,30,2,1,0,2,0,0,NA,1,2,4,0.13333333333333333,0,D31w,1
+2019,D3,1,control,seedling,30,4,1,1,1,1,0,lost emergent and cut-top between 3 and 4 weeks,0,0,4,0.13333333333333333,0,D31w,1
+2019,D3,4,fungicide,adult,30,11,5,1,6,1,0,NA,4,5,16,0.5333333333333333,1,D34f,1
+2019,D3,4,fungicide,seedling,30,5,0,0,1,0,0,NA,0,1,6,0.2,1,D34f,1
+2019,D3,4,control,adult,30,3,0,0,0,0,0,NA,0,0,3,0.1,0,D34w,1
+2019,D3,4,control,seedling,30,20,7,7,7,7,0,lost cut-tops between 3 and 4 weeks,0,0,20,0.6666666666666666,0,D34w,1
+2019,D3,7,fungicide,adult,30,6,3,1,3,1,0,NA,2,2,8,0.26666666666666666,1,D37f,1
+2019,D3,7,fungicide,seedling,30,7,3,0,3,0,0,NA,3,3,10,0.3333333333333333,1,D37f,1
+2019,D3,7,control,adult,30,1,1,0,1,0,0,NA,1,1,2,0.06666666666666667,0,D37w,1
+2019,D3,7,control,seedling,30,10,1,0,2,0,0,NA,1,2,12,0.4,0,D37w,1
+2019,D3,10,fungicide,adult,30,1,1,0,1,0,0,NA,1,1,2,0.06666666666666667,1,D310f,1
+2019,D3,10,fungicide,seedling,30,9,2,0,2,0,0,NA,2,2,11,0.36666666666666664,1,D310f,1
+2019,D3,10,control,adult,30,0,1,0,1,0,0,NA,1,1,1,0.03333333333333333,0,D310w,1
+2019,D3,10,control,seedling,30,2,1,1,4,1,0,NA,0,3,5,0.16666666666666666,0,D310w,1
+2019,D2,1,fungicide,adult,30,0,0,0,0,0,0,NA,0,0,0,0,1,D21f,1
+2019,D2,1,fungicide,seedling,6,0,0,0,0,0,0,NA,0,0,0,0,1,D21f,1
+2019,D2,1,control,adult,30,0,0,0,1,0,0,NA,0,1,1,0.03333333333333333,0,D21w,1
+2019,D2,4,fungicide,adult,30,0,1,0,2,0,0,NA,1,2,2,0.06666666666666667,1,D24f,1
+2019,D2,4,fungicide,seedling,5,0,0,0,0,0,0,NA,0,0,0,0,1,D24f,1
+2019,D2,4,control,adult,30,1,0,0,0,0,0,NA,0,0,1,0.03333333333333333,0,D24w,1
+2019,D2,4,control,seedling,30,1,2,0,3,0,0,NA,2,3,4,0.13333333333333333,0,D24w,1
+2019,D2,7,fungicide,adult,30,0,0,0,0,0,0,NA,0,0,0,0,1,D27f,1
+2019,D2,7,fungicide,seedling,29,1,1,1,1,1,0,NA,0,0,1,0.034482758620689655,1,D27f,1
+2019,D2,7,control,adult,31,0,0,0,0,0,0,NA,0,0,0,0,0,D27w,1
+2019,D2,7,control,seedling,30,1,0,0,0,0,0,NA,0,0,1,0.03333333333333333,0,D27w,1
+2019,D2,10,fungicide,adult,30,0,1,0,2,0,0,NA,1,2,2,0.06666666666666667,1,D210f,1
+2019,D2,10,fungicide,seedling,30,1,2,0,3,0,0,NA,2,3,4,0.13333333333333333,1,D210f,1
+2019,D2,10,control,adult,30,1,0,0,1,0,0,NA,0,1,2,0.06666666666666667,0,D210w,1
+2019,D2,10,control,seedling,30,2,3,1,5,1,0,NA,2,4,6,0.2,0,D210w,1
+2019,D1,1,control,adult,27,1,0,0,0,0,0,NA,0,0,1,0.037037037037037035,0,D11w,1
+2019,D1,4,fungicide,adult,30,0,0,0,0,0,0,NA,0,0,0,0,1,D14f,1
+2019,D1,4,fungicide,seedling,9,1,0,0,1,0,0,NA,0,1,2,0.2222222222222222,1,D14f,1
+2019,D1,4,control,adult,30,0,1,0,1,0,0,NA,1,1,1,0.03333333333333333,0,D14w,1
+2019,D1,7,fungicide,adult,30,0,0,0,0,0,0,"a seedling with a cut top was found in this container in week 3, but there were no emergents in week 2 and the seed was completely above the soil, so it is likely a plucked seed from another container.",0,0,0,0,1,D17f,1
+2019,D1,7,control,adult,22,0,0,0,0,0,0,NA,0,0,0,0,0,D17w,1
+2019,D1,7,control,seedling,26,0,1,0,2,0,0,NA,1,2,2,0.07692307692307693,0,D17w,1
+2019,D1,10,fungicide,adult,21,0,0,0,0,0,0,NA,0,0,0,0,1,D110f,1
+2019,D1,10,fungicide,seedling,30,0,0,0,1,0,0,NA,0,1,1,0.03333333333333333,1,D110f,1
+2019,D1,10,control,adult,30,0,0,0,0,0,0,NA,0,0,0,0,0,D110w,1
+2019,D1,10,control,seedling,30,4,1,0,4,0,0,NA,1,4,8,0.26666666666666666,0,D110w,1

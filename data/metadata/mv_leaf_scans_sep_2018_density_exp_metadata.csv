@@ -1,0 +1,12 @@
+﻿title,mv_leaf_scans_sep_2018_density_exp
+authors,"Amy Kendig, Chris Wojan"
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20180924 - 20180926
+scanned-original,in folder leaf-scans-sep-2019-density-exp
+entered-original,mv_leaf_scan_text_output_sep_2019_density_exp
+processing-script,mv_leaf_damage_severity.ijm
+,
+columns,meaning
+Slice,"description of image (leaf or lesions, site, plot, plant ID, indicate of if it was manually edited)"
+Count,number of objects (leaves or lesions)
+Total Area,area in units of pixels

@@ -1,0 +1,17 @@
+title,ev_biomass_seeds_oct_2019_density_exp
+authors,Chris Wojan
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20191022 - 20191024
+scanned-original,ev_biomass_seeds_oct_2019_density_exp
+entered-original,ev-biomass-seeds-oct-2019-density-exp_20200130
+,
+columns,meaning
+site,experimental site (D1 - 4)
+plot,"experimental plot, which corresponds to planting treatment (1 - 10)"
+treatment,"fungicide treatment (water, fungicide)"
+sp,"species (Ev = Elymus virginicus, Mv = Microstegium vimineum)"
+ID,"plant ID (A = focal adult, 1 - 3 = focal seedlings)"
+weight,dry weight of plant in grams (without seeds)
+seeds_collected,indicator variable of whether seeds were present in the sample
+seeds_green,"indicator variable of seed color (0 = all brown, 0.5 = mixed brown and green, 1 = all green)"
+processing_notes,notes

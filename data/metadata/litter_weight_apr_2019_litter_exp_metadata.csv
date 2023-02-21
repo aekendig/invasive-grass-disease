@@ -1,0 +1,12 @@
+﻿title,litter-weight-apr-2019-litter-exp
+authors,"Amy Kendig, Christopher Wojan"
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20190409
+scanned-original,litter-weight-apr-2019-litter-exp
+,
+columns,meaning
+date,date that data were collected
+site,"experimental site (D1, D3 - same as density experiment)"
+treatment,"litter treatment (addition, removal, control)"
+block,"block number (D1.1 is on the west side of the site, D1.2 is northeast, D3.1 is northeast, D3.2 is northwest)"
+litter_weight.lb,weight of litter and trash bag (lb)

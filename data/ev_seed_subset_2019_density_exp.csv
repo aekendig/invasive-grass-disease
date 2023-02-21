@@ -1,0 +1,20 @@
+site,plot,treatment,age,ID,collect_date,seed_date,seeds,seed_weight,processing_notes
+D1,9,fungicide,A,A,20190830,20200219,80,0.286,"lost one seed; this row has full seed count, weight with dummy seed"
+D1,9,fungicide,A,A,20190830,20200219,79,0.283,lost one seed; this row has weight of reduced seed count
+D1,6,fungicide,S,2,20191024,20200220,9,0.042,brown
+D1,1,water,A,A,20190830,20200219,2,0.008,
+D1,2,water,S,2,20190928,20200206,28,0.139,
+D2,1,fungicide,A,A,20191023,20200219,6,0.01,green
+D2,8,fungicide,S,3,20190927,20200206,33,0.112,"lost two seeds; this row has full seed count, weight with dummy seeds"
+D2,8,fungicide,S,3,20190927,20200206,31,0.106,lost two seeds; this row has weight of reduced seed count
+D2,2,water,A,A,20190704,20200218,0,0,
+D2,4,water,S,3,20190829,20200212,31,0.033,
+D3,6,fungicide,A,A,20190925,20200211,28,0.11,
+D3,3,fungicide,S,1,20190829,20200206,6,0.016,
+D3,3,water,A,A,20191022,20200219,11,0.046,brown
+D3,5,water,S,3,20190829,20200219,55,0.159,
+D4,6,fungicide,A,A,20190729,20200218,14,0.024,
+D4,10,fungicide,S,3,20190729,20200218,2,0.003,
+D4,8,water,A,A,20190924,20200220,113,0.414,2-Jan
+D4,8,water,A,A,20190924,20200221,80,0.269,2-Feb
+D4,10,water,S,3,20191022,20200220,1,0.003,green

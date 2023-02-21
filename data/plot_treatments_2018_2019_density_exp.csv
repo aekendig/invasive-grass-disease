@@ -1,0 +1,21 @@
+plot,flag,treatment,background,background_sp,background_density,density_level
+1,blue,water,none,none,0,none
+2,blue,water,Mv seedling,Mv,4,low
+3,blue,water,Mv seedling,Mv,16,medium
+4,blue,water,Mv seedling,Mv,64,high
+5,blue,water,Ev seedling,Ev,4,low
+6,blue,water,Ev seedling,Ev,8,medium
+7,blue,water,Ev seedling,Ev,16,high
+8,blue,water,Ev adult,Ev,2,low
+9,blue,water,Ev adult,Ev,4,medium
+10,blue,water,Ev adult,Ev,8,high
+1,red,fungicide,none,none,0,none
+2,red,fungicide,Mv seedling,Mv,4,low
+3,red,fungicide,Mv seedling,Mv,16,medium
+4,red,fungicide,Mv seedling,Mv,64,high
+5,red,fungicide,Ev seedling,Ev,4,low
+6,red,fungicide,Ev seedling,Ev,8,medium
+7,red,fungicide,Ev seedling,Ev,16,high
+8,red,fungicide,Ev adult,Ev,2,low
+9,red,fungicide,Ev adult,Ev,4,medium
+10,red,fungicide,Ev adult,Ev,8,high

@@ -1,0 +1,43 @@
+﻿site_plot,trial,date_sterilized,date_check_1,date_check_2,seeds,seeds_dark_check_1,seeds_light_check_1,seeds_red_check_1,seeds_pink_check_1,seeds_green_check_1,seeds_transferred_check_1,notes_check_1,seeds_dark_check_2,seeds_light_check_2,seeds_red_check_2,seeds_pink_check_2,seeds_green_check_2,notes_check_2,germination_check_1,date_germination_check_1,notes_germination_check_1,seeds_dark_check_3,seeds_light_check_3,seeds_red_check_3,seeds_green_check_3,date_check_3,notes_check_3,germination_final,date_germination_final,notes_germination_final
+D1 2F,0,6/4/19,6/7/19,6/12/19,30,,4,,,,yes,all light  ,2,14,,,,,24,6/12/19,,,,,,,,25,6/21/19,
+D1 2W,0,6/4/19,6/7/19,6/12/19,30,,6,,,,yes,"All light and branchy, with some spotted white infection throughout plate ",2,11,,,,spotted green contaminate (?) all over plate,27,6/12/19,,,,,,,,26,6/21/19,
+D1 9W,0,6/4/19,6/7/19,6/12/19,30,1,4,,,,yes,one darker,3,11,,,2,,21,6/12/19,,,,,,,,26,6/21/19,2 seedlings seem to have been killed by white fungus 
+D2 10W,0,6/4/19,6/7/19,,30,14,16,,,,,14 darker,,,,,,,29,6/11/19,the one seed that didnt germinate was covered in fuzz. plate put in fridge on 6/11/19,,,,,,,NA,6/21/19,
+D2 1W,0,6/4/19,6/7/19,6/12/19,30,2,3,1,,,yes,"two notably dark fungi, one reddish, the rest lighter",4,7,,1,,hard to see light inf because of condensation on lid- should check under flow hood,26,6/12/19,,,,,,,,26,6/21/19,
+D2 3F,0,6/4/19,6/7/19,6/12/19,21,1,8,,,,yes,"one darker, fuzzy",1,10,,,,,16,6/12/19,,,,,,,,16,6/21/19,
+D3 8W,0,6/4/19,6/7/19,6/12/19,30,2,4,,,,yes,"two darker, the rest lighter",3,9,,,,,26,6/12/19,,,,,,,,28,6/21/19,
+D3 9W,0,6/4/19,6/7/19,6/12/19,30,2,12,,,,yes,"two darker, the rest lighter",4,14,,,,,22,6/12/19,,,,,,,,24,6/21/19,"At least one seed with Bipolaris, at least one seed with Fusarium"
+D4 5F,0,6/4/19,6/7/19,6/12/19,30,,10,,,,yes,all light,1,11,,,,,24,6/12/19,,,,,,,,26,6/21/19,
+D4 8W,0,6/4/19,6/7/19,6/12/19,30,4,7,,,,yes,"4 darker, the rest light",8,7,,,,,19,6/12/19,,,,,,,,23,6/21/19,At least one seed with Bipolaris. Might be curvularia?
+D1 1W,0,6/5/19,6/11/19,6/13/19,30,4,10,,,,,,3,8,,,,,29,6/13/19,,,,,,,,29,6/21/19,
+D1 3W,0,6/5/19,6/7/19,6/13/19,30,1,29,,,,,"light and branchy, maybe one darker they all look pretty much infected but all is very light",4,26,,,,Most of the light infectio is almost clear. only one seed is very obviously white and fuzzy. most intesely infected seeds are not germinating and look like they won't be,24,6/11/19,put in fridge 6/11/19,,,,,,,NA,6/21/19,
+D1 8W,0,6/5/19,6/7/19,6/11/19,30,,6,,,,yes,all light,,12,,2,,,24,6/13/19,,3,3,,,6/13/19,three are slightly darker hyphae but with white fuzz,29,6/21/19,
+D2 2F,0,6/5/19,6/7/19,6/11/19,30,,2,,,,yes,light and branchy,1,15,,,,"Honestly, original plate was a mess. infection all over the place just on the agar. Second plate was easier to see infected seeds.",21,6/13/19,,2,16,,,,,23,6/21/19,
+D2 3W,0,6/5/19,6/7/19,6/11/19,30,,2,,,,yes,light and branchy,4,9,,,1,,20,6/13/19,,6,7,1,1,,hard to distinguish between red and dark ..,22,6/21/19,
+D2 4F,0,6/5/19,6/11/19,6/13/19,30,,6,,,,,,,5,,,,,22,6/13/19,,,,,,,,27,6/21/19,
+D3 3F,0,6/5/19,6/11/19,6/13/19,30,,8,,4,,,,1,10,,2,,one is half pink half dark,20,6/13/19,,,,,,,,27,6/21/19,
+D3 5F,0,6/5/19,6/11/19,6/13/19,30,4,7,,,,yes,,5,5,,,,,21,6/13/19,,,,,,,,28,6/21/19,
+D3 5W,0,6/5/19,6/7/19,6/11/19,30,,4,,,,yes,all light. Some infection in sites without seeds,3,21,,,,,27,6/13/19,,3,21,,,6/13/19,,28,6/21/19,
+D3 7W,0,6/5/19,6/11/19,6/13/19,30,8,7,1,,,,Plate completely covered with infection,7,9,1,,,,10,6/13/19,infection seems to be inhibiting germination,,,,,,,15,6/21/19,
+D4 3W,0,6/5/19,6/11/19,6/13/19,30,1,10,,,,,,1,10,,,,,23,6/13/19,,,,,,,,24,6/21/19,
+D4 4F,0,6/5/19,6/11/19,6/13/19,30,,7,,,,,random reddish infection in the corner not on a seed. ,,9,,,,,24,6/13/19,,,,,,,,25,6/21/19,
+D4 9F,0,6/5/19,6/11/19,6/13/19,30,4,3,2,1,,,although most seeds aren't infected there is infection on most of the plate,5,6,,,,,18,6/13/19,,,,,,,,22,6/21/19,At least one seed with Bipolaris
+P1 10W,0,6/5/19,6/11/19,6/13/19,30,1,11,,,,,,4,7,,,,,24,6/13/19,,,,,,,,27,6/21/19,
+D1 5F,0,6/7/19,6/11/19,6/13/19,30,,5,,,,,,,9,,,,,22,6/14/19,,,,,,,,26,6/21/19,
+D1 6W,0,6/7/19,6/11/19,6/13/19,29,1,3,,,,,,2,4,,,,,20,6/13/19,,,,,,,,23,6/21/19,
+D1 7F,0,6/7/19,6/11/19,6/13/19,29,1,26,,,,,basically entire plate covered,1,28,,,,can only tell that 20 or so seeds are infected with the light fungus bc the dark one spread,27,6/13/19,,,,,,,,28,6/21/19,
+D1 8F,0,6/7/19,6/11/19,6/13/19,30,,12,,,,,,,11,,1,,,24,6/13/19,,,,,,,,29,6/21/19,at least one seed with gigantea
+D1 9F,0,6/7/19,6/11/19,6/13/19,30,,23,,,,,,,18,,,,,19,6/13/19,,,,,,,,27,6/21/19,
+D2 4W,0,6/7/19,6/11/19,6/13/19,30,,7,,,,,,,7,,,,,18,6/13/19,,,,,,,,20,6/21/19,
+D2 5W,0,6/7/19,6/11/19,6/13/19,30,,13,,,,,,,13,,,,,20,6/13/19,,,,,,,,30,6/21/19,
+D2 7W,0,6/7/19,6/11/19,6/13/19,30,2,8,,,,,,2,8,,,,,13,6/13/19,,,,,,,,23,6/21/19,At least one seed with Bipolaris
+D3 2F,0,6/7/19,6/11/19,6/14/19,30,,12,,,,,,3,10,,,,one half dark one half light,22,6/14/19,,,,,,,,28,6/21/19,At least one seed with Bipolaris
+D3 3W,0,6/7/19,6/11/19,6/13/19,30,2,6,,2,,,,4,10,,2,,,20,6/13/19,,,,,,,,24,6/21/19,At least one seed with Bipolaris
+D2 5F,0,6/12/19,6/19/19,6/22/19,30,2,3,,,,,,,,,,,,23,6/22/19,,,,,,,,,,Might have gigantea
+D2 7F,0,6/12/19,6/19/19,6/22/19,30,1,9,,,,,,,,,,,,19,6/22/19,,,,,,,,,,
+D3 10W,0,6/12/19,6/19/19,6/22/19,30,8,6,,,,,,,,,,,,17,6/22/19,,,,,,,,,,
+D4 5W,0,6/12/19,6/19/19,6/22/19,30,4,1,,,,,two! seedlings with leasions,,,,,,,19,6/22/19,,,,,,,,,,At least one seed with Bipolaris
+D2 6W,0,6/13/19,6/23/19,6/23/19,30,4,1,,,,,some greenish infection on 3 seeds (unsure if it is fungal or other),,,,,,,25,6/23/19,,,,,,,,,,At least one seed with Bipolaris
+D3 4W,0,6/13/19,6/23/19,6/23/19,30,6,4,,,,,,,,,,,,5,6/23/19,,,,,,,,,,"why is germination so low?, At least one seed with Bipolaris"
+D3 6W,0,6/13/19,6/23/19,6/23/19,30,6,3,,,,,,,,,,,,16,6/23/19,,,,,,,,,,At least one seed with Bipolaris
+D4 1W,0,6/13/19,6/23/19,6/23/19,30,4,2,,,,,,,,,,,,15,6/23/19,,,,,,,,,,At least one seed with Bipolaris

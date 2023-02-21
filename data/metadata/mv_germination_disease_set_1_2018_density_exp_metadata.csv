@@ -1,0 +1,38 @@
+﻿title,mv_germination_disease_set_1_2018_density_exp
+authors,"Penny Reif, Lili Benitez, Vida Svahnstrom, Shannon Regan, Trevor Green, and Zadok Jollie"
+location,"Gainesville, FL"
+date,20190604–20190623
+entered-original,Seed sterilization trials - backup 20200714 (from Google Sheet owned by Liliana Benitez)
+,
+columns,meaning
+site_plot,site and plot at Big Oaks National Wildlife Refuge where seeds were collected
+trial,"trial (0, other trials in set 2)"
+date_sterilized,date seeds were sterilized with bleach
+date_check_1,first date seeds were checked
+date_check_2,second date seeds were checked
+seeds,number of seeds on agar plate
+seeds_dark_check_1,number of seeds with dark hyphae growing out of them during first check
+seeds_light_check_1,number of seeds with light hyphae growing out of them during first check
+seeds_red_check_1,number of seeds with red hyphae growing out of them during first check
+seeds_pink_check_1,number of seeds with pink hyphae growing out of them during first check
+seeds_green_check_1,number of seeds with green hyphae growing out of them during first check
+seeds_transferred_check_1,number of seeds tranferred to a fresh agar plate after first check
+notes_check_1,notes recorded during first check
+seeds_dark_check_2,number of seeds with dark hyphae growing out of them during second check
+seeds_light_check_2,number of seeds with light hyphae growing out of them during second check
+seeds_red_check_2,number of seeds with red hyphae growing out of them during second check
+seeds_pink_check_2,number of seeds with pink hyphae growing out of them during second check
+seeds_green_check_2,number of seeds with green hyphae growing out of them during second check
+notes_check_2,notes recorded during second check
+germination_check_1,number of seeds that germinated by first germination check
+date_germination_check_1,date of first germination check
+notes_germination_check_1,notes recorded during first germination check
+seeds_dark_check_3,number of seeds with dark hyphae growing out of them during third check
+seeds_light_check_3,number of seeds with light hyphae growing out of them during third check
+seeds_red_check_3,number of seeds with red hyphae growing out of them during third check
+seeds_green_check_3,number of seeds with green hyphae growing out of them during third check
+date_check_3,third date seeds were checked
+notes_check_3,notes recorded during thirdcheck
+germination_final,number of seeds that germinated by final germination check
+date_germination_final,date of final germination check
+notes_germination_final,notes recorded during final germination check

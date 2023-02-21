@@ -1,0 +1,14 @@
+﻿plot,flag_color,litter,litter_density,litter_weight.g,seeds_added,justification
+1,pink,live,low,50,yes,"infected litter impacts, low density"
+2,pink,live,low,50,no,Mv germination from low density infected litter
+3,pink,live,medium,100,yes,"infected litter impacts, medium density"
+4,pink,live,medium,100,no,Mv germination from medium density infected litter
+5,pink,live,high,200,yes,"infected litter impacts, high density"
+6,pink,live,high,200,no,Mv germination from high density infected litter
+7,orange,sterilized,low,50,yes,"uninfected litter impacts, low density"
+8,orange,sterilized,low,50,no,Mv germination from low density uninfected litter
+9,orange,sterilized,medium,100,yes,"uninfected litter impacts, medium density"
+10,orange,sterilized,medium,100,no,Mv germination from medium density uninfected litter
+11,orange,sterilized,high,200,yes,"uninfected litter impacts, high density"
+12,orange,sterilized,high,200,no,Mv germination from high density uninfected litter
+13,yellow,none,none,0,yes,baseline demographic rates without litter impacts

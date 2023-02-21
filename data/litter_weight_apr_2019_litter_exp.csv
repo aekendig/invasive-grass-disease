@@ -1,0 +1,13 @@
+﻿date,site,treatment,block,litter_weight.lb
+20190409,D1,addition,1,14.1
+20190409,D1,control,1,20.8
+20190409,D1,removal,1,14.6
+20190409,D1,addition,2,8.5
+20190409,D1,control,2,2.8
+20190409,D1,removal,2,4.5
+20190409,D3,control,1,7.6
+20190409,D3,addition,1,6.1
+20190409,D3,removal,1,3
+20190409,D3,control,2,4.5
+20190409,D3,removal,2,4.5
+20190409,D3,addition,2,2.9

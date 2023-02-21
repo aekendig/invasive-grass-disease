@@ -1,0 +1,17 @@
+﻿title,ev_seed_subset_2018_density_exp
+authors,Christopher Wojan
+location,"Big Oaks National Wildlife Refuge, Madison, IN, USA"
+date,20180711 - 20181022
+scanned-original,ev_seed_subset_2018_density_exp
+entered-original,ev_seed_subset_2018_v20190322
+,
+columns,meaning
+site,experimental site (D1 - 4)
+plot,"experimental plot, which corresponds to planting treatment (1 - 10)"
+treatment,"fungicide treatment (water, fungicide)"
+age,"age of plant (A = adult, S = seedling)"
+ID,"plant ID (A = focal adult, 1 - 3 = focal seedlings, other = background)"
+collect_date,date seeds were collected
+seed_date,date seeds were processed and weighed
+seeds,number of seeds
+seed_weight.mg,weight of seeds (mg)
