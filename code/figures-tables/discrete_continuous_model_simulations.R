@@ -21,16 +21,16 @@ cont_params <- read_csv("output/continuous_model_parameters_2018_2019_density_ex
 disc_params <- read_csv("output/discrete_model_parameters_2018_2019_density_exp.csv")
 
 # continuous models
-source("code/continuous_AFP_model.R")
-source("code/continuous_AF_model.R")
-source("code/continuous_AP_model.R")
-source("code/continuous_FP_model.R")
-source("code/continuous_A_model.R")
-source("code/continuous_F_model.R")
-source("code/continuous_P_model.R")
+source("code/dynamical-models/continuous_AFP_model.R")
+source("code/dynamical-models/continuous_AF_model.R")
+source("code/dynamical-models/continuous_AP_model.R")
+source("code/dynamical-models/continuous_FP_model.R")
+source("code/dynamical-models/continuous_A_model.R")
+source("code/dynamical-models/continuous_F_model.R")
+source("code/dynamical-models/continuous_P_model.R")
 
 # discrete model
-source("code/discrete_model.R")
+source("code/dynamical-models/discrete_model.R")
 
 # figure settings
 fig_theme <- theme_bw() +
@@ -172,8 +172,6 @@ per_bio_alone <- mod_inv_dis %>%
            time == 99) %>%
   summarize(bio = sum(N)) %>%
   pull(bio)
-
-# per_bio_alone <- 719.323
 
 # figure
 mod_inv_dis %>%
@@ -719,8 +717,6 @@ for(i in 1:nrow(alpha_AA_PP_vals)){
 }
 dev.off()
 
-# per_bio_alone <- 719.323
-
 # select last time point
 # combine adult & first-year perennial
 mod_AA_PP3 <- mod_AA_PP2 %>%
@@ -914,9 +910,6 @@ sens_sim <- function(parms_vary, parms_range, parms_n, parms_type, filename){
 }
 
 sens_sim_dat <- function(dat_in) {
-  
-  # recovered perennial biomass
-  per_bio_alone <- 719.323
   
   # select last date
   # combine perennial life stages

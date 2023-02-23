@@ -207,10 +207,10 @@ evASeedDensMod <- brm(data = adultD2Dat, family = gaussian,
                       iter = 6000, warmup = 1000, chains = 3,
                       control = list(adapt_delta = 0.999)) 
 
-mod_check_fun(evSBioDensMod)
-mod_check_fun(evSSeedDensMod)
-mod_check_fun(evABioDensMod)
-mod_check_fun(evASeedDensMod)
+# mod_check_fun(evSBioDensMod)
+# mod_check_fun(evSSeedDensMod)
+# mod_check_fun(evABioDensMod)
+# mod_check_fun(evASeedDensMod)
 
 # save models
 save(evSBioDensMod, file = "output/evS_plot_biomass_density_model_2019_density_exp.rda")
