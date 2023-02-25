@@ -49,8 +49,8 @@ dodge_width = 0.5
 #### severity ####
 
 # load model
-load("output/focal_severity_model_aug_2019_dens_exp.rda")
-load("output/focal_severity_model_jul_2019_dens_exp.rda")
+load("output/focal_severity_model_aug_2019_dens_exp.rda") # early August -> late august
+load("output/focal_severity_model_jul_2019_dens_exp.rda") # July -> early August
 
 # load data
 sevD2Dat3_aug2 <- read_csv("output/focal_severity_model_data_aug_2019_dens_exp.csv")

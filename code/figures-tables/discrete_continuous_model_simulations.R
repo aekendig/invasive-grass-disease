@@ -192,6 +192,7 @@ mod_inv_dis2 <- mod_inv_dis %>%
                         "Perennial adult infected biomass",
                         "Perennial first-year infected biomass") &
            time >= 195 & time < 315) %>%
+  filter(!(Disease == "absent" & time > 300)) %>% # remove invasion without disease, no change from pre-emergence
   mutate(time = time - 201,
          species = str_replace_all(species, " ", "_"),
          species = str_replace_all(species, "-", "_")) %>%
@@ -220,7 +221,7 @@ time_series_fig <- mod_inv_dis2 %>%
   ggplot(aes(x = time, y = RelN)) +
   geom_rect(xmin = 0, xmax = 100, ymin = -Inf, ymax = Inf, fill = "gray95", color = NA, show.legend = F) +
   geom_rect(xmin = 100, xmax = Inf, ymin = -Inf, ymax = Inf, fill = "gray85", color = NA, show.legend = F) +
-  geom_line(aes(color = Species, linetype = Disease)) +
+  geom_line(aes(color = Species)) +
   geom_text(data = phase_lab, check_overlap = T, size = 2.5,
             aes(label = lab)) +
   scale_color_manual(values = col_pal2, name = "Variable") +
@@ -364,6 +365,7 @@ mod_F_dis2 <- mod_F_dis %>%
                         "Perennial first-year biomass",
                         "Perennial adult infected biomass",
                         "Perennial first-year infected biomass")) %>%
+  filter(!(Disease == "absent" & time > 200)) %>% # remove absent disease, no change from pre-emergence
   mutate(species = str_replace_all(species, " ", "_"),
          species = str_replace_all(species, "-", "_")) %>%
   pivot_wider(names_from = "species",
@@ -390,7 +392,7 @@ P_alone_time_series <- mod_F_dis2 %>%
   filter(time < 210 & !is.na(RelN)) %>%
   ggplot(aes(x = time, y = RelN)) +
   geom_rect(xmin = 200, xmax = Inf, ymin = -Inf, ymax = Inf, fill = "gray85", color = NA, show.legend = F) +
-  geom_line(aes(color = Species, linetype = Disease)) +
+  geom_line(aes(color = Species)) +
   geom_text(data = phase_lab_F, check_overlap = T, size = 2.5,
             aes(label = lab)) +
   scale_color_manual(values = col_pal2[2:3], name = "Variable") +
