@@ -11,6 +11,7 @@
  7. Run the scripts in code/figure-prep  
  8. Run the scripts in code/figures-tables  
  9. As an alternative to steps 4-8, if you are interested in recreating a specific table or figure, you can find the script associated with that table or figure in code_data_relationships.csv using the "Outputs" columns and only run the script in the "Code" columns.  
-10. It is recommended to restart the R session (unload packages and clear environment) between scripts.  
+ 
+ It is recommended to restart the R session (unload packages and clear environment) between scripts. You will not need to run the scripts in the directory code/dynamical-models because these are called by other scripts.  
 
-Output models, tables, and figures in this respository may vary slightly from those in the manuscript due to model estimation methods. To see models, tables, and figures exactly matching those in the manuscript as well as version history of scripts, visit https://github.com/aekendig/microstegium-bipolaris. Notes that this repository has many more scripts and is organized and archived for reproducibility.
+Output models, tables, and figures in this respository may vary slightly from those in the manuscript due to model estimation methods. To see models, tables, and figures exactly matching those in the manuscript as well as version history of scripts, visit https://github.com/aekendig/microstegium-bipolaris. Notes that this repository has many more scripts and is not organized and archived for reproducibility.
