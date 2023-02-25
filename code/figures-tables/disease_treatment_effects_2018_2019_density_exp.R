@@ -142,7 +142,6 @@ sev %>%
                values_to = "estimate") %>%
   group_by(parameter) %>%
   median_hdi(estimate)
-# did this in focal_severity_model_2018_2019.R too
 
 
 #### germination ####
@@ -637,7 +636,7 @@ alpha %>%
                names_to = "parameter",
                values_to = "estimate") %>%
   group_by(parameter) %>%
-  median_hdi(estimate, .width = 0.29)
+  median_hdi(estimate, .width = 0.29) # change this value
 
 
 # table
