@@ -1,0 +1,9 @@
+﻿Sort,Directory,Code,Outputs,Dependency,Dependency file,Dependency source
+5,figures-tables,plot_biomass_density_2019_density_exp.R,"Figure 2A
+Table S1",bgBioD2Dat,bg_biomass_2019_density_exp.csv,data
+5,figures-tables,plot_biomass_density_2019_density_exp.R,"Figure 2A
+Table S1",evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
+5,figures-tables,plot_biomass_density_2019_density_exp.R,"Figure 2A
+Table S1",mvBioD2Dat,mv_biomass_seeds_2019_density_exp.csv,data
+5,figures-tables,plot_biomass_density_2019_density_exp.R,"Figure 2A
+Table S1",plots,plot_treatments_for_analyses_2018_2019_density_exp.csv,data
