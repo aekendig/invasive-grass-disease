@@ -12,6 +12,7 @@ library(tidyverse)
 library(brms)
 library(broom.mixed)
 library(tidybayes)
+library(ggtext)
 
 # import data
 bgBioD2Dat <- read_csv("data/bg_biomass_2019_density_exp.csv") 
@@ -28,6 +29,9 @@ mod_check_fun <- function(mod){
   print(plot(mod))
   
 }
+
+# figure settings
+source("code/figure-prep/figure_settings.R")
 
 
 ##### edit data ####
@@ -82,7 +86,11 @@ plotBioD2Dat <- bgBioD2Dat3 %>%
   full_join(plotDens, relationship = "many-to-many") %>%
   mutate(biomass.g_m2 = case_when(background == "Mv seedling" ~ biomass_bg + biomass_foc_mv,
                                   background == "Ev seedling" ~ biomass_bg + biomass_foc_evS,
-                                  background == "Ev adult" ~ biomass_bg + biomass_foc_evA))
+                                  background == "Ev adult" ~ biomass_bg + biomass_foc_evA),
+         background_species = case_when(background == "Mv seedling" ~ "*M. vimineum*",
+                                        background == "Ev seedling" ~ "1st yr *E. virginicus*",
+                                        background == "Ev adult" ~ "Adult *E. virginicus*") %>%
+           as.factor())
 
 #### start here ####
 # above dataset can be used for biomass vs. density
@@ -197,58 +205,29 @@ evPredD2Dat <- evSSeedPredD2Dat %>%
 
 #### figure ####
 
-# theme
-fig_theme <- theme_bw() +
-  theme(panel.background = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text = element_text(size = 7, color = "black"),
-        axis.title = element_text(size = 7, color = "black"),
-        legend.text = element_text(size = 7),
-        legend.title = element_text(size = 7),
-        legend.background = element_blank(),
-        legend.margin = margin(-0.3, 0, -0.1, 0, unit = "cm"),
-        legend.position = "bottom",
-        legend.direction = "horizontal",
-        strip.background = element_blank(),
-        strip.text.x = element_text(size = 7,
-                                    margin = margin(0, 0, 0.1, 0, unit = "cm")),
-        strip.text.y = element_text(size = 7,
-                                    margin = margin(0, 0.1, 0, 0, unit = "cm")),
-        strip.placement = "outside",
-        plot.title = element_text(size = 8, hjust = 0.5, face = "bold"))
-
-# colors
-col_pal = c("black", "#238A8D")
-
-# dodge size
-dodge_width <- 0.5
 
 # labels
 plot_labels <- c(biomass = "Biomass~(g~m^-2)",
                  seeds = "Seed~production~(m^-2)")
 
 # figure
-pdf("output/ev_density_figure_2019_density_exp.pdf", width = 3.54, height = 3.54)
-ggplot(evPredD2Dat, aes(x = density, y = value)) +
-  geom_ribbon(aes(ymin = lower, ymax = upper, fill = treatment), alpha = 0.3) +
-  geom_line(aes(color = treatment)) +
-  geom_point(data = figD2Dat, aes(color = treatment), 
+# pdf("output/ev_density_figure_2019_density_exp.pdf", width = 3.54, height = 3.54)
+ggplot(plotBioD2Dat, aes(x = density, y = biomass.g_m2)) +
+  # geom_ribbon(aes(ymin = lower, ymax = upper, fill = treatment), alpha = 0.3) +
+  # geom_line(aes(color = treatment)) +
+  geom_point(aes(color = treatment), 
              position = position_jitterdodge(jitter.width = 0.1, 
                                              jitter.height = 0,
                                              dodge.width = dodge_width),
              size = 0.5) +
-  facet_grid(rows = vars(response),
-             cols = vars(plant_group),
-             scales = "free",
-             switch = "y",
-             labeller = labeller(response = as_labeller(plot_labels, label_parsed))) +
+  facet_wrap(~ background_species, scales = "free") +
   scale_color_manual(values = col_pal, name = "Disease treatment") +
-  scale_fill_manual(values = col_pal, name = "Disease treatment") +
-  labs(x = expression(paste("Competitor density (", m^-2, ")", sep = ""))) +
+  # scale_fill_manual(values = col_pal, name = "Disease treatment") +
+  labs(x = expression(paste("Planted density (", m^-2, ")", sep = "")),
+       y = expression(paste("Plot biomass (g ", m^-2, ")", sep = ""))) +
   fig_theme +
-  theme(axis.title.y = element_blank())
-dev.off()
+  theme(strip.text.x = element_markdown())
+# dev.off()
 
 
 #### treatment effects ####
