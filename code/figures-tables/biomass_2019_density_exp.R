@@ -1,6 +1,7 @@
 ##### outputs ####
 
-# Figure 2A
+# Figure 2
+# Table S1
 
 #### set up ####
 
@@ -84,45 +85,80 @@ plotBioD2Dat <- bgBioD2Dat3 %>%
                           select(site, plot, treatment, weight) %>%
                           rename(biomass_foc_evA = weight))) %>%
   full_join(plotDens, relationship = "many-to-many") %>%
-  mutate(biomass.g_m2 = case_when(background == "Mv seedling" ~ biomass_bg + biomass_foc_mv,
-                                  background == "Ev seedling" ~ biomass_bg + biomass_foc_evS,
-                                  background == "Ev adult" ~ biomass_bg + biomass_foc_evA),
+  mutate(biomass = case_when(background == "Mv seedling" ~ biomass_bg + biomass_foc_mv,
+                             background == "Ev seedling" ~ biomass_bg + biomass_foc_evS,
+                             background == "Ev adult" ~ biomass_bg + biomass_foc_evA),
          background_species = case_when(background == "Mv seedling" ~ "*M. vimineum*",
                                         background == "Ev seedling" ~ "1st yr *E. virginicus*",
                                         background == "Ev adult" ~ "Adult *E. virginicus*") %>%
            as.factor())
 
-#### start here ####
-# above dataset can be used for biomass vs. density
-# add in data to do focal biomass vs. biomass
+# divide by species
+mvPlotBioD2Dat <- filter(plotBioD2Dat, background == "Mv seedling")
+evSPlotBioD2Dat <- filter(plotBioD2Dat, background == "Ev seedling")
+evAPlotBioD2Dat <- filter(plotBioD2Dat, background == "Ev adult")
+
+# individual biomass
+growthD2Dat <- mvBioD2Dat %>%
+  mutate(ID = as.character(plant)) %>%
+  full_join(evBioD2Dat %>%
+              rename(biomass_weight.g = weight)) %>%
+  left_join(plotDens, relationship = "many-to-many") %>% 
+  mutate(plant_growth = log(biomass_weight.g),
+         age = ifelse(ID == "A", "adult", "seedling"),
+         focal = paste(sp, age, sep = " ") %>%
+           fct_recode(Mv = "Mv seedling"),
+         foc = fct_recode(focal, m = "Mv", a = "Ev adult", s = "Ev seedling") %>%
+           fct_relevel("m"),
+         background = str_replace(background, "_", " ") %>%
+           fct_recode(Mv = "Mv seedling"),
+         bg = fct_recode(background, m = "Mv", a = "Ev adult", s = "Ev seedling") %>%
+           fct_relevel("m"),
+         fungicide = ifelse(treatment == "fungicide", 1, 0),
+         plotf = paste0(site, plot, str_sub(treatment, 1, 1))) %>%
+  filter(!is.na(biomass_weight.g)) %>%
+  left_join(plotBioD2Dat %>%
+              select(site, treatment, plot, biomass) %>%
+              rename(plot_biomass = biomass), 
+            relationship = "many-to-many") %>%
+  mutate(plot_biomass = if_else(as.character(focal) == as.character(background), 
+                                plot_biomass - biomass_weight.g, plot_biomass))
 
 
-#### fit models ####
+#### fit biomass-density models ####
 
 # initial visualization
-ggplot(plotD2Dat, aes(x = density, y = biomass, color = treatment)) +
+ggplot(plotBioD2Dat, aes(x = density, y = biomass, color = treatment)) +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0, position = position_dodge(2)) +
   stat_summary(geom = "point", fun = "mean", size = 1.5, position = position_dodge(2)) +
-  facet_wrap(~ age, scales = "free")
-
-ggplot(plotD2Dat, aes(x = density, y = seeds, color = treatment)) +
-  stat_summary(geom = "errorbar", fun.data = "mean_cl_boot", width = 0, position = position_dodge(2)) +
-  stat_summary(geom = "point", fun = "mean", size = 1.5, position = position_dodge(2)) +
-  facet_wrap(~ age, scales = "free")
+  facet_wrap(~ background, scales = "free")
 
 # priors
-plotD2Dat %>%
+plotBioD2Dat %>%
   filter(plot == 1) %>%
-  group_by(treatment, age) %>%
-  summarise(b0 = mean(biomass/density),
-            s0 = mean(seeds/density))
+  group_by(treatment, background) %>%
+  summarise(b0 = mean(biomass/density))
 
 x <- seq(-1, 20, length.out = 100)
 y <- dgamma(x, shape = 5, scale = 1) # note that this scale is 1/(stan scale)
 plot(x, y, type = "l")
 
+y <- dgamma(x, shape = 14, scale = 1) # note that this scale is 1/(stan scale)
+plot(x, y, type = "l")
+
 # models
-evSBioDensMod <- brm(data = seedlingD2Dat, family = gaussian,
+mvBioDensMod <- brm(data = mvPlotBioD2Dat, family = gaussian,
+                    bf(biomass ~ (density * b0)/(1 + alpha * density), 
+                       b0 ~ 0 + treatment + (1|site), 
+                       alpha ~ 0 + treatment, 
+                       nl = T),
+                    prior <- c(prior(gamma(14, 1), nlpar = "b0", lb = 0),
+                               prior(exponential(0.5), nlpar = "alpha", lb = 0)), # use default for sigma and sd
+                    iter = 6000, warmup = 1000, chains = 3,
+                    control = list(adapt_delta = 0.99)) 
+mod_check_fun(mvBioDensMod)
+
+evSBioDensMod <- brm(data = evSPlotBioD2Dat, family = gaussian,
                     bf(biomass ~ (density * b0)/(1 + alpha * density), 
                        b0 ~ 0 + treatment + (1|site), 
                        alpha ~ 0 + treatment, 
@@ -131,8 +167,9 @@ evSBioDensMod <- brm(data = seedlingD2Dat, family = gaussian,
                                prior(exponential(0.5), nlpar = "alpha", lb = 0)), # use default for sigma and sd
                     iter = 6000, warmup = 1000, chains = 3,
                     control = list(adapt_delta = 0.99)) 
+mod_check_fun(evSBioDensMod)
 
-evABioDensMod <- brm(data = adultD2Dat, family = gaussian,
+evABioDensMod <- brm(data = evAPlotBioD2Dat, family = gaussian,
                      bf(biomass ~ (density * b0)/(1 + alpha * density), 
                         b0 ~ 0 + treatment + (1|site), 
                         alpha ~ 0 + treatment, 
@@ -141,15 +178,17 @@ evABioDensMod <- brm(data = adultD2Dat, family = gaussian,
                                 prior(exponential(0.5), nlpar = "alpha", lb = 0)), # use default for sigma and sd
                      iter = 6000, warmup = 1000, chains = 3,
                      control = list(adapt_delta = 0.999)) 
-
-# mod_check_fun(evSBioDensMod)
-# mod_check_fun(evABioDensMod)
+mod_check_fun(evABioDensMod)
 
 # save models
+save(mvBioDensMod, file = "output/mv_plot_biomass_density_model_2019_density_exp.rda")
 save(evSBioDensMod, file = "output/evS_plot_biomass_density_model_2019_density_exp.rda")
 save(evABioDensMod, file = "output/evA_plot_biomass_density_model_2019_density_exp.rda")
 
+#### start here ####
+
 # load models
+load("output/mv_plot_biomass_density_model_2019_density_exp.rda")
 load("output/evS_plot_biomass_density_model_2019_density_exp.rda")
 load("output/evA_plot_biomass_density_model_2019_density_exp.rda")
 
