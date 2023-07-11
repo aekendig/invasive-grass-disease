@@ -1,0 +1,19 @@
+plant_group,term,estimate,std.error,conf.low,conf.high
+M. vimineum,b0 control,15.98,4,8.95,24.64
+M. vimineum,b0 fungicide,15.19,3.94,8.36,23.74
+M. vimineum,alpha control,0.09,0.03,0.03,0.16
+M. vimineum,alpha fungicide,0.06,0.02,0.02,0.11
+M. vimineum,b0 random intercept: site,25.97,22.08,2.33,82.33
+M. vimineum,sigma,81.68,12.22,61.69,109.51
+1st yr E. virginicus,b0 control,1.45,0.95,0.08,3.5
+1st yr E. virginicus,b0 fungicide,1.29,0.86,0.06,3.05
+1st yr E. virginicus,alpha control,0.02,0.03,0,0.09
+1st yr E. virginicus,alpha fungicide,0.01,0.01,0,0.04
+1st yr E. virginicus,b0 random intercept: site,2.66,1.93,0.6,7.68
+1st yr E. virginicus,sigma,10.68,1.66,8.04,14.37
+adult E. virginicus,b0 control,6.24,2.46,2.31,11.77
+adult E. virginicus,b0 fungicide,5.35,2.13,1.87,10.09
+adult E. virginicus,alpha control,0.24,0.19,0.04,0.66
+adult E. virginicus,alpha fungicide,0.05,0.06,0,0.2
+adult E. virginicus,b0 random intercept: site,11.56,7.66,3.15,32.19
+adult E. virginicus,sigma,20.51,3.14,15.39,27.83

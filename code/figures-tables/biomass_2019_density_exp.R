@@ -14,6 +14,7 @@ library(brms)
 library(broom.mixed)
 library(tidybayes)
 library(ggtext)
+library(janitor)
 
 # import data
 bgBioD2Dat <- read_csv("data/bg_biomass_2019_density_exp.csv") 
@@ -106,21 +107,18 @@ growthD2Dat <- mvBioD2Dat %>%
   left_join(plotDens, relationship = "many-to-many") %>% 
   mutate(plant_growth = log(biomass_weight.g),
          age = ifelse(ID == "A", "adult", "seedling"),
-         focal = paste(sp, age, sep = " ") %>%
-           fct_recode(Mv = "Mv seedling"),
-         foc = fct_recode(focal, m = "Mv", a = "Ev adult", s = "Ev seedling") %>%
+         focal = paste(sp, age, sep = " "),
+         foc = fct_recode(focal, m = "Mv seedling", a = "Ev adult", s = "Ev seedling") %>%
            fct_relevel("m"),
-         background = str_replace(background, "_", " ") %>%
-           fct_recode(Mv = "Mv seedling"),
-         bg = fct_recode(background, m = "Mv", a = "Ev adult", s = "Ev seedling") %>%
+         background = str_replace(background, "_", " "),
+         bg = fct_recode(background, m = "Mv seedling", a = "Ev adult", s = "Ev seedling") %>%
            fct_relevel("m"),
          fungicide = ifelse(treatment == "fungicide", 1, 0),
          plotf = paste0(site, plot, str_sub(treatment, 1, 1))) %>%
   filter(!is.na(biomass_weight.g)) %>%
   left_join(plotBioD2Dat %>%
-              select(site, treatment, plot, biomass) %>%
-              rename(plot_biomass = biomass), 
-            relationship = "many-to-many") %>%
+              select(site, treatment, plot, background, biomass) %>%
+              rename(plot_biomass = biomass)) %>%
   mutate(plot_biomass = if_else(as.character(focal) == as.character(background), 
                                 plot_biomass - biomass_weight.g, plot_biomass))
 
@@ -185,19 +183,43 @@ save(mvBioDensMod, file = "output/mv_plot_biomass_density_model_2019_density_exp
 save(evSBioDensMod, file = "output/evS_plot_biomass_density_model_2019_density_exp.rda")
 save(evABioDensMod, file = "output/evA_plot_biomass_density_model_2019_density_exp.rda")
 
-#### start here ####
-
 # load models
 load("output/mv_plot_biomass_density_model_2019_density_exp.rda")
 load("output/evS_plot_biomass_density_model_2019_density_exp.rda")
 load("output/evA_plot_biomass_density_model_2019_density_exp.rda")
 
+
+#### biomass-density model table ####
+
+bioDensTab <- tidy(mvBioDensMod) %>%
+  mutate(plant_group = "M. vimineum") %>%
+  full_join(tidy(evSBioDensMod) %>%
+              mutate(plant_group = "1st yr E. virginicus")) %>%
+  full_join(tidy(evABioDensMod) %>%
+              mutate(plant_group = "adult E. virginicus")) %>%
+  mutate(term = str_replace(term, "_treatment", " "),
+         term = str_replace(term, "water", "control"),
+         term = fct_recode(term, "b0 random intercept: site" = "sd__b0_(Intercept)"),
+         term = fct_recode(term, "sigma" = "sd__Observation"),
+         plant_group = fct_relevel(plant_group, "M. vimineum",
+                                   "1st yr E. virginicus",
+                                   "adult E. virginicus"),
+         term = fct_relevel(term, "b0 control",
+                            "b0 fungicide",
+                            "alpha control",
+                            "alpha fungicide",
+                            "b0 random intercept: site"),
+         across(c(estimate, std.error, conf.low, conf.high),
+                ~ round_half_up(.x, 2))) %>%
+  relocate(plant_group) %>%
+  arrange(plant_group, term) %>%
+  select(-c(effect, component, group))
+
 # output tables
-write_csv(tidy(evSBioDensMod), "output/evS_plot_biomass_density_model_2019_dens_exp.csv")
-write_csv(tidy(evABioDensMod), "output/evA_plot_biomass_density_model_2019_dens_exp.csv")
+write_csv(bioDensTab, "output/plot_biomass_density_model_2019_dens_exp.csv")
 
 
-#### predicted values ####
+#### biomass-density predicted values ####
 
 # density gradient function
 dens_fun <- function(min_dens, max_dens){
@@ -208,38 +230,85 @@ dens_fun <- function(min_dens, max_dens){
 }
 
 # prediction dataset
-plotPredDatTemplate <- plotD2Dat %>%
-  group_by(treatment, fungicide, age) %>%
+plotPredDatTemplate <- plotBioD2Dat %>%
+  group_by(treatment, background) %>%
   summarize(min_dens = min(density),
             max_dens = max(density)) %>%
   ungroup() %>%
   mutate(density = pmap(list(min_dens, max_dens), dens_fun)) %>%
   unnest(density) %>%
-  mutate(plotf = "A") 
+  mutate(site = "A") 
+
+mvBioPredD2Dat <- plotPredDatTemplate %>%
+  mutate(value = fitted(mvBioDensMod, newdata = ., allow_new_levels = T)[, "Estimate"],
+         lower = fitted(mvBioDensMod, newdata = ., allow_new_levels = T)[, "Q2.5"],
+         upper = fitted(mvBioDensMod, newdata = ., allow_new_levels = T)[, "Q97.5"])
 
 evSBioPredD2Dat <- plotPredDatTemplate %>%
-  filter(age == "seedling") %>%
+  filter(background == "Ev seedling") %>%
   mutate(value = fitted(evSBioDensMod, newdata = ., allow_new_levels = T)[, "Estimate"],
          lower = fitted(evSBioDensMod, newdata = ., allow_new_levels = T)[, "Q2.5"],
          upper = fitted(evSBioDensMod, newdata = ., allow_new_levels = T)[, "Q97.5"])
 
 evABioPredD2Dat <- plotPredDatTemplate %>%
-  filter(age == "adult") %>%
+  filter(background == "Ev adult") %>%
   mutate(value = fitted(evABioDensMod, newdata = ., allow_new_levels = T)[, "Estimate"],
          lower = fitted(evABioDensMod, newdata = ., allow_new_levels = T)[, "Q2.5"],
          upper = fitted(evABioDensMod, newdata = ., allow_new_levels = T)[, "Q97.5"])
 
-evPredD2Dat <- evSSeedPredD2Dat %>%
-  mutate(response = "seeds") %>%
-  full_join(evASeedPredD2Dat %>%
-              mutate(response = "seeds")) %>%
-  full_join(evSBioPredD2Dat %>%
-              mutate(response = "biomass")) %>%
-  full_join(evABioPredD2Dat %>%
-              mutate(response = "biomass")) %>%
-  mutate(plant_group = if_else(age == "adult", "Adult competitor (Ev)",
-                               "1st yr competitor (Ev)") %>%
-           fct_relevel("1st yr competitor (Ev)"))
+
+#### fit individual growth models ####
+
+# initial visualization
+ggplot(growthD2Dat, aes(density, plant_growth, color = treatment)) +
+  stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0) +
+  stat_summary(geom = "line", fun = "mean") +
+  stat_summary(geom = "point", fun = "mean", size = 2) +
+  facet_grid(focal ~ background, scales = "free")
+
+ggplot(growthD2Dat, aes(plot_biomass, plant_growth, color = treatment)) +
+  geom_point() +
+  facet_grid(focal ~ background, scales = "free")
+
+# remove plot 1 (no competitors)
+growthD2Dat2 <- growthD2Dat %>%
+  filter(plot > 1)
+
+ggplot(growthD2Dat, aes(plot_biomass, plant_growth, color = treatment)) +
+  geom_point() +
+  facet_grid(foc ~ bg, scales = "free")
+
+# fit models
+growthD2Mod <- brm(data = growthD2Dat, family = gaussian,
+                    plant_growth ~ foc * fungicide * (plot_biomass + plot_biomass:bg) + (1|plotf),
+                    prior <- c(prior(normal(3, 1), class = "Intercept"),
+                               prior(normal(0, 1), class = "b")), # use default for sigma
+                    iter = 6000, warmup = 1000, chains = 3, cores = 3, 
+                    control = list(adapt_delta = 0.99999, max_treedepth = 15)) 
+mod_check_fun(growthD2Mod)
+
+#### start here ####
+# load above model - didn't fit above model before -- it includes plot 1
+
+growthD2Mod2 <- update(growthD2Mod, newdata = growthD2Dat2)
+mod_check_fun(growthD2Mod2)
+
+# subset data to remove high EvA biomass
+growthD2Dat2b <- growthD2Dat2 %>%
+  filter(!(bg == "a" & plot_biomass > 150))
+
+growthD2Mod2b <- update(growthD2Mod2, newdata = growthD2Dat2b)
+mod_check_fun(growthD2Mod2b)
+
+# save models and data
+save(growthD2Mod, file = "output/focal_growth_biomass_model_2019_density_exp.rda")
+save(growthD2Mod2, file = "output/focal_growth_biomass_model_no_plot_1_2019_density_exp.rda")
+save(growthD2Mod2b, file = "output/focal_growth_biomass_model_no_high_EvA_2019_density_exp.rda")
+
+# load models
+load("output/focal_growth_biomass_model_2019_density_exp.rda")
+load("output/focal_growth_biomass_model_no_plot_1_2019_density_exp.rda")
+load("output/focal_growth_biomass_model_no_high_EvA_2019_density_exp.rda")
 
 
 #### figure ####
