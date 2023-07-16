@@ -1,7 +1,11 @@
 ##### outputs ####
 
-# Figure 2
-# Table S1
+# Figure 2 (output/biomass_combined_figure_2019_density_exp.pdf)
+# Table S1 (output/plot_biomass_density_model_2019_dens_exp.csv)
+# Table S2 (output/focal_growth_interaction_coefficients_2019_density_exp.csv)
+# Table S3 (output/focal_growth_interaction_coefficients_no_plot_1_high_EvA_2019_density_exp.csv)
+# Table S4 (output/focal_growth_biomass_model_2019_dens_exp.csv)
+# Table SX (output/focal_growth_biomass_model_no_plot_1_high_EvA_2019_dens_exp.csv)
 
 #### set up ####
 
@@ -15,6 +19,7 @@ library(broom.mixed)
 library(tidybayes)
 library(ggtext)
 library(janitor)
+library(patchwork)
 
 # import data
 bgBioD2Dat <- read_csv("data/bg_biomass_2019_density_exp.csv") 
@@ -56,8 +61,9 @@ plotDens <- plots %>%
   mutate(density = case_when(background == "Mv seedling" ~ background_density + 3,
                              background == "Ev seedling" ~ background_density + 3,
                              background == "Ev adult" ~ background_density + 1,
-                             TRUE ~ background_density)) %>%
-  select(plot, treatment, background, density)
+                             TRUE ~ background_density),
+         density_level = fct_relevel(density_level, "none", "low", "medium", "high")) %>%
+  select(plot, treatment, background, density, density_level)
 
 # add focal biomass to background
 # use average of others in plot if plant is missing biomass
@@ -92,7 +98,9 @@ plotBioD2Dat <- bgBioD2Dat3 %>%
          background_species = case_when(background == "Mv seedling" ~ "*M. vimineum*",
                                         background == "Ev seedling" ~ "1st yr *E. virginicus*",
                                         background == "Ev adult" ~ "Adult *E. virginicus*") %>%
-           as.factor())
+           as.factor(),
+         treatment_fig = fct_recode(treatment, "control (water)" = "water") %>%
+           fct_relevel("control (water)"))
 
 # divide by species
 mvPlotBioD2Dat <- filter(plotBioD2Dat, background == "Mv seedling")
@@ -114,10 +122,16 @@ growthD2Dat <- mvBioD2Dat %>%
          bg = fct_recode(background, m = "Mv seedling", a = "Ev adult", s = "Ev seedling") %>%
            fct_relevel("m"),
          fungicide = ifelse(treatment == "fungicide", 1, 0),
-         plotf = paste0(site, plot, str_sub(treatment, 1, 1))) %>%
+         plotf = paste0(site, plot, str_sub(treatment, 1, 1)),
+         focal_species = case_when(focal == "Mv seedling" ~ "*M. vimineum*",
+                                   focal == "Ev seedling" ~ "1st yr *E. virginicus*",
+                                   focal == "Ev adult" ~ "Adult *E. virginicus*"),
+         intra = case_when(foc ==  bg ~ "yes",
+                           str_detect(focal, "Ev") == T &  str_detect(background, "Ev") == T ~ "yes",
+                           TRUE ~ "no")) %>%
   filter(!is.na(biomass_weight.g)) %>%
   left_join(plotBioD2Dat %>%
-              select(site, treatment, plot, background, biomass) %>%
+              select(site, treatment, treatment_fig, plot, background, background_species, biomass) %>%
               rename(plot_biomass = biomass)) %>%
   mutate(plot_biomass = if_else(as.character(focal) == as.character(background), 
                                 plot_biomass - biomass_weight.g, plot_biomass))
@@ -229,9 +243,9 @@ dens_fun <- function(min_dens, max_dens){
   return(density)
 }
 
-# prediction dataset
+# prediction dataset template
 plotPredDatTemplate <- plotBioD2Dat %>%
-  group_by(treatment, background) %>%
+  group_by(treatment, treatment_fig, background, background_species) %>%
   summarize(min_dens = min(density),
             max_dens = max(density)) %>%
   ungroup() %>%
@@ -239,7 +253,9 @@ plotPredDatTemplate <- plotBioD2Dat %>%
   unnest(density) %>%
   mutate(site = "A") 
 
+# apply to each plant group
 mvBioPredD2Dat <- plotPredDatTemplate %>%
+  filter(background == "Mv seedling") %>%
   mutate(value = fitted(mvBioDensMod, newdata = ., allow_new_levels = T)[, "Estimate"],
          lower = fitted(mvBioDensMod, newdata = ., allow_new_levels = T)[, "Q2.5"],
          upper = fitted(mvBioDensMod, newdata = ., allow_new_levels = T)[, "Q97.5"])
@@ -255,6 +271,10 @@ evABioPredD2Dat <- plotPredDatTemplate %>%
   mutate(value = fitted(evABioDensMod, newdata = ., allow_new_levels = T)[, "Estimate"],
          lower = fitted(evABioDensMod, newdata = ., allow_new_levels = T)[, "Q2.5"],
          upper = fitted(evABioDensMod, newdata = ., allow_new_levels = T)[, "Q97.5"])
+
+# combine plant groups
+bioPredD2Dat <- full_join(mvBioPredD2Dat, evSBioPredD2Dat) %>%
+  full_join(evABioPredD2Dat)
 
 
 #### fit individual growth models ####
@@ -287,9 +307,7 @@ growthD2Mod <- brm(data = growthD2Dat, family = gaussian,
                     control = list(adapt_delta = 0.99999, max_treedepth = 15)) 
 mod_check_fun(growthD2Mod)
 
-#### start here ####
-# load above model - didn't fit above model before -- it includes plot 1
-
+# remove plot one (very low growth for some)
 growthD2Mod2 <- update(growthD2Mod, newdata = growthD2Dat2)
 mod_check_fun(growthD2Mod2)
 
@@ -303,68 +321,329 @@ mod_check_fun(growthD2Mod2b)
 # save models and data
 save(growthD2Mod, file = "output/focal_growth_biomass_model_2019_density_exp.rda")
 save(growthD2Mod2, file = "output/focal_growth_biomass_model_no_plot_1_2019_density_exp.rda")
-save(growthD2Mod2b, file = "output/focal_growth_biomass_model_no_high_EvA_2019_density_exp.rda")
+save(growthD2Mod2b, file = "output/focal_growth_biomass_model_no_plot_1_high_EvA_2019_density_exp.rda")
 
 # load models
 load("output/focal_growth_biomass_model_2019_density_exp.rda")
 load("output/focal_growth_biomass_model_no_plot_1_2019_density_exp.rda")
-load("output/focal_growth_biomass_model_no_high_EvA_2019_density_exp.rda")
+load("output/focal_growth_biomass_model_no_plot_1_high_EvA_2019_density_exp.rda")
 
 
-#### figure ####
+#### individual growth model table ####
+
+# format tables
+growthD2Tab <- tidy(growthD2Mod) %>%
+  mutate(term = str_replace(term, "\\(Intercept\\)", "intercept"),
+         term = str_replace(term, "foca", "adult Ev focal"),
+         term = str_replace(term, "focs", "1st yr Ev focal"),
+         term = str_replace(term, "plot_biomass", "biomass"),
+         term = str_replace(term, "bga", "adult Ev bckgrd"),
+         term = str_replace(term, "bgs", "1st yr Ev bckgrd"),
+         term = str_replace(term, "sd__intercept", "random intercept: plot"),
+         term = str_replace(term, "sd__Observation", "sigma")) %>%
+  select(-c(effect, component, group))
+
+growthD2Tab2b <- tidy(growthD2Mod2b) %>%
+  mutate(term = str_replace(term, "\\(Intercept\\)", "intercept"),
+         term = str_replace(term, "foca", "adult Ev focal"),
+         term = str_replace(term, "focs", "1st yr Ev focal"),
+         term = str_replace(term, "plot_biomass", "biomass"),
+         term = str_replace(term, "bga", "adult Ev bckgrd"),
+         term = str_replace(term, "bgs", "1st yr Ev bckgrd"),
+         term = str_replace(term, "sd__intercept", "random intercept: plot"),
+         term = str_replace(term, "sd__Observation", "sigma")) %>%
+  select(-c(effect, component, group))
+
+# output tables
+write_csv(growthD2Tab, "output/focal_growth_biomass_model_2019_dens_exp.csv")
+write_csv(growthD2Tab2b, "output/focal_growth_biomass_model_no_plot_1_high_EvA_2019_dens_exp.csv")
 
 
-# labels
-plot_labels <- c(biomass = "Biomass~(g~m^-2)",
-                 seeds = "Seed~production~(m^-2)")
+#### interaction coefficients (alphas) ####
 
-# figure
-# pdf("output/ev_density_figure_2019_density_exp.pdf", width = 3.54, height = 3.54)
-ggplot(plotBioD2Dat, aes(x = density, y = biomass.g_m2)) +
-  # geom_ribbon(aes(ymin = lower, ymax = upper, fill = treatment), alpha = 0.3) +
-  # geom_line(aes(color = treatment)) +
-  geom_point(aes(color = treatment), 
+# Mv background
+mv_mv_ctrl_alpha = "plot_biomass = 0"
+mv_mv_fung_alpha = "plot_biomass + fungicide:plot_biomass = 0"
+evS_mv_ctrl_alpha = "plot_biomass + focs:plot_biomass = 0"
+evS_mv_fung_alpha = "plot_biomass + fungicide:plot_biomass + focs:plot_biomass + focs:fungicide:plot_biomass = 0"
+evA_mv_ctrl_alpha = "plot_biomass + foca:plot_biomass = 0"
+evA_mv_fung_alpha = "plot_biomass + fungicide:plot_biomass + foca:plot_biomass + foca:fungicide:plot_biomass = 0"
+
+# EvS background
+evS_evS_ctrl_alpha = "plot_biomass + focs:plot_biomass + plot_biomass:bgs + focs:plot_biomass:bgs = 0"
+evS_evS_fung_alpha = "plot_biomass + focs:plot_biomass + plot_biomass:bgs + focs:plot_biomass:bgs + fungicide:plot_biomass + focs:fungicide:plot_biomass + fungicide:plot_biomass:bgs + focs:fungicide:plot_biomass:bgs = 0"
+mv_evS_ctrl_alpha = "plot_biomass +  plot_biomass:bgs = 0"
+mv_evS_fung_alpha = "plot_biomass +  plot_biomass:bgs + fungicide:plot_biomass + fungicide:plot_biomass:bgs = 0"
+evA_evS_ctrl_alpha = "plot_biomass +  plot_biomass:bgs + foca:plot_biomass + foca:plot_biomass:bgs = 0"
+evA_evS_fung_alpha = "plot_biomass +  plot_biomass:bgs + foca:plot_biomass + foca:plot_biomass:bgs + fungicide:plot_biomass +  fungicide:plot_biomass:bgs + foca:fungicide:plot_biomass + foca:fungicide:plot_biomass:bgs = 0"
+
+# EvA background
+evA_evA_ctrl_alpha = "plot_biomass + foca:plot_biomass + plot_biomass:bga + foca:plot_biomass:bga = 0"
+evA_evA_fung_alpha = "plot_biomass + foca:plot_biomass + plot_biomass:bga + foca:plot_biomass:bga + fungicide:plot_biomass + foca:fungicide:plot_biomass + fungicide:plot_biomass:bga + foca:fungicide:plot_biomass:bga = 0"
+mv_evA_ctrl_alpha = "plot_biomass +  plot_biomass:bga = 0"
+mv_evA_fung_alpha = "plot_biomass +  plot_biomass:bga + fungicide:plot_biomass + fungicide:plot_biomass:bga = 0"
+evS_evA_ctrl_alpha = "plot_biomass + plot_biomass:bga + focs:plot_biomass + focs:plot_biomass:bga = 0"
+evS_evA_fung_alpha = "plot_biomass + plot_biomass:bga + focs:plot_biomass + focs:plot_biomass:bga + fungicide:plot_biomass + fungicide:plot_biomass:bga + focs:fungicide:plot_biomass + focs:fungicide:plot_biomass:bga = 0"
+
+# apply to each model
+biomassD2alphas <- hypothesis(growthD2Mod, 
+                              c(mv_mv_ctrl_alpha, mv_mv_fung_alpha, 
+                                evS_mv_ctrl_alpha, evS_mv_fung_alpha, 
+                                evA_mv_ctrl_alpha, evA_mv_fung_alpha,
+                                evS_evS_ctrl_alpha, evS_evS_fung_alpha,
+                                mv_evS_ctrl_alpha, mv_evS_fung_alpha, 
+                                evA_evS_ctrl_alpha, evA_evS_fung_alpha, 
+                                evA_evA_ctrl_alpha, evA_evA_fung_alpha,
+                                mv_evA_ctrl_alpha, mv_evA_fung_alpha, 
+                                evS_evA_ctrl_alpha, evS_evA_fung_alpha))
+
+biomassD2alphas2 <- hypothesis(growthD2Mod2, 
+                              c(mv_mv_ctrl_alpha, mv_mv_fung_alpha, 
+                                evS_mv_ctrl_alpha, evS_mv_fung_alpha, 
+                                evA_mv_ctrl_alpha, evA_mv_fung_alpha,
+                                evS_evS_ctrl_alpha, evS_evS_fung_alpha,
+                                mv_evS_ctrl_alpha, mv_evS_fung_alpha, 
+                                evA_evS_ctrl_alpha, evA_evS_fung_alpha, 
+                                evA_evA_ctrl_alpha, evA_evA_fung_alpha,
+                                mv_evA_ctrl_alpha, mv_evA_fung_alpha, 
+                                evS_evA_ctrl_alpha, evS_evA_fung_alpha))
+
+biomassD2alphas2b <- hypothesis(growthD2Mod2b, 
+                              c(mv_mv_ctrl_alpha, mv_mv_fung_alpha, 
+                                evS_mv_ctrl_alpha, evS_mv_fung_alpha, 
+                                evA_mv_ctrl_alpha, evA_mv_fung_alpha,
+                                evS_evS_ctrl_alpha, evS_evS_fung_alpha,
+                                mv_evS_ctrl_alpha, mv_evS_fung_alpha, 
+                                evA_evS_ctrl_alpha, evA_evS_fung_alpha, 
+                                evA_evA_ctrl_alpha, evA_evA_fung_alpha,
+                                mv_evA_ctrl_alpha, mv_evA_fung_alpha, 
+                                evS_evA_ctrl_alpha, evS_evA_fung_alpha))
+
+# alpha processing
+alpha_fun <- function(alphas) {
+  
+  out <- alphas %>%
+    mutate(foc_bg_trt = c("m_m_ctrl", "m_m_fung", "s_m_ctrl", "s_m_fung", 
+                          "a_m_ctrl", "a_m_fung", "s_s_ctrl", "s_s_fung",
+                          "m_s_ctrl", "m_s_fung", "a_s_ctrl", "a_s_fung", 
+                          "a_a_ctrl", "a_a_fung","m_a_ctrl", "m_a_fung", 
+                          "s_a_ctrl", "s_a_fung")) %>%
+    select(-Hypothesis) %>%
+    rowwise() %>%
+    mutate(foc = str_split(foc_bg_trt, "_")[[1]][1],
+           bg = str_split(foc_bg_trt, "_")[[1]][2],
+           trt = str_split(foc_bg_trt, "_")[[1]][3]) %>%
+    ungroup() %>%
+    left_join(growthD2Dat %>%
+                distinct(foc, bg, focal_species, background_species)) %>%
+    mutate(treatment_fig = fct_recode(trt, "control (water)" = "ctrl",
+                                      "fungicide" = "fung"),
+           sig = case_when((CI.Lower < 0 & CI.Upper < 0) | (CI.Lower > 0 & CI.Upper > 0) ~ "omits 0",
+                           TRUE ~ "includes 0"),
+           comp = as.character(sprintf("%.3f",round(Estimate, 3))))
+  
+  return(out)
+  
+}
+
+alphaDat <- alpha_fun(biomassD2alphas[[1]])
+alphaDat2 <- alpha_fun(biomassD2alphas2[[1]])
+alphaDat2b <- alpha_fun(biomassD2alphas2b[[1]])
+
+# save
+write_csv(alphaDat, "output/focal_growth_interaction_coefficients_2019_density_exp.csv")
+write_csv(alphaDat2b, "output/focal_growth_interaction_coefficients_no_plot_1_high_EvA_2019_density_exp.csv")
+
+
+#### individual growth predicted values ####
+
+# biomass gradient function
+bio_fun <- function(f, b, trt){
+  
+  dat <- growthD2Dat %>% filter(foc == f & bg == b & treatment == trt)
+  dat_out <- seq(min(dat$plot_biomass), max(dat$plot_biomass), length.out = 100)
+
+  return(dat_out)
+}
+
+bio_fun2 <- function(f, b, trt){
+  
+  dat <- growthD2Dat2 %>% filter(foc == f & bg == b & treatment == trt)
+  dat_out <- seq(min(dat$plot_biomass), max(dat$plot_biomass), length.out = 100)
+  
+  return(dat_out)
+}
+
+bio_fun2b <- function(f, b, trt){
+  
+  dat <- growthD2Dat2b %>% filter(foc == f & bg == b & treatment == trt)
+  dat_out <- seq(min(dat$plot_biomass), max(dat$plot_biomass), length.out = 100)
+  
+  return(dat_out)
+}
+
+# predicted data
+predD2Dat <- growthD2Dat %>%
+  distinct(foc, bg, treatment, treatment_fig, fungicide, focal_species, background_species) %>%
+  mutate(plotf = "A") %>%
+  mutate(plot_biomass = pmap(list(foc, bg, treatment), bio_fun)) %>%
+  unnest(plot_biomass) %>%
+  mutate(plant_growth = fitted(growthD2Mod, newdata = ., allow_new_levels = T)[, "Estimate"],
+         lower = fitted(growthD2Mod, newdata = ., allow_new_levels = T)[, "Q2.5"],
+         upper = fitted(growthD2Mod, newdata = ., allow_new_levels = T)[, "Q97.5"]) %>%
+  left_join(alphaDat %>%
+              select(focal_species, background_species, treatment_fig, sig))
+
+predD2Dat2 <- growthD2Dat2 %>%
+  distinct(foc, bg, treatment, treatment_fig, fungicide, focal_species, background_species) %>%
+  mutate(plotf = "A") %>%
+  mutate(plot_biomass = pmap(list(foc, bg, treatment), bio_fun2)) %>%
+  unnest(plot_biomass) %>%
+  mutate(plant_growth = fitted(growthD2Mod2, newdata = ., allow_new_levels = T)[, "Estimate"],
+         lower = fitted(growthD2Mod2, newdata = ., allow_new_levels = T)[, "Q2.5"],
+         upper = fitted(growthD2Mod2, newdata = ., allow_new_levels = T)[, "Q97.5"]) %>%
+  left_join(alphaDat2 %>%
+              select(focal_species, background_species, treatment_fig, sig))
+
+predD2Dat2b <- growthD2Dat2b %>%
+  distinct(foc, bg, treatment, treatment_fig, fungicide, focal_species, background_species) %>%
+  mutate(plotf = "A") %>%
+  mutate(plot_biomass = pmap(list(foc, bg, treatment), bio_fun2b)) %>%
+  unnest(plot_biomass) %>%
+  mutate(plant_growth = fitted(growthD2Mod2b, newdata = ., allow_new_levels = T)[, "Estimate"],
+         lower = fitted(growthD2Mod2b, newdata = ., allow_new_levels = T)[, "Q2.5"],
+         upper = fitted(growthD2Mod2b, newdata = ., allow_new_levels = T)[, "Q97.5"]) %>%
+  left_join(alphaDat2b %>%
+              select(focal_species, background_species, treatment_fig, sig))
+
+
+#### figures ####
+
+# plot biomass vs. density
+bio_dens_fig <- ggplot(bioPredD2Dat, aes(x = density, y = value)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = treatment_fig), alpha = 0.3) +
+  geom_line(aes(color = treatment_fig)) +
+  geom_point(data = plotBioD2Dat, 
+             aes(y = biomass , color = treatment_fig, shape = density_level), 
              position = position_jitterdodge(jitter.width = 0.1, 
                                              jitter.height = 0,
-                                             dodge.width = dodge_width),
-             size = 0.5) +
+                                             dodge.width = dodge_width), 
+             alpha = 0.5, size = 0.75) +
   facet_wrap(~ background_species, scales = "free") +
   scale_color_manual(values = col_pal, name = "Disease treatment") +
-  # scale_fill_manual(values = col_pal, name = "Disease treatment") +
-  labs(x = expression(paste("Planted density (", m^-2, ")", sep = "")),
+  scale_fill_manual(values = col_pal, name = "Disease treatment") +
+  scale_shape(name = "Density level") +
+  labs(x = expression(paste("Density (", m^-2, ")", sep = "")),
        y = expression(paste("Plot biomass (g ", m^-2, ")", sep = ""))) +
   fig_theme +
-  theme(strip.text.x = element_markdown())
-# dev.off()
+  theme(strip.text.x = element_markdown(),
+        legend.box = "vertical")
+
+# plot individual vs. plot biomass
+bio_bio_fig <- ggplot(predD2Dat, aes(x = plot_biomass, y = plant_growth)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = treatment_fig), alpha = 0.3) +
+  geom_line(aes(color = treatment_fig)) + 
+  geom_point(data = growthD2Dat, 
+             aes(color = treatment_fig, shape = density_level), alpha = 0.5, size = 0.75) +
+  geom_text(data = filter(alphaDat, sig == "omits 0"),
+            x = -Inf, y = Inf, hjust = 0, vjust = 1,
+            aes(label = paste("alpha", "==", comp, sep = ""),
+                color = treatment_fig),
+            parse = T, show.legend = F, size = textSize) +
+  facet_grid(rows = vars(focal_species),
+             cols = vars(background_species),
+             scales = "free",
+             switch = "both") +
+  scale_color_manual(values = col_pal, name = "Disease treatment") +
+  scale_fill_manual(values = col_pal, name = "Disease treatment") +
+  scale_shape(name = "Density level") +
+  xlab(expression(paste("Plot biomass - focal biomass (g/", m^2, ")", sep = ""))) +
+  ylab("Focal biomass (ln[g])") +
+  fig_theme +
+  theme(strip.text.x = element_markdown(),
+        strip.text.y.left = element_markdown(),
+        legend.box = "vertical")
+
+bio_bio_fig2 <- ggplot(predD2Dat2, aes(x = plot_biomass, y = plant_growth)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = treatment_fig), alpha = 0.3) +
+  geom_line(aes(color = treatment_fig)) +
+  geom_point(data = growthD2Dat2, 
+             aes(color = treatment_fig, shape = density_level), alpha = 0.5, size = 0.75) +
+  geom_text(data = filter(alphaDat2, sig == "omits 0"),
+            x = -Inf, y = Inf, hjust = -0.1, vjust = 1.3,
+            aes(label = paste("alpha", "==", comp, sep = ""),
+                color = treatment_fig),
+            parse = T, show.legend = F, size = textSize) +
+  facet_grid(rows = vars(focal_species),
+             cols = vars(background_species),
+             scales = "free",
+             switch = "both") +
+  scale_color_manual(values = col_pal, name = "Disease treatment") +
+  scale_fill_manual(values = col_pal, name = "Disease treatment") +
+  scale_shape(name = "Density level") +
+  xlab(expression(paste("Plot biomass - focal biomass (g/", m^2, ")", sep = ""))) +
+  ylab("Focal biomass (ln[g])") +
+  fig_theme +
+  theme(strip.text.x = element_markdown(),
+        strip.text.y.left = element_markdown(),
+        legend.box = "vertical")
+
+bio_bio_fig2b <- ggplot(predD2Dat2b, aes(x = plot_biomass, y = plant_growth)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = treatment_fig), alpha = 0.3) +
+  geom_line(aes(color = treatment_fig)) +
+  geom_point(data = growthD2Dat2b, 
+             aes(color = treatment_fig, shape = density_level), alpha = 0.5, size = 0.75) +
+  geom_text(data = filter(alphaDat2b, sig == "omits 0"),
+            x = -Inf, y = Inf, hjust = 0, vjust = 1,
+            aes(label = paste("alpha", "==", comp, sep = ""),
+                color = treatment_fig),
+            parse = T, show.legend = F, size = textSize) +
+  facet_grid(rows = vars(focal_species),
+             cols = vars(background_species),
+             scales = "free",
+             switch = "both") +
+  scale_color_manual(values = col_pal, name = "Disease treatment") +
+  scale_fill_manual(values = col_pal, name = "Disease treatment") +
+  scale_shape(name = "Density level") +
+  xlab(expression(paste("Plot biomass - focal biomass (g/", m^2, ")", sep = ""))) +
+  ylab("Focal biomass (ln[g])") +
+  fig_theme +
+  theme(strip.text.x = element_markdown(),
+        strip.text.y.left = element_markdown(),
+        legend.box = "vertical")
+
+# combine
+bio_comb_fig <- bio_dens_fig + bio_bio_fig +
+  plot_layout(ncol = 1, heights = c(0.3, 1), 
+              guides = "collect") +
+  plot_annotation(tag_levels = "A") & 
+  scale_shape_discrete(drop = F, name = "Density level") &
+  theme(legend.position = "bottom",
+        legend.box = "vertical",
+        plot.tag = element_text(size = 10, face = "bold"))
+
+pdf("output/biomass_combined_figure_2019_density_exp.pdf", width = 7.09, height = 8.5)
+bio_comb_fig
+dev.off()
+
+pdf("output/focal_biomass_growth_no_plot_1_high_EvA_figure_2019_density_exp.pdf", width = 6.5, height = 6)
+bio_bio_fig2b
+dev.off()
+
+pdf("output/focal_biomass_growth_no_plot_1_figure_2019_density_exp.pdf", width = 6.5, height = 6)
+bio_bio_fig2
+dev.off()
 
 
 #### treatment effects ####
 
 # treatment effects
-b0_eff = "b0_treatmentfungicide - b0_treatmentcontrol = 0"
-alpha_eff = "alpha_treatmentfungicide - alpha_treatmentcontrol = 0"
+b0_eff = "b0_treatmentfungicide - b0_treatmentwater = 0"
+alpha_eff = "alpha_treatmentfungicide - alpha_treatmentwater = 0"
 
+mvBioEff <- hypothesis(mvBioDensMod, c(b0_eff, alpha_eff))
 evSBioEff <- hypothesis(evSBioDensMod, c(b0_eff, alpha_eff))
-evSSeedEff <- hypothesis(evSSeedDensMod, c(b0_eff, alpha_eff))
 evABioEff <- hypothesis(evABioDensMod, c(b0_eff, alpha_eff))
-evASeedEff <- hypothesis(evASeedDensMod, c(b0_eff, alpha_eff))
-
-# combine treatment effects
-evSBioEff[[1]] %>%
-  mutate(response = "biomass",
-         age = "seedling") %>%
-  full_join(evSSeedEff[[1]] %>%
-              mutate(response = "seeds",
-                     age = "seedling")) %>%
-  full_join(evABioEff[[1]] %>%
-              mutate(response = "biomass",
-                     age = "adult")) %>%
-  full_join(evASeedEff[[1]] %>%
-              mutate(response = "seeds",
-                     age = "adult")) %>%
-  mutate(parameter = rep(c("b0", "alpha"), 4)) %>%
-  select(-c(Hypothesis, Evid.Ratio, Post.Prob)) %>%
-  relocate(age, response, parameter)
 
 
 

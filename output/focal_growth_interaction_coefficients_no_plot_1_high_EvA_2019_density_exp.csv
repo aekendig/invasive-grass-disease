@@ -1,0 +1,19 @@
+Estimate,Est.Error,CI.Lower,CI.Upper,Evid.Ratio,Post.Prob,Star,foc_bg_trt,foc,bg,trt,focal_species,background_species,treatment_fig,sig,comp
+-8.119897656463502e-4,9.179896223551569e-4,-0.0026425464212916816,9.548648304386115e-4,NA,NA,,m_m_ctrl,m,m,ctrl,*M. vimineum*,*M. vimineum*,control (water),includes 0,-0.001
+-6.810958228670086e-4,7.05159292339688e-4,-0.002069649440197664,6.969520194937548e-4,NA,NA,,m_m_fung,m,m,fung,*M. vimineum*,*M. vimineum*,fungicide,includes 0,-0.001
+-3.964359314109001e-4,8.843038192577594e-4,-0.0021481951210474523,0.0012988898288847123,NA,NA,,s_m_ctrl,s,m,ctrl,1st yr *E. virginicus*,*M. vimineum*,control (water),includes 0,-0.000
+-5.545246008438708e-4,6.959082573205046e-4,-0.00195456783442599,7.763428130283535e-4,NA,NA,,s_m_fung,s,m,fung,1st yr *E. virginicus*,*M. vimineum*,fungicide,includes 0,-0.001
+-5.467205873346513e-4,0.0011489809496945677,-0.002816328052579579,0.0017199201509331913,NA,NA,,a_m_ctrl,a,m,ctrl,Adult *E. virginicus*,*M. vimineum*,control (water),includes 0,-0.001
+2.172146704563346e-4,9.071017033359539e-4,-0.0015732935163471629,0.0019897854870224623,NA,NA,,a_m_fung,a,m,fung,Adult *E. virginicus*,*M. vimineum*,fungicide,includes 0,0.000
+0.009839066940563383,0.007460825791149878,-0.005062626656397189,0.024374284456644642,NA,NA,,s_s_ctrl,s,s,ctrl,1st yr *E. virginicus*,1st yr *E. virginicus*,control (water),includes 0,0.010
+0.00817150708199333,0.006448138269869832,-0.004478899164183024,0.020497820652881277,NA,NA,,s_s_fung,s,s,fung,1st yr *E. virginicus*,1st yr *E. virginicus*,fungicide,includes 0,0.008
+0.00894012954869969,0.007010312389749532,-0.004922093939711212,0.02243424135548004,NA,NA,,m_s_ctrl,m,s,ctrl,*M. vimineum*,1st yr *E. virginicus*,control (water),includes 0,0.009
+0.004719962262884483,0.006246272958725746,-0.00752811261736809,0.01691440762789123,NA,NA,,m_s_fung,m,s,fung,*M. vimineum*,1st yr *E. virginicus*,fungicide,includes 0,0.005
+0.0032437594097067222,0.00918421155882954,-0.014840472166594725,0.021107326106001235,NA,NA,,a_s_ctrl,a,s,ctrl,Adult *E. virginicus*,1st yr *E. virginicus*,control (water),includes 0,0.003
+0.013843669741383749,0.008087722679308726,-0.0022415763382683143,0.029599077703734086,NA,NA,,a_s_fung,a,s,fung,Adult *E. virginicus*,1st yr *E. virginicus*,fungicide,includes 0,0.014
+-0.007823277641266472,0.008068846684807188,-0.023878361750198043,0.007868980107781722,NA,NA,,a_a_ctrl,a,a,ctrl,Adult *E. virginicus*,Adult *E. virginicus*,control (water),includes 0,-0.008
+0.012770763297089021,0.008277365054866068,-0.0031575412650860037,0.029064363376243414,NA,NA,,a_a_fung,a,a,fung,Adult *E. virginicus*,Adult *E. virginicus*,fungicide,includes 0,0.013
+4.941085215465601e-4,0.0055854728098824625,-0.010563014295711196,0.011325270751137533,NA,NA,,m_a_ctrl,m,a,ctrl,*M. vimineum*,Adult *E. virginicus*,control (water),includes 0,0.000
+0.00767820910925438,0.005306003620072881,-0.0028742433486688445,0.01788255124114449,NA,NA,,m_a_fung,m,a,fung,*M. vimineum*,Adult *E. virginicus*,fungicide,includes 0,0.008
+2.911725973138255e-4,0.00559748931869496,-0.010808031611245097,0.011073156716050133,NA,NA,,s_a_ctrl,s,a,ctrl,1st yr *E. virginicus*,Adult *E. virginicus*,control (water),includes 0,0.000
+0.002697696773750168,0.0053843486775123125,-0.008002027762251758,0.01304463184988653,NA,NA,,s_a_fung,s,a,fung,1st yr *E. virginicus*,Adult *E. virginicus*,fungicide,includes 0,0.003

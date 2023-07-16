@@ -24,3 +24,6 @@ col_pal = c("black", "#238A8D")
 
 # dodge size
 dodge_width <- 0.5
+
+# text size
+textSize = 2.5
