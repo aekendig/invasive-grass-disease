@@ -1,11 +1,15 @@
 ##### outputs ####
 
 # Figure 2 (output/biomass_combined_figure_2019_density_exp.pdf)
+# Figure S1 (output/focal_biomass_growth_no_plot_1_high_EvA_figure_2019_density_exp.pdf)
 # Table S1 (output/plot_biomass_density_model_2019_dens_exp.csv)
 # Table S2 (output/focal_growth_interaction_coefficients_2019_density_exp.csv)
 # Table S3 (output/focal_growth_interaction_coefficients_no_plot_1_high_EvA_2019_density_exp.csv)
 # Table S4 (output/focal_growth_biomass_model_2019_dens_exp.csv)
-# Table SX (output/focal_growth_biomass_model_no_plot_1_high_EvA_2019_dens_exp.csv)
+# Table S5 (output/focal_growth_biomass_model_no_plot_1_high_EvA_2019_dens_exp.csv)
+
+#### cleaning ####
+# can remove model and outputs for focal_biomass_no_plot_1 if not using
 
 #### set up ####
 

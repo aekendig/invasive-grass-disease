@@ -1,10 +1,14 @@
 ﻿Sort,Directory,Code,Outputs,Dependency,Dependency file,Dependency source
 4,figure-prep,figure_settings.R,,,,
-5,figures-tables,biomass_2019_density_exp.R,"Figure 2
-Tables S1-S4, SX",bgBioD2Dat,bg_biomass_2019_density_exp.csv,data
-5,figures-tables,biomass_2019_density_exp.R,"Figure 2
-Tables S1-S4, SX",evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
-5,figures-tables,biomass_2019_density_exp.R,"Figure 2
-Tables S1-S4, SX",mvBioD2Dat,mv_biomass_seeds_2019_density_exp.csv,data
-5,figures-tables,biomass_2019_density_exp.R,"Figure 2
-Tables S1-S4, SX",plots,plot_treatments_for_analyses_2018_2019_density_exp.csv,data
+5,figures-tables,biomass_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1-S5",bgBioD2Dat,bg_biomass_2019_density_exp.csv,data
+5,figures-tables,biomass_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1-S5",evBioD2Dat,ev_biomass_seeds_oct_2019_density_exp.csv,data
+5,figures-tables,biomass_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1-S5",mvBioD2Dat,mv_biomass_seeds_2019_density_exp.csv,data
+5,figures-tables,biomass_2019_density_exp.R,"Figure 2,
+Figure S1,
+Tables S1-S5",plots,plot_treatments_for_analyses_2018_2019_density_exp.csv,data
