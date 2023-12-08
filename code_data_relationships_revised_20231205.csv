@@ -3,10 +3,11 @@
 mvGermD2Dat1","mv_germination_disease_set_1_2018_density_exp.csv
 mv_germination_disease_set_1_2018_density_exp.csv",data,yes
 ,data-processing-1,ev_germination_data_processing_2018_2019_density_exp.R,ev_germination_2018_2019_density_exp.csv,intermediate-data,evGermDat,ev_germination_2018_2019_density_exp.csv,data,yes
-,model-fitting,germination_2018_2019_density_exp.R,,,"mvGermDat
+,model-fitting,germination_2018_2019_density_exp.R,"mv_germination_fungicide_model_2018_density_exp.rda (and .csv)
+mv_germination_infection_model_2018_density_exp.rda (and .csv)
+mv_seed_infection_dark_model_2018_density_exp.rda (and .csv)
+ev_germination_fungicide_model_2018_2019_density_exp.rda (and .csv)
+figures (add numbers when finalized here and at top of script)",output,"mvGermDat
 evGermDat","mv_germination_disease_2018_density_exp.csv
 ev_germination_2018_2019_density_exp.csv","intermediate-data
 intermediate-data",no
-,,,,,,,,
-,,,,,,,,
-,,,,,,,,

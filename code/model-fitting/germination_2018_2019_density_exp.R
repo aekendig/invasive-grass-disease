@@ -1,12 +1,15 @@
-##### outputs ####
-
-# mv_germination_fungicide_model_2018_density_exp.rda
-# mv_germination_fungicide_model_data_2018_density_exp.csv
-# ev_germination_fungicide_model_2018_2019_density_exp.rda
-# ev_germination_fungicide_model_data_2018_2019_density_exp.rda
-# mv_germination_infection_model_2018_density_exp.csv
-# mv_seed_infection_dark_fungicide_model_2018_density_exp.csv
-# mv_germination_infection_figure_2018_density_exp.pdf
+#### outputs ####
+# models
+# output/mv_germination_fungicide_model_2018_density_exp.rda
+# output/mv_germination_infection_model_2018_density_exp.rda
+# output/mv_seed_infection_dark_model_2018_density_exp.rda
+# output/mv_seed_infection_light_model_2018_density_exp.rda
+# output/ev_germination_fungicide_model_2018_2019_density_exp.rda
+# tables
+# output/mv_germination_fungicide_model_2018_density_exp.csv
+# output/mv_germination_infection_model_2018_density_exp.csv
+# output/mv_seed_infection_dark_model_2018_density_exp.csv
+# output/ev_germination_fungicide_model_2018_2019_density_exp.csv
 
 
 #### set up ####
@@ -16,11 +19,9 @@ rm(list=ls())
 
 # load packages
 library(tidyverse)
+library(tidybayes)
 library(brms)
 library(GGally)
-library(cowplot)
-library(car)
-library(tidybayes)
 library(broom.mixed)
 
 # import data
@@ -176,18 +177,31 @@ evGermDraws <- as_draws_df(evGermMod)
 
 # combine
 germDraws <- tibble(sp = "M. vimineum",
-                    fung_eff = mvGermD1Draws$b_fungicide) %>%
+                    int = mvGermD1Draws$b_Intercept,
+                    fung_beta = mvGermD1Draws$b_fungicide) %>%
   full_join(tibble(sp = "E. virginicus",
-                   fung_eff = evGermDraws$b_fungicide))
+                   int = evGermDraws$b_Intercept,
+                   fung_beta = evGermDraws$b_fungicide)) %>%
+  mutate(sp = fct_relevel(sp, "M. vimineum"),
+         fung_odds = 100 * (exp(fung_beta) - 1),
+         prob_int = exp(int) / (1 + exp(int)),
+         prob_fung = exp(int + fung_beta) / (1 + exp(int + fung_beta)),
+         prob_change = 100 * (prob_fung - prob_int) / prob_int)
 
 # figure
-ggplot(germDraws, aes(x = sp, y = fung_eff)) +
+ggplot(germDraws, aes(x = sp, y = prob_change)) +
   geom_hline(yintercept = 0) +
-  geom_violin(fill = NA) +
-  labs(y = "Fungicide effect on germination") +
+  geom_violin(fill = "paleturquoise", color = "paleturquoise4", 
+              draw_quantiles = c(0.025, 0.5, 0.975)) +
+  labs(y = "Change in germination with fungicide (%)") +
   fig_theme +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_text(face = "italic"))
+
+# values for text
+germDraws %>%
+  group_by(sp) %>%
+  mean_hdci(prob_change)
 
 
 #### seed infection figure ####
@@ -199,59 +213,39 @@ mvPropLightDraws <- as_draws_df(mvPropLightMod)
 
 # combine
 infDraws <- tibble(fungi = "dark",
-                   response = "Infection effect on germination",
-                   eff = mvGermInfD1Draws$b_prop_dark) %>%
+                   response = "Change in germination with infection (%)",
+                   beta = mvGermInfD1Draws$b_prop_dark,
+                   int = mvGermInfD1Draws$b_Intercept) %>%
   full_join(tibble(fungi = "light",
-                   response = "Infection effect on germination",
-                   eff = mvGermInfD1Draws$b_prop_light)) %>%
+                   response = "Change in germination with infection (%)",
+                   beta = mvGermInfD1Draws$b_prop_light,
+                   int = mvGermInfD1Draws$b_Intercept)) %>%
   full_join(tibble(fungi = "dark",
-                   response = "Fungicide effect on infection",
-                   eff = mvPropDarkDraws$b_fungicide) %>%
+                   response = "Change in infection with fungicide (%)",
+                   beta = mvPropDarkDraws$b_fungicide,
+                   int = mvPropDarkDraws$b_Intercept) %>%
               full_join(tibble(fungi = "light",
-                               response = "Fungicide effect on infection",
-                               eff = mvPropLightDraws$b_fungicide)))
+                               response = "Change in infection with fungicide (%)",
+                               beta = mvPropLightDraws$b_fungicide,
+                               int = mvPropLightDraws$b_Intercept))) %>%
+  mutate(odds = 100 * (exp(beta) - 1),
+         prob_int = exp(int) / (1 + exp(int)),
+         prob_beta = exp(int + beta) / (1 + exp(int + beta)),
+         prob_change = 100 * (prob_beta - prob_int) / prob_int,
+         response = fct_relevel(response, "Change in infection with fungicide (%)"))
 
 # figure
-ggplot(infDraws, aes(x = fungi, y = eff)) +
+ggplot(infDraws, aes(x = fungi, y = prob_change)) +
   geom_hline(yintercept = 0) +
-  geom_violin(fill = NA) +
+  geom_violin(fill = "paleturquoise", color = "paleturquoise4", 
+              draw_quantiles = c(0.025, 0.5, 0.975)) +
   facet_wrap(~ response, strip.position = "left",
-             scales = "free") +
+             scales = "free_y", ncol = 1) +
   labs(x = "Seed fungi color") +
   fig_theme +
   theme(axis.title.y = element_blank())
 
-
-#### START HERE: values for text ####
-
-# fungicide effects
-mean_hdci(evGermDraws$b_fungicide)
-
-# Mv fungicide effect on infection
-hypothesis(mvPropDarkMod, "plogis(Intercept + fungicide) - plogis(Intercept) = 0")
-
-# Mv infection effect on germination
-filter(mvGermSim, prop_dark == min(prop_dark))
-filter(mvGermSim, prop_dark == max(prop_dark))
-
-# Mv infection effect on germination
-set.seed(184)
-posterior_predict(mvGermD1Mod,
-                  newdata = filter(mvGermD1Dat, 
-                                   prop_dark %in% c(max(mvGermD1Dat$prop_dark), min(mvGermD1Dat$prop_dark))) %>%
-                    select(prop_dark) %>%
-                    unique() %>%
-                    mutate(prop_light = 0,
-                           seeds = 30,
-                           plotf = "A"),
-                  allow_new_levels = T) %>%
-  as_tibble(.name_repair = ~ c("min_inf", "max_inf")) %>% # min_inf is first row
-  mutate(min_inf_prop = min_inf / 30,
-         max_inf_prop = max_inf / 30,
-         inf_eff = 100 * (max_inf_prop - min_inf_prop) / min_inf_prop) %>%
-  select(min_inf_prop, max_inf_prop, inf_eff) %>%
-  pivot_longer(cols = everything(),
-               names_to = "variable",
-               values_to = "value") %>%
-  group_by(variable) %>%
-  median_hdi(value)
+# values for text
+infDraws %>% 
+  group_by(fungi, response) %>%
+  mean_hdci(prob_change)
