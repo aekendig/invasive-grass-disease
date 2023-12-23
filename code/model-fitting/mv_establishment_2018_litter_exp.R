@@ -74,12 +74,8 @@ mvEstL1Mod <- brm(mv_germ ~ mv_germ_ev + litter.g.m2 +  litter.g.m2:live + (1|si
                   prior = c(prior(normal(200, 100), class = Intercept),
                             prior(normal(0, 10), class = b),
                             prior(normal(1, 10), coef = "mv_germ_ev")),
-                  iter = 6000, warmup = 1000, chains = 1)
-summary(mvEstL1Mod)
-
-# increase chains
-mvEstL1Mod <- update(mvEstL1Mod, chains = 3, cores = 3,
-                      control = list(adapt_delta = 0.999))
+                  iter = 6000, warmup = 1000, chains = 3, cores = 3,
+                  control = list(adapt_delta = 0.999))
 mod_check_fun(mvEstL1Mod)
 
 # save
