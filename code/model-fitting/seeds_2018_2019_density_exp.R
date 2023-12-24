@@ -1,4 +1,13 @@
-##### outputs ####
+#### outputs #####
+
+# models
+# output/evS_seed_model_2018_2019_density_exp.rda
+# output/evA_seed_model_2018_2019_density_exp.rda
+# output/mv_seed_model_2018_2019_density_exp.rda
+# tables
+# output/evS_seed_model_2018_2019_density_exp.csv
+# output/evA_seed_model_2018_2019_density_exp.csv
+# output/mv_seed_model_2018_2019_density_exp.csv
 
 
 #### set up ####
@@ -230,6 +239,7 @@ SeedDraws <- tibble(sp = "E. virginicus",
          age = fct_relevel(age, "first-year"),
          resp_int = exp(int) - 1,
          resp_fung = exp(int + beta) - 1,
+         resp_diff = resp_fung - resp_int,
          resp_change = 100 * (resp_fung - resp_int) / resp_int)
 
 # fungicide effect without competition
@@ -245,48 +255,48 @@ ggplot(SeedDraws, aes(x = sp, y = beta)) +
 # looks better with beta than resp_change
 
 
-#### values for text ####
-
-SeedDraws %>%
-  group_by(sp, age) %>%
-  mean_hdci(resp_change)
-
-
 #### fungicide effect on competition ####
 
 # edit
-compSeedDraws <- tibble(beta = mvSeedDraws$`b_fungicide:background_density:backgroundEvadult`,
-                       background = "*E. virginicus* adult effects",
-                       sp = "M. vimineum") %>%
-  full_join(tibble(beta = mvSeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   background = "*E. virginicus* first-year effects",
-                   sp = "M. vimineum")) %>%
-  full_join(tibble(beta = mvSeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   background = "*M. vimineum* effects",
-                   sp = "M. vimineum")) %>%
-  full_join(tibble(ctrl_beta = evSSeedDraws$`b_background_density:backgroundEvseedling`,
-                   beta = evSSeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
+compSeedDraws <- tibble(fung = mvSeedDraws$`b_fungicide:background_density:backgroundEvadult`,
+                        ctrl = mvSeedDraws$`b_background_density:backgroundEvadult`,
+                        background = "*E. virginicus* adult effects") %>%
+  full_join(tibble(fung = mvSeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
+                   ctrl = mvSeedDraws$`b_background_density:backgroundEvseedling`,
+                   background = "*E. virginicus* first-year effects")) %>%
+  full_join(tibble(fung = mvSeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
+                   ctrl = mvSeedDraws$`b_background_density:backgroundMvseedling`,
+                   background = "*M. vimineum* effects")) %>%
+  mutate(sp = "M. vimineum") %>%
+  full_join(tibble(fung = evSSeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
+                   ctrl = evSSeedDraws$`b_background_density:backgroundEvseedling`,
                    background = "*E. virginicus* first-year effects",
                    sp = "E. virginicus\nfirst-year")) %>%
-  full_join(tibble(beta = evSSeedDraws$`b_fungicide:background_density:backgroundEvadult`,
+  full_join(tibble(fung = evSSeedDraws$`b_fungicide:background_density:backgroundEvadult`,
+                   ctrl = evSSeedDraws$`b_background_density:backgroundEvadult`,
                    background = "*E. virginicus* adult effects",
                    sp = "E. virginicus\nfirst-year")) %>%
-  full_join(tibble(beta = evSSeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
+  full_join(tibble(fung = evSSeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
+                   ctrl = evSSeedDraws$`b_background_density:backgroundMvseedling`,
                    background = "*M. vimineum* effects",
                    sp = "E. virginicus\nfirst-year")) %>%
-  full_join(tibble(beta = evASeedDraws$`b_fungicide:background_density:backgroundEvadult`,
+  full_join(tibble(fung = evASeedDraws$`b_fungicide:background_density:backgroundEvadult`,
+                   ctrl = evASeedDraws$`b_background_density:backgroundEvadult`,
                    background = "*E. virginicus* adult effects",
                    sp = "E. virginicus\nadult")) %>%
-  full_join(tibble(beta = evASeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
+  full_join(tibble(fung = evASeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
+                   ctrl = evASeedDraws$`b_background_density:backgroundEvseedling`,
                    background = "*E. virginicus* first-year effects",
                    sp = "E. virginicus\nadult")) %>%
-  full_join(tibble(beta = evASeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
+  full_join(tibble(fung = evASeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
+                   ctrl = evASeedDraws$`b_background_density:backgroundMvseedling`,
                    background = "*M. vimineum* effects",
                    sp = "E. virginicus\nadult")) %>%
-  mutate(sp = fct_relevel(sp, "M. vimineum"))
+  mutate(sp = fct_relevel(sp, "M. vimineum"),
+         perc_change = 100 * fung / ctrl)
 
 # figure
-ggplot(compSeedDraws, aes(x = background, y = beta)) +
+ggplot(compSeedDraws, aes(x = background, y = fung)) +
   geom_hline(yintercept = 0) +
   geom_violin(fill = "paleturquoise", color = "paleturquoise4", 
               draw_quantiles = c(0.025, 0.5, 0.975)) +
@@ -296,3 +306,15 @@ ggplot(compSeedDraws, aes(x = background, y = beta)) +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_markdown(size = 7, color = "black"),
         strip.text = element_text(face = "italic"))
+
+
+#### values for text ####
+
+# fungicide effects without neighbors
+SeedDraws %>%
+  group_by(sp, age) %>%
+  mean_hdci(resp_change)
+
+compSeedDraws %>%
+  group_by(sp, background) %>%
+  mean_hdci(perc_change)

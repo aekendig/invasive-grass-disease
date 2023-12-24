@@ -22,13 +22,34 @@ litter_weight_apr_2019_litter_exp.csv",data,no
 ev_establishment_model_2018_greenhouse_exp.rda (and .csv)",output,"mvEstDat
 evEstDat","litter_reu_mv_establishment_data.csv
 litter_reu_ev_establishment_data.csv",data,yes?
-,model-fitting,establishment_survival_2018_2019_density_exp.R,"output/evS_establishment_model_2018_2019_density_exp.rda (and .csv)
-output/mv_establishment_model_2018_2019_density_exp.rda (and .csv)
-output/evS_survival_model_2018_2019_density_exp.rda (and .csv)
-output/evA_survival_model_2018_2019_density_exp.rda (and .csv)",output,"survD1Dat
+,model-fitting,establishment_survival_2018_2019_density_exp.R,"evS_establishment_model_2018_2019_density_exp.rda (and .csv)
+mv_establishment_model_2018_2019_density_exp.rda (and .csv)
+evS_survival_model_2018_2019_density_exp.rda (and .csv)
+evA_survival_model_2018_2019_density_exp.rda (and .csv)",output,"survD1Dat
 survD2Dat
 plots","all_processed_survival_2018_density_exp.csv
 all_replacement_2019_density_exp.csv
 plot_treatments_2018_2019_density_exp.csv","intermediate-data
 data
+data",no
+,model-fitting,seeds_2018_2019_density_exp.R,"evS_seed_model_2018_2019_density_exp.rda (and .csv)
+evA_seed_model_2018_2019_density_exp.rda (and .csv)
+mv_seed_model_2018_2019_density_exp.rda (and .csv)",output,"mvSeedD1Dat
+mvSeedD2Dat
+evSeedD1Dat
+evSeedD2Dat
+survD1Dat
+tillerD1Dat
+plots","mv_processed_seeds_2018_density_exp.csv
+mv_plant_level_seeds_2019_density_exp.csv
+ev_processed_seeds_both_year_conversion_2018_density_exp.csv
+ev_processed_seeds_both_year_conversion_2019_density_exp.csv
+all_processed_survival_2018_density_exp.csv
+focal_processed_growth_2018_density_exp.csv
+plot_treatments_2018_2019_density_exp.csv","intermediate-data
+intermediate-data
+intermediate-data
+intermediate-data
+intermediate-data
+intermediate-data
 data",no

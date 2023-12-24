@@ -247,63 +247,63 @@ ggplot(survDraws, aes(x = age, y = beta)) +
   theme(axis.title.x = element_blank())
 
 
-#### values for text ####
-
-estDraws %>%
-  group_by(sp) %>%
-  mean_hdci(prob_change)
-
-survDraws %>%
-  group_by(age) %>%
-  mean_hdci(prob_change)
-
-
 #### fungicide effect on competition ####
 
 # edit
-compEstDraws <- tibble(beta = mvEstDraws$`b_fungicide:background_density:backgroundEvadult`,
-                       background = "*E. virginicus* adult effects",
-                       sp = "M. vimineum") %>%
-  full_join(tibble(beta = mvEstDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   background = "*E. virginicus* first-year effects",
-                   sp = "M. vimineum")) %>%
-  full_join(tibble(beta = mvEstDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   background = "*M. vimineum* effects",
-                   sp = "M. vimineum")) %>%
-  full_join(tibble(ctrl_beta = evSEstDraws$`b_background_density:backgroundEvseedling`,
-                   beta = evSEstDraws$`b_fungicide:background_density:backgroundEvseedling`,
+compEstDraws <- tibble(fung = mvEstDraws$`b_fungicide:background_density:backgroundEvadult`,
+                       ctrl = mvEstDraws$`b_background_density:backgroundEvadult`,
+                       background = "*E. virginicus* adult effects") %>%
+  full_join(tibble(fung = mvEstDraws$`b_fungicide:background_density:backgroundEvseedling`,
+                   ctrl = mvEstDraws$`b_background_density:backgroundEvseedling`,
+                   background = "*E. virginicus* first-year effects")) %>%
+  full_join(tibble(fung = mvEstDraws$`b_fungicide:background_density:backgroundMvseedling`,
+                   ctrl = mvEstDraws$`b_background_density:backgroundMvseedling`,
+                   background = "*M. vimineum* effects")) %>%
+  mutate(sp = "M. vimineum") %>%
+  full_join(tibble(fung = evSEstDraws$`b_fungicide:background_density:backgroundEvseedling`,
+                   ctrl = evSEstDraws$`b_background_density:backgroundEvseedling`,
                    background = "*E. virginicus* first-year effects",
                    sp = "E. virginicus")) %>%
-  full_join(tibble(beta = evSEstDraws$`b_fungicide:background_density:backgroundEvadult`,
+  full_join(tibble(fung = evSEstDraws$`b_fungicide:background_density:backgroundEvadult`,
+                   ctrl = evSEstDraws$`b_background_density:backgroundEvadult`,
                    background = "*E. virginicus* adult effects",
                    sp = "E. virginicus")) %>%
-  full_join(tibble(beta = evSEstDraws$`b_fungicide:background_density:backgroundMvseedling`,
+  full_join(tibble(fung = evSEstDraws$`b_fungicide:background_density:backgroundMvseedling`,
+                   ctrl = evSEstDraws$`b_background_density:backgroundMvseedling`,
                    background = "*M. vimineum* effects",
                    sp = "E. virginicus")) %>%
-  mutate(sp = fct_relevel(sp, "M. vimineum"))
+  mutate(sp = fct_relevel(sp, "M. vimineum"),
+         perc_change = 100 * fung / abs(ctrl))
 
-compSurvDraws <- tibble(beta = evASurvDraws$`b_fungicide:background_density:backgroundEvadult`,
-                       background = "*E. virginicus* adult effects",
-                       age = "adult") %>%
-  full_join(tibble(beta = evASurvDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   background = "*E. virginicus* first-year effects",
-                   age = "adult")) %>%
-  full_join(tibble(beta = evASurvDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   background = "*M. vimineum* effects",
-                   age = "adult")) %>%
-  full_join(tibble(beta = evSSurvDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   background = "*E. virginicus* first-year effects",
-                   age = "first-year")) %>%
-  full_join(tibble(beta = evSSurvDraws$`b_fungicide:background_density:backgroundEvadult`,
+compSurvDraws <- tibble(fung = evSSurvDraws$`b_fungicide:background_density:backgroundEvseedling`,
+                        ctrl = evSSurvDraws$`b_background_density:backgroundEvseedling`,
+                        background = "*E. virginicus* first-year effects",
+                        age = "first-year") %>%
+  full_join(tibble(fung = evSSurvDraws$`b_fungicide:background_density:backgroundEvadult`,
+                   ctrl = evSSurvDraws$`b_background_density:backgroundEvadult`,
                    background = "*E. virginicus* adult effects",
                    age = "first-year")) %>%
-  full_join(tibble(beta = evSSurvDraws$`b_fungicide:background_density:backgroundMvseedling`,
+  full_join(tibble(fung = evSSurvDraws$`b_fungicide:background_density:backgroundMvseedling`,
+                   ctrl = evSSurvDraws$`b_background_density:backgroundMvseedling`,
                    background = "*M. vimineum* effects",
                    age = "first-year")) %>%
-  mutate(age = fct_relevel(age, "first-year"))
+  full_join(tibble(fung = evASurvDraws$`b_fungicide:background_density:backgroundEvadult`,
+                   ctrl = evASurvDraws$`b_background_density:backgroundEvadult`,
+                   background = "*E. virginicus* adult effects",
+                   age = "adult")) %>%
+  full_join(tibble(fung = evASurvDraws$`b_fungicide:background_density:backgroundEvseedling`,
+                   ctrl = evASurvDraws$`b_background_density:backgroundEvseedling`,
+                   background = "*E. virginicus* first-year effects",
+                   age = "adult")) %>%
+  full_join(tibble(fung = evASurvDraws$`b_fungicide:background_density:backgroundMvseedling`,
+                   ctrl = evASurvDraws$`b_background_density:backgroundMvseedling`,
+                   background = "*M. vimineum* effects",
+                   age = "adult")) %>%
+  mutate(age = fct_relevel(age, "first-year"),
+         perc_change = 100 * fung / abs(ctrl))
 
 # figure
-ggplot(compEstDraws, aes(x = background, y = beta)) +
+ggplot(compEstDraws, aes(x = background, y = fung)) +
   geom_hline(yintercept = 0) +
   geom_violin(fill = "paleturquoise", color = "paleturquoise4", 
               draw_quantiles = c(0.025, 0.5, 0.975)) +
@@ -314,7 +314,7 @@ ggplot(compEstDraws, aes(x = background, y = beta)) +
         axis.text.x = element_markdown(size = 7, color = "black"),
         strip.text = element_text(face = "italic"))
 
-ggplot(compSurvDraws, aes(x = background, y = beta)) +
+ggplot(compSurvDraws, aes(x = background, y = fung)) +
   geom_hline(yintercept = 0) +
   geom_violin(fill = "paleturquoise", color = "paleturquoise4", 
               draw_quantiles = c(0.025, 0.5, 0.975)) +
@@ -323,3 +323,22 @@ ggplot(compSurvDraws, aes(x = background, y = beta)) +
   fig_theme +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_markdown(size = 7, color = "black"))
+
+
+#### values for text ####
+
+estDraws %>%
+  group_by(sp) %>%
+  mean_hdci(prob_change)
+
+survDraws %>%
+  group_by(age) %>%
+  mean_hdci(prob_change)
+
+compEstDraws %>%
+  group_by(sp, background) %>%
+  mean_hdci(perc_change)
+
+compSurvDraws %>%
+  group_by(age, background) %>%
+  mean_hdci(perc_change)
