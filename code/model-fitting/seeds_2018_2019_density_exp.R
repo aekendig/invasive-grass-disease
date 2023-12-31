@@ -205,9 +205,12 @@ save(evASeedMod, file = "output/evA_seed_model_2018_2019_density_exp.rda")
 save(mvSeedMod, file = "output/mv_seed_model_2018_2019_density_exp.rda")
 
 # save tables
-write_csv(tidy(evSSeedMod), "output/evS_seed_model_2018_2019_density_exp.csv")
-write_csv(tidy(evASeedMod), "output/evA_seed_model_2018_2019_density_exp.csv")
-write_csv(tidy(mvSeedMod), "output/mv_seed_model_2018_2019_density_exp.csv")
+write_csv(tidy(evSSeedMod, conf.method = "HPDinterval"), 
+          "output/evS_seed_model_2018_2019_density_exp.csv")
+write_csv(tidy(evASeedMod, conf.method = "HPDinterval"), 
+          "output/evA_seed_model_2018_2019_density_exp.csv")
+write_csv(tidy(mvSeedMod, conf.method = "HPDinterval"), 
+          "output/mv_seed_model_2018_2019_density_exp.csv")
 
 # load
 load("output/evS_seed_model_2018_2019_density_exp.rda")
@@ -240,7 +243,7 @@ SeedDraws <- tibble(sp = "E. virginicus",
          resp_int = exp(int) - 1,
          resp_fung = exp(int + beta) - 1,
          resp_diff = resp_fung - resp_int,
-         resp_change = 100 * (resp_fung - resp_int) / resp_int)
+         resp_perc = 100 * resp_diff / resp_int)
 
 # fungicide effect without competition
 ggplot(SeedDraws, aes(x = sp, y = beta)) +
@@ -252,7 +255,6 @@ ggplot(SeedDraws, aes(x = sp, y = beta)) +
   fig_theme +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_text(face = "italic"))
-# looks better with beta than resp_change
 
 
 #### fungicide effect on competition ####
@@ -292,8 +294,7 @@ compSeedDraws <- tibble(fung = mvSeedDraws$`b_fungicide:background_density:backg
                    ctrl = evASeedDraws$`b_background_density:backgroundMvseedling`,
                    background = "*M. vimineum* effects",
                    sp = "E. virginicus\nadult")) %>%
-  mutate(sp = fct_relevel(sp, "M. vimineum"),
-         perc_change = 100 * fung / ctrl)
+  mutate(sp = fct_relevel(sp, "M. vimineum"))
 
 # figure
 ggplot(compSeedDraws, aes(x = background, y = fung)) +
@@ -313,8 +314,20 @@ ggplot(compSeedDraws, aes(x = background, y = fung)) +
 # fungicide effects without neighbors
 SeedDraws %>%
   group_by(sp, age) %>%
-  mean_hdci(resp_change)
+  mean_hdci(resp_int)
+
+SeedDraws %>%
+  group_by(sp, age) %>%
+  mean_hdci(resp_diff)
+
+SeedDraws %>%
+  group_by(sp, age) %>%
+  mean_hdci(resp_perc)
 
 compSeedDraws %>%
   group_by(sp, background) %>%
-  mean_hdci(perc_change)
+  mean_hdci(fung)
+
+compSeedDraws %>%
+  group_by(sp, background) %>%
+  mean_hdci(ctrl)

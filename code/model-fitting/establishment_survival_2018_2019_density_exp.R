@@ -143,8 +143,10 @@ save(evSEstMod, file = "output/evS_establishment_model_2018_2019_density_exp.rda
 save(mvEstMod, file = "output/mv_establishment_model_2018_2019_density_exp.rda")
 
 # save tables
-write_csv(tidy(evSEstMod), "output/evS_establishment_model_2018_2019_density_exp.csv")
-write_csv(tidy(mvEstMod), "output/mv_establishment_model_2018_2019_density_exp.csv")
+write_csv(tidy(evSEstMod, conf.method = "HPDinterval"), 
+          "output/evS_establishment_model_2018_2019_density_exp.csv")
+write_csv(tidy(mvEstMod, conf.method = "HPDinterval"), 
+          "output/mv_establishment_model_2018_2019_density_exp.csv")
 
 # load
 load("output/evS_establishment_model_2018_2019_density_exp.rda")
@@ -188,8 +190,10 @@ save(evSSurvMod, file = "output/evS_survival_model_2018_2019_density_exp.rda")
 save(evASurvMod, file = "output/evA_survival_model_2018_2019_density_exp.rda")
 
 # save tables
-write_csv(tidy(evSSurvMod), "output/evS_survival_model_2018_2019_density_exp.csv")
-write_csv(tidy(evASurvMod), "output/evA_survival_model_2018_2019_density_exp.csv")
+write_csv(tidy(evSSurvMod, conf.method = "HPDinterval"), 
+          "output/evS_survival_model_2018_2019_density_exp.csv")
+write_csv(tidy(evASurvMod, conf.method = "HPDinterval"), 
+          "output/evA_survival_model_2018_2019_density_exp.csv")
 
 # load
 load("output/evS_survival_model_2018_2019_density_exp.rda")
@@ -212,9 +216,9 @@ estDraws <- tibble(sp = "E. virginicus",
                    int = mvEstDraws$b_Intercept,
                    beta = mvEstDraws$b_fungicide)) %>%
   mutate(sp = fct_relevel(sp, "M. vimineum"),
-         prob_int = exp(int) / (1 + exp(int)),
-         prob_fung = exp(int + beta) / (1 + exp(int + beta)),
-         prob_change = 100 * (prob_fung - prob_int) / prob_int)
+         prob_int = 100 * plogis(int),
+         prob_fung = 100 * plogis(int + beta),
+         prob_diff = prob_fung - prob_int)
 
 survDraws <- tibble(age = "first-year",
                     int = evSSurvDraws$b_Intercept,
@@ -223,9 +227,9 @@ survDraws <- tibble(age = "first-year",
                    int = evASurvDraws$b_Intercept,
                    beta = evASurvDraws$b_fungicide)) %>%
   mutate(age = fct_relevel(age, "first-year"),
-         prob_int = exp(int) / (1 + exp(int)),
-         prob_fung = exp(int + beta) / (1 + exp(int + beta)),
-         prob_change = 100 * (prob_fung - prob_int) / prob_int)
+         prob_int = 100 * plogis(int),
+         prob_fung = 100 * plogis(int + beta),
+         prob_diff = prob_fung - prob_int)
 
 # fungicide effect without competition
 ggplot(estDraws, aes(x = sp, y = beta)) +
@@ -236,7 +240,6 @@ ggplot(estDraws, aes(x = sp, y = beta)) +
   fig_theme +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_text(face = "italic"))
-# looks better with beta than prob_change
 
 ggplot(survDraws, aes(x = age, y = beta)) +
   geom_hline(yintercept = 0) +
@@ -272,8 +275,7 @@ compEstDraws <- tibble(fung = mvEstDraws$`b_fungicide:background_density:backgro
                    ctrl = evSEstDraws$`b_background_density:backgroundMvseedling`,
                    background = "*M. vimineum* effects",
                    sp = "E. virginicus")) %>%
-  mutate(sp = fct_relevel(sp, "M. vimineum"),
-         perc_change = 100 * fung / abs(ctrl))
+  mutate(sp = fct_relevel(sp, "M. vimineum"))
 
 compSurvDraws <- tibble(fung = evSSurvDraws$`b_fungicide:background_density:backgroundEvseedling`,
                         ctrl = evSSurvDraws$`b_background_density:backgroundEvseedling`,
@@ -299,8 +301,7 @@ compSurvDraws <- tibble(fung = evSSurvDraws$`b_fungicide:background_density:back
                    ctrl = evASurvDraws$`b_background_density:backgroundMvseedling`,
                    background = "*M. vimineum* effects",
                    age = "adult")) %>%
-  mutate(age = fct_relevel(age, "first-year"),
-         perc_change = 100 * fung / abs(ctrl))
+  mutate(age = fct_relevel(age, "first-year"))
 
 # figure
 ggplot(compEstDraws, aes(x = background, y = fung)) +
@@ -329,16 +330,65 @@ ggplot(compSurvDraws, aes(x = background, y = fung)) +
 
 estDraws %>%
   group_by(sp) %>%
-  mean_hdci(prob_change)
+  mean_hdci(prob_int)
+
+estDraws %>%
+  group_by(sp) %>%
+  mean_hdci(prob_diff)
 
 survDraws %>%
   group_by(age) %>%
-  mean_hdci(prob_change)
+  mean_hdci(prob_int)
+
+survDraws %>%
+  group_by(age) %>%
+  mean_hdci(prob_diff)
 
 compEstDraws %>%
   group_by(sp, background) %>%
-  mean_hdci(perc_change)
+  mean_hdci(ctrl)
+
+evSEstDraws %>%
+  mutate(prob_none = 100 * plogis(b_Intercept),
+            prob_Mv = 100 * plogis(b_Intercept + 
+                                   `b_background_density:backgroundMvseedling` * 10),
+            prob_EvA = 100 * plogis(b_Intercept + 
+                                  `b_background_density:backgroundEvadult` * 10)) %>%
+  transmute(Mveffect = prob_Mv - prob_none,
+            EvAeffect = prob_EvA - prob_none) %>%
+  mean_hdci()
+
+compEstDraws %>%
+  group_by(sp, background) %>%
+  mean_hdci(fung)
 
 compSurvDraws %>%
   group_by(age, background) %>%
-  mean_hdci(perc_change)
+  mean_hdci(ctrl)
+
+evSSurvDraws %>%
+  mutate(prob_none = 100 * plogis(b_Intercept),
+         prob_Mv = 100 * plogis(b_Intercept + 
+                                  `b_background_density:backgroundMvseedling` * 10),
+         prob_EvA = 100 * plogis(b_Intercept + 
+                                   `b_background_density:backgroundEvadult` * 10)) %>%
+  transmute(Mveffect = prob_Mv - prob_none,
+            EvAeffect = prob_EvA - prob_none) %>%
+  mean_hdci()
+
+compSurvDraws %>%
+  group_by(age, background) %>%
+  mean_hdci(fung)
+
+evSSurvDraws %>%
+  mutate(prob_none = 100 * plogis(b_Intercept + b_fungicide),
+         prob_Mv = 100 * plogis(b_Intercept + b_fungicide + 
+                                  `b_background_density:backgroundMvseedling` * 10 + 
+                                  `b_fungicide:background_density:backgroundMvseedling` * 10),
+         prob_EvA = 100 * plogis(b_Intercept + b_fungicide + 
+                                   `b_background_density:backgroundEvadult` * 10 + 
+                                   `b_fungicide:background_density:backgroundEvadult` * 10)) %>%
+  transmute(Mveffect = prob_Mv - prob_none,
+            EvAeffect = prob_EvA - prob_none) %>%
+  mean_hdci()
+

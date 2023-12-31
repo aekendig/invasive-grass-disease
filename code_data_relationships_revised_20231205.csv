@@ -53,3 +53,12 @@ intermediate-data
 intermediate-data
 intermediate-data
 data",no
+,model-fitting,severity_2018_2019_density_exp.R,"evS_severity_model_2018_2019_density_exp.rda (and .csv)
+evA_severity_model_2018_2019_density_exp.rda (and .csv)
+mv_severity_model_2018_2019_density_exp.rda (and .csv)",output,"sevD1Dat
+sevD2Dat
+plots","focal_leaf_scans_2018_density_exp.csv
+all_leaf_scans_2019_density_exp.csv
+plot_treatments_2018_2019_density_exp.csv","intermediate-data
+intermediate-data
+data",no
