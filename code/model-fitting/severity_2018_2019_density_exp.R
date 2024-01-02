@@ -153,9 +153,12 @@ save(evASevMod, file = "output/evA_severity_model_2018_2019_density_exp.rda")
 save(mvSevMod, file = "output/mv_severity_model_2018_2019_density_exp.rda")
 
 # save tables
-write_csv(tidy(evSSevMod), "output/evS_severity_model_2018_2019_density_exp.csv")
-write_csv(tidy(evASevMod), "output/evA_severity_model_2018_2019_density_exp.csv")
-write_csv(tidy(mvSevMod), "output/mv_severity_model_2018_2019_density_exp.csv")
+write_csv(tidy(evSSevMod, conf.method = "HPDinterval"), 
+          "output/evS_severity_model_2018_2019_density_exp.csv")
+write_csv(tidy(evASevMod, conf.method = "HPDinterval"), 
+          "output/evA_severity_model_2018_2019_density_exp.csv")
+write_csv(tidy(mvSevMod, conf.method = "HPDinterval"), 
+          "output/mv_severity_model_2018_2019_density_exp.csv")
 
 # load
 load("output/evS_severity_model_2018_2019_density_exp.rda")
@@ -185,10 +188,9 @@ SevDraws <- tibble(sp = "E. virginicus",
                    beta = evASevDraws$b_fungicide)) %>%
   mutate(sp = fct_relevel(sp, "M. vimineum"),
          age = fct_relevel(age, "first-year"),
-         resp_int = plogis(int),
-         resp_fung = plogis(int + beta),
-         resp_diff = resp_fung - resp_int,
-         resp_change = 100 * (resp_fung - resp_int) / resp_int)
+         resp_int = 100 * plogis(int),
+         resp_fung = 100 * plogis(int + beta),
+         resp_diff = resp_fung - resp_int)
 
 # fungicide effect without competition
 ggplot(SevDraws, aes(x = sp, y = beta)) +
@@ -259,7 +261,7 @@ ggplot(compSevDraws, aes(x = background, y = fung)) +
 # fungicide effects without neighbors
 SevDraws %>%
   group_by(sp, age) %>%
-  mean_hdci(resp_change)
+  mean_hdci(resp_diff)
 
 compSevDraws %>%
   group_by(sp, background) %>%
@@ -267,4 +269,16 @@ compSevDraws %>%
 
 compSevDraws %>%
   group_by(sp, background) %>%
-  mean_hdci(fung + ctrl)
+  mean_hdci(fung)
+
+evSSevDraws %>%
+  mutate(prob_none = 100 * plogis(b_Intercept + b_fungicide),
+         prob_EvS = 100 * plogis(b_Intercept + b_fungicide + 
+                                  `b_background_density:backgroundEvseedling` * 10 + 
+                                  `b_fungicide:background_density:backgroundEvseedling` * 10),
+         prob_EvA = 100 * plogis(b_Intercept + b_fungicide + 
+                                   `b_background_density:backgroundEvadult` * 10 + 
+                                   `b_fungicide:background_density:backgroundEvadult` * 10)) %>%
+  transmute(EvSeffect = prob_EvS - prob_none,
+            EvAeffect = prob_EvA - prob_none) %>%
+  mean_hdci()
