@@ -192,14 +192,17 @@ germDraws <- tibble(sp = "M. vimineum",
          prob_diff = prob_fung - prob_int)
 
 # figure
-ggplot(germDraws, aes(x = sp, y = beta)) +
+germ_fung_fig <- ggplot(germDraws, aes(x = sp, y = beta)) +
   geom_hline(yintercept = 0) +
-  geom_violin(fill = "paleturquoise", color = "paleturquoise4", 
-              draw_quantiles = c(0.025, 0.5, 0.975)) +
-  labs(y = "Change in germination with fungicide (log odds)") +
+  stat_pointinterval(fatten_point = 3,
+                     point_interval = mean_hdci,
+                     .width = c(0.95, 1)) +
+  labs(y = "Fungicide effect on germination (log-odds)") +
   fig_theme +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_text(face = "italic"))
+
+save(germ_fung_fig, file = "output/germination_fungicide_figure_2018_2019_density_exp.rda")
 
 # values for text
 germDraws %>%
@@ -224,36 +227,41 @@ mvPropLightDraws <- as_draws_df(mvPropLightMod)
 
 # combine
 infDraws <- tibble(fungi = "dark",
-                   response = "Change in germination with infection (log odds)",
+                   response = "Infection effect on germination (log-odds)",
                    beta = mvGermInfD1Draws$b_prop_dark,
                    int = mvGermInfD1Draws$b_Intercept) %>%
   full_join(tibble(fungi = "light",
-                   response = "Change in germination with infection (log odds)",
+                   response = "Infection effect on germination (log-odds)",
                    beta = mvGermInfD1Draws$b_prop_light,
                    int = mvGermInfD1Draws$b_Intercept)) %>%
   full_join(tibble(fungi = "dark",
-                   response = "Change in infection with fungicide (log odds)",
+                   response = "Fungicide effect on infection (log-odds)",
                    beta = mvPropDarkDraws$b_fungicide,
                    int = mvPropDarkDraws$b_Intercept) %>%
               full_join(tibble(fungi = "light",
-                               response = "Change in infection with fungicide (log odds)",
+                               response = "Fungicide effect on infection (log-odds)",
                                beta = mvPropLightDraws$b_fungicide,
                                int = mvPropLightDraws$b_Intercept))) %>%
   mutate(prob_int = 100 * exp(int) / (1 + exp(int)),
          prob_beta = 100 * exp(int + beta) / (1 + exp(int + beta)),
          prob_diff = prob_beta - prob_int,
-         response = fct_relevel(response, "Change in infection with fungicide (log odds)"))
+         response = fct_relevel(response, "Fungicide effect on infection (log-odds)"))
 
 # figure
-ggplot(infDraws, aes(x = fungi, y = beta)) +
+germ_inf_fig <- ggplot(infDraws, aes(x = fungi, y = beta)) +
   geom_hline(yintercept = 0) +
-  geom_violin(fill = "paleturquoise", color = "paleturquoise4", 
-              draw_quantiles = c(0.025, 0.5, 0.975)) +
+  stat_pointinterval(fatten_point = 3,
+                     point_interval = mean_hdci,
+                     .width = c(0.95, 1)) +
   facet_wrap(~ response, strip.position = "left",
              scales = "free_y", ncol = 1) +
   labs(x = "Seed fungi color") +
   fig_theme +
   theme(axis.title.y = element_blank())
+
+ggsave("output/germination_infection_figure_2018_density_exp.png",
+       germ_inf_fig,
+       width = 3, height = 5.5)
 
 # values for text
 infDraws %>% 
