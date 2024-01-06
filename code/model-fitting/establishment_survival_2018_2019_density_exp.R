@@ -246,11 +246,14 @@ surv_fung_fig <- ggplot(survDraws, aes(x = age, y = beta)) +
   stat_pointinterval(fatten_point = 3,
                      point_interval = mean_hdci,
                      .width = c(0.95, 1)) +
-  scale_x_discrete(labels = c(~ atop(paste("first-year"), paste(italic("E. virginicus"))),
-                              ~ atop(paste("adult"), paste(italic("E. virginicus"))))) +
-  labs(y = "Fungicide effect on perennial survival (log-odds)") +
+  scale_x_discrete(labels = c(~ atop(NA, atop(textstyle("first-year"), 
+                                              textstyle(italic("E. virginicus")))),
+                              ~ atop(NA, atop(textstyle("adult"), 
+                                              textstyle(italic("E. virginicus")))))) +
+  labs(y = "Fungicide effect on survival (log-odds)") +
   fig_theme +
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_text(vjust = 2.7))
 
 save(est_fung_fig, file = "output/establishment_fungicide_figure_2018_2019_density_exp.rda")
 save(surv_fung_fig, file = "output/survival_fungicide_figure_2018_2019_density_exp.rda")

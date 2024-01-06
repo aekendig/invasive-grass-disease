@@ -30,7 +30,8 @@ load("output/seed_competition_figure_2018_2019_density_exp.rda")
 fung_fig <- germ_fung_fig + est_fung_fig + surv_fung_fig + seed_fung_fig +
   plot_layout(nrow = 2) +
   plot_annotation(tag_levels = "A") &
-  theme(plot.tag = element_text(size = 9, face = "bold"))
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        plot.margin = margin(5.5, 5.5, -4, 5.5))
 
 ggsave("output/combined_fungicide_figure_2018_2019_density_exp.png",
        fung_fig,
@@ -47,4 +48,4 @@ comp_fig <- est_comp_fig + theme(legend.position = "none",
 
 ggsave("output/combined_competition_figure_2018_2019_density_exp.png",
        comp_fig,
-       width = 6, height = 6)
+       width = 6, height = 8)

@@ -254,12 +254,15 @@ seed_fung_fig <- ggplot(SeedDraws, aes(x = sp_age, y = beta)) +
   stat_pointinterval(fatten_point = 3,
                      point_interval = mean_hdci,
                      .width = c(0.95, 1)) +
-  scale_x_discrete(labels = c(~ italic("M. vimineum"),
-                              ~ atop(paste("first-year"), paste(italic("E. virginicus"))),
-                              ~ atop(paste("adult"), paste(italic("E. virginicus"))))) +
+  scale_x_discrete(labels = c(~ atop(NA, atop(NA, textstyle(italic("M. vimineum")))),
+                              ~ atop(NA, atop(textstyle("first-year"), 
+                                              textstyle(italic("E. virginicus")))),
+                              ~ atop(NA, atop(textstyle("adult"), 
+                                              textstyle(italic("E. virginicus")))))) +
   labs(y = "Fungicide effect on seeds (log)") +
   fig_theme +
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_text(vjust = 2))
 
 save(seed_fung_fig, file = "output/seed_fungicide_figure_2018_2019_density_exp.rda")
 
