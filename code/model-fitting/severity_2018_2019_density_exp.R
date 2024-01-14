@@ -126,6 +126,7 @@ ggplot(mvSevDat, aes(x = severity_t)) +
   geom_density()
 
 # fit models
+# note that the year_month used for the intercept does not affect the other model coefficients (except year_month)
 evSSevMod <- brm(data = evSSevDat, family = "beta",
                   severity_t ~ fungicide + background_density:background + background_density:background:fungicide + year_month + 
                     (1|site/plot),

@@ -25,6 +25,3 @@ names(col_pal) <- c("*M. vimineum*", "first-year *E. virginicus*", "adult *E. vi
 
 # dodge size
 dodge_width <- 0.5
-
-# text size
-textSize = 2.5

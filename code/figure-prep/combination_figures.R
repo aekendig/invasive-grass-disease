@@ -1,6 +1,8 @@
 #### outputs #####
 
-# 
+# figures
+# combined_fungicide_figure_2018_2019_density_exp.png
+# combined_competition_figure_2018_2019_density_exp.png
 
 
 #### set up ####

@@ -10,7 +10,11 @@
 # output/mv_establishment_model_2018_2019_density_exp.csv
 # output/evS_survival_model_2018_2019_density_exp.csv
 # output/evA_survival_model_2018_2019_density_exp.csv
-
+# figures
+# output/establishment_fungicide_figure_2018_2019_density_exp.rda
+# output/survival_fungicide_figure_2018_2019_density_exp.rda
+# output/establishment_competition_figure_2018_2019_density_exp.rda
+# output/survival_competition_figure_2018_2019_density_exp.rda
 
 #### set up ####
 

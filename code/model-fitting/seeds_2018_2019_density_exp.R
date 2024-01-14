@@ -8,6 +8,9 @@
 # output/evS_seed_model_2018_2019_density_exp.csv
 # output/evA_seed_model_2018_2019_density_exp.csv
 # output/mv_seed_model_2018_2019_density_exp.csv
+# figures
+# output/seed_fungicide_figure_2018_2019_density_exp.rda
+# output/seed_competition_figure_2018_2019_density_exp.rda
 
 
 #### set up ####

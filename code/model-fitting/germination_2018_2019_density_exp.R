@@ -10,6 +10,9 @@
 # output/mv_germination_infection_model_2018_density_exp.csv
 # output/mv_seed_infection_dark_model_2018_density_exp.csv
 # output/ev_germination_fungicide_model_2018_2019_density_exp.csv
+# figures
+# output/germination_fungicide_figure_2018_2019_density_exp.rda
+# output/germination_infection_figure_2018_density_exp.png
 
 
 #### set up ####

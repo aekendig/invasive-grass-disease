@@ -7,7 +7,8 @@ mv_germination_disease_set_1_2018_density_exp.csv",data,yes
 mv_germination_infection_model_2018_density_exp.rda (and .csv)
 mv_seed_infection_dark_model_2018_density_exp.rda (and .csv)
 ev_germination_fungicide_model_2018_2019_density_exp.rda (and .csv)
-figures (add numbers when finalized here and at top of script)",output,"mvGermDat
+germination_fungicide_figure_2018_2019_density_exp.rda
+germination_infection_figure_2018_density_exp.png",output,"mvGermDat
 evGermDat","mv_germination_disease_2018_density_exp.csv
 ev_germination_2018_2019_density_exp.csv","intermediate-data
 intermediate-data",no
@@ -25,7 +26,11 @@ litter_reu_ev_establishment_data.csv",data,yes?
 ,model-fitting,establishment_survival_2018_2019_density_exp.R,"evS_establishment_model_2018_2019_density_exp.rda (and .csv)
 mv_establishment_model_2018_2019_density_exp.rda (and .csv)
 evS_survival_model_2018_2019_density_exp.rda (and .csv)
-evA_survival_model_2018_2019_density_exp.rda (and .csv)",output,"survD1Dat
+evA_survival_model_2018_2019_density_exp.rda (and .csv)
+establishment_fungicide_figure_2018_2019_density_exp.rda
+survival_fungicide_figure_2018_2019_density_exp.rda
+establishment_competition_figure_2018_2019_density_exp.rda
+survival_competition_figure_2018_2019_density_exp.rda",output,"survD1Dat
 survD2Dat
 plots","all_processed_survival_2018_density_exp.csv
 all_replacement_2019_density_exp.csv
@@ -34,7 +39,9 @@ data
 data",no
 ,model-fitting,seeds_2018_2019_density_exp.R,"evS_seed_model_2018_2019_density_exp.rda (and .csv)
 evA_seed_model_2018_2019_density_exp.rda (and .csv)
-mv_seed_model_2018_2019_density_exp.rda (and .csv)",output,"mvSeedD1Dat
+mv_seed_model_2018_2019_density_exp.rda (and .csv)
+seed_fungicide_figure_2018_2019_density_exp.rda
+seed_competition_figure_2018_2019_density_exp.rda",output,"mvSeedD1Dat
 mvSeedD2Dat
 evSeedD1Dat
 evSeedD2Dat
@@ -55,10 +62,28 @@ intermediate-data
 data",no
 ,model-fitting,severity_2018_2019_density_exp.R,"evS_severity_model_2018_2019_density_exp.rda (and .csv)
 evA_severity_model_2018_2019_density_exp.rda (and .csv)
-mv_severity_model_2018_2019_density_exp.rda (and .csv)",output,"sevD1Dat
+mv_severity_model_2018_2019_density_exp.rda (and .csv)
+combined_severity_figure_2018_2019_density_exp.png",output,"sevD1Dat
 sevD2Dat
 plots","focal_leaf_scans_2018_density_exp.csv
 all_leaf_scans_2019_density_exp.csv
 plot_treatments_2018_2019_density_exp.csv","intermediate-data
 intermediate-data
 data",no
+,figure-prep,figure_settings.R,"fig_theme
+col_pal
+dodge_width",called by source,,,,
+,figure-prep,combination_figures.R,"combined_fungicide_figure_2018_2019_density_exp.png
+combined_competition_figure_2018_2019_density_exp.png",output,"germ_fung_fig
+est_fung_fig
+surv_fung_fig
+seed_fung_fig
+est_comp_fig
+surv_comp_fig
+seed_comp_fig","germination_fungicide_figure_2018_2019_density_exp.rda
+establishment_fungicide_figure_2018_2019_density_exp.rda
+survival_fungicide_figure_2018_2019_density_exp.rda
+seed_fungicide_figure_2018_2019_density_exp.rda
+establishment_competition_figure_2018_2019_density_exp.rda
+survival_competition_figure_2018_2019_density_exp.rda
+seed_competition_figure_2018_2019_density_exp.rda",output,no
