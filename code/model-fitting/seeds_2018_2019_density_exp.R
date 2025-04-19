@@ -1,5 +1,7 @@
 #### outputs #####
 
+#### don't need 2018: seeds depend on density and treatments were messed up ####
+
 # models
 # output/evS_seed_model_2018_2019_density_exp.rda
 # output/evA_seed_model_2018_2019_density_exp.rda
