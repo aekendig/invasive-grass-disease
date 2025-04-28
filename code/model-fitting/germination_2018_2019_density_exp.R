@@ -26,6 +26,8 @@ library(tidybayes)
 library(brms)
 library(GGally)
 library(broom.mixed)
+library(ggtext)
+library(patchwork)
 
 # import data
 mvGermDat <- read_csv("intermediate-data/mv_germination_disease_2018_density_exp.csv")
@@ -54,7 +56,7 @@ mvGermD1Dat <- mvGermDat %>%
          prop_dark = seeds_dark / seeds,
          prop_light = seeds_light / seeds,
          fungicide = ifelse(treatment == "fungicide", 1, 0),
-         plotf = paste0(site, plot, substr(treatment, 1, 1)))
+         plotID = paste(site, plot, fungicide, sep = "_"))
 
 # check
 filter(mvGermD1Dat, prop_germ > 1 | prop_dark > 1 | prop_light > 1 ) %>%
@@ -62,7 +64,7 @@ filter(mvGermD1Dat, prop_germ > 1 | prop_dark > 1 | prop_light > 1 ) %>%
 
 # trials per plot
 mvGermD1Dat %>%
-  count(plotf) %>%
+  count(plotID) %>%
   rename(trials = "n") %>%
   count(trials)
 
@@ -71,7 +73,7 @@ mvGermD1Dat %>%
 evGermDat2 <- evGermDat %>%
   mutate(prop_germ = germinants/seeds_planted,
          fungicide = ifelse(treatment == "fungicide", 1, 0),
-         plotf = paste0(site, plot, substr(treatment, 1, 1)),
+         plotID = paste(site, plot, fungicide, sep = "_"),
          yearf = as.factor(year))
   
 # sample size
@@ -87,6 +89,14 @@ mvGermD1Dat %>%
   select(prop_dark, prop_light, prop_germ) %>%
   ggpairs()
 
+ggplot(mvGermD1Dat, aes(treatment, prop_germ)) +
+  stat_summary(geom = "errorbar", width = 0, fun.data = "mean_cl_boot") +
+  stat_summary(geom = "point", fun = "mean")
+
+ggplot(mvGermD1Dat, aes(site, prop_germ, color = treatment)) +
+  stat_summary(geom = "errorbar", width = 0, fun.data = "mean_cl_boot") +
+  stat_summary(geom = "point", fun = "mean")
+
 ggplot(mvGermD1Dat, aes(treatment, prop_dark)) +
   stat_summary(geom = "errorbar", width = 0, fun.data = "mean_cl_boot") +
   stat_summary(geom = "point", fun = "mean")
@@ -96,7 +106,7 @@ cor.test(~ prop_dark + prop_light, data = mvGermD1Dat) # not correlated
 
 # fungicide model
 mvGermD1Mod <- brm(data = mvGermD1Dat, family = binomial,
-                   germination_final | trials(seeds) ~ fungicide + (1|plotf), # can't converge with site/plot
+                   germination_final | trials(seeds) ~ fungicide + (1|plotID), # can't converge with site/plot
                    prior <- c(prior(normal(0, 10), class = "Intercept"),
                               prior(normal(0, 10), class = "b")), # use default for sigma
                    iter = 6000, warmup = 1000, chains = 3, cores = 3)
@@ -105,7 +115,7 @@ save(mvGermD1Mod, file = "output/mv_germination_fungicide_model_2018_density_exp
 
 # seed infection model
 mvGermInfD1Mod <- brm(data = mvGermD1Dat, family = binomial,
-                   germination_final | trials(seeds) ~ prop_dark + prop_light + (1|plotf),
+                   germination_final | trials(seeds) ~ prop_dark + prop_light + (1|plotID),
                    prior <- c(prior(normal(0, 10), class = "Intercept"),
                               prior(normal(0, 10), class = "b")), # use default for sigma
                    iter = 6000, warmup = 1000, chains = 3, cores = 3)
@@ -114,7 +124,7 @@ save(mvGermInfD1Mod, file = "output/mv_germination_infection_model_2018_density_
 
 # proportion of seeds with dark infection
 mvPropDarkMod <- brm(data = mvGermD1Dat, family = binomial,
-                     seeds_dark | trials(seeds) ~ fungicide + (1|plotf),
+                     seeds_dark | trials(seeds) ~ fungicide + (1|plotID),
                      prior <- c(prior(normal(0, 10), class = "Intercept"),
                                 prior(normal(0, 10), class = "b")), # use default for sigma
                      iter = 6000, warmup = 1000, chains = 3, cores = 3)
@@ -123,7 +133,7 @@ save(mvPropDarkMod, file = "output/mv_seed_infection_dark_model_2018_density_exp
 
 # proportion of seeds with light infection
 mvPropLightMod <- brm(data = mvGermD1Dat, family = binomial,
-                      seeds_light | trials(seeds) ~ fungicide + (1|plotf),
+                      seeds_light | trials(seeds) ~ fungicide + (1|plotID),
                       prior <- c(prior(normal(0, 10), class = "Intercept"),
                                  prior(normal(0, 10), class = "b")), # use default for sigma
                       iter = 6000, warmup = 1000, chains = 3, cores = 3)
@@ -158,12 +168,12 @@ ggplot(evGermDat2, aes(treatment, prop_germ)) +
 
 # model
 evGermMod <- brm(data = evGermDat2, family = binomial,
-                 germinants | trials(seeds_planted) ~ fungicide + (1|site) + (1|yearf),
+                 germinants | trials(seeds_planted) ~ fungicide + yearf + age + (1|site/plotID),
                  prior <- c(prior(normal(0, 10), class = "Intercept"),
                             prior(normal(0, 10), class = "b")), # use default for sigma
-                 iter = 6000, warmup = 1000, chains = 3, 
+                 iter = 6000, warmup = 1000, chains = 3, cores = 3,
                  control = list(adapt_delta = 0.999, max_treedepth = 15))
-# mod_check_fun(evGermMod)
+mod_check_fun(evGermMod)
 
 # save
 save(evGermMod, file = "output/ev_germination_fungicide_model_2018_2019_density_exp.rda")
@@ -176,105 +186,96 @@ write_csv(tidy(evGermMod, conf.method = "HPDinterval"),
           "output/ev_germination_fungicide_model_2018_2019_density_exp.csv")
 
 
-#### fungicide effect figure ####
+#### figures ####
+
+# prediction data
+pred_dat_trt <- mvGermD1Dat %>%
+  distinct(fungicide, treatment) %>%
+  mutate(treatment = fct_relevel(treatment, "water")) %>%
+  expand_grid(tibble(seeds = round(mean(mvGermD1Dat$seeds)),
+                     seeds_planted = round(mean(evGermDat2$seeds_planted)),
+                     age = NA, # predictions are averaged over levels
+                     yearf = NA))
+
+pred_dat_inf_dark <- mvGermD1Dat %>%
+  distinct(prop_dark) %>%
+  expand_grid(tibble(seeds = round(mean(mvGermD1Dat$seeds)),
+                     prop_light = 0))
+
+pred_dat_inf_light <- mvGermD1Dat %>%
+  distinct(prop_light) %>%
+  expand_grid(tibble(seeds = round(mean(mvGermD1Dat$seeds)),
+                     prop_dark = 0))
 
 # posterior draws
-mvGermD1Draws <- as_draws_df(mvGermD1Mod)
-evGermDraws <- as_draws_df(evGermMod)
+mvGermD1Draws <- pred_dat_trt %>%
+  add_epred_draws(mvGermD1Mod, re_formula = NA) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds)
+mvGermInfDarkD1Draws <- pred_dat_inf_dark %>%
+  add_epred_draws(mvGermInfD1Mod, re_formula = NA) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds)
+mvGermInfLightD1Draws <- pred_dat_inf_light %>%
+  add_epred_draws(mvGermInfD1Mod, re_formula = NA) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds)
+mvPropDarkDraws <- pred_dat_trt %>%
+  add_epred_draws(mvPropDarkMod, re_formula = NA) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds)
+mvPropLightDraws <- pred_dat_trt %>%
+  add_epred_draws(mvPropLightMod, re_formula = NA) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds)
+evGermDraws <- pred_dat_trt %>%
+  add_epred_draws(evGermMod, re_formula = NA) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds_planted)
 
-# combine
-germDraws <- tibble(sp = "M. vimineum",
-                    int = mvGermD1Draws$b_Intercept,
-                    beta = mvGermD1Draws$b_fungicide) %>%
-  full_join(tibble(sp = "E. virginicus",
-                   int = evGermDraws$b_Intercept,
-                   beta = evGermDraws$b_fungicide)) %>%
-  mutate(sp = fct_relevel(sp, "M. vimineum"),
-         prob_int = 100 * plogis(int),
-         prob_fung = 100 * plogis(int + beta),
-         prob_diff = prob_fung - prob_int)
-
-# figure
-germ_fung_fig <- ggplot(germDraws, aes(x = sp, y = beta)) +
-  geom_hline(yintercept = 0) +
-  stat_pointinterval(fatten_point = 3,
-                     point_interval = mean_hdci,
-                     .width = c(0.95, 1)) +
-  labs(y = "Fungicide effect on germination (log-odds)") +
+# mv fig
+mv_germ_fig <- ggplot(mvGermD1Draws, aes(x = treatment, y = germ_frac)) +
+  stat_pointinterval(fatten_point = 2,
+                     point_interval = mean_hdi,
+                     .width = c(0.80, 0.95)) +
+  labs(x = "Disease treatment", y = "*M. vimineum* germination fraction") +
   fig_theme +
-  theme(axis.title.x = element_blank(),
-        axis.text.x = element_text(face = "italic"))
+  theme(axis.title.y = element_markdown())
 
-save(germ_fung_fig, file = "output/germination_fungicide_figure_2018_2019_density_exp.rda")
-
-# values for text
-germDraws %>%
-  group_by(sp) %>%
-  mean_hdci(prob_int)
-
-germDraws %>%
-  group_by(sp) %>%
-  mean_hdci(prob_fung)
-
-germDraws %>%
-  group_by(sp) %>%
-  mean_hdci(prob_diff)
-
-
-#### seed infection figure ####
-
-# posterior draws
-mvGermInfD1Draws <- as_draws_df(mvGermInfD1Mod)
-mvPropDarkDraws <- as_draws_df(mvPropDarkMod)
-mvPropLightDraws <- as_draws_df(mvPropLightMod)
-
-# combine
-infDraws <- tibble(fungi = "dark",
-                   response = "Infection effect on germination (log-odds)",
-                   beta = mvGermInfD1Draws$b_prop_dark,
-                   int = mvGermInfD1Draws$b_Intercept) %>%
-  full_join(tibble(fungi = "light",
-                   response = "Infection effect on germination (log-odds)",
-                   beta = mvGermInfD1Draws$b_prop_light,
-                   int = mvGermInfD1Draws$b_Intercept)) %>%
-  full_join(tibble(fungi = "dark",
-                   response = "Fungicide effect on infection (log-odds)",
-                   beta = mvPropDarkDraws$b_fungicide,
-                   int = mvPropDarkDraws$b_Intercept) %>%
-              full_join(tibble(fungi = "light",
-                               response = "Fungicide effect on infection (log-odds)",
-                               beta = mvPropLightDraws$b_fungicide,
-                               int = mvPropLightDraws$b_Intercept))) %>%
-  mutate(prob_int = 100 * exp(int) / (1 + exp(int)),
-         prob_beta = 100 * exp(int + beta) / (1 + exp(int + beta)),
-         prob_diff = prob_beta - prob_int,
-         response = fct_relevel(response, "Fungicide effect on infection (log-odds)"))
-
-# figure
-germ_inf_fig <- ggplot(infDraws, aes(x = fungi, y = beta)) +
-  geom_hline(yintercept = 0) +
-  stat_pointinterval(fatten_point = 3,
-                     point_interval = mean_hdci,
-                     .width = c(0.95, 1)) +
-  facet_wrap(~ response, strip.position = "left",
-             scales = "free_y", ncol = 1) +
-  labs(x = "Seed fungi color") +
+mv_dark_fig <- ggplot(mvGermInfDarkD1Draws, 
+                      aes(x = prop_dark, y = germ_frac)) +
+  stat_lineribbon(point_interval = mean_hdi,
+                  .width = 0.95, alpha = 0.5, fill = "black") +
+  labs(x = "Proportion infected with dark fungi", 
+       y = "Germination fraction") +
   fig_theme +
-  theme(axis.title.y = element_blank())
+  theme(axis.title.y = element_markdown())
 
+mv_light_fig <- mv_dark_fig %+%
+  mvGermInfLightD1Draws +
+  aes(x = prop_light) +
+  labs(x = "Proportion infected with light fungi")
+
+mv_prop_dark_fig <- mv_germ_fig %+%
+  mvPropDarkDraws +
+  labs(y = "Proportion infected with dark fungi")
+
+mv_prop_light_fig <- mv_germ_fig %+%
+  mvPropLightDraws +
+  labs(y = "Proportion infected with light fungi")
+
+ev_germ_fig <- mv_germ_fig %+%
+  evGermDraws +
+  labs(y = "*E. virginicus* germination fraction")
+
+# combine figures and save
+germ_fung_fig <- mv_germ_fig + ev_germ_fig + plot_annotation(tag_levels = "A")
+ggsave("output/germination_fungicide_figure_2018_2019_density_exp.png",
+       germ_fung_fig, width = 6, height = 3)
+
+germ_inf_fig <- mv_prop_dark_fig + mv_dark_fig + 
+  mv_prop_light_fig + mv_light_fig +
+  plot_layout(nrow = 2) + 
+  plot_annotation(tag_levels = "A")
 ggsave("output/germination_infection_figure_2018_density_exp.png",
-       germ_inf_fig,
-       width = 3, height = 5.5)
-
-# values for text
-infDraws %>% 
-  group_by(fungi, response) %>%
-  mean_hdci(prob_int)
-
-infDraws %>% 
-  group_by(fungi, response) %>%
-  mean_hdci(prob_beta)
-
-infDraws %>% 
-  group_by(fungi, response) %>%
-  mean_hdci(prob_diff)
+       germ_inf_fig, width = 6, height = 6)
