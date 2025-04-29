@@ -20,8 +20,9 @@ fig_theme <- theme_bw() +
         plot.title = element_text(size = 9, hjust = 0.5, face = "bold"))
 
 # colors
-col_pal = palette.colors(n = 6)[c(4, 6, 3)]
-names(col_pal) <- c("*M. vimineum*", "first-year *E. virginicus*", "adult *E. virginicus*")
+col_pal <- palette.colors(n = 6)
+col_pal_grp <- col_pal[c(4, 6, 3)]
+names(col_pal_grp) <- c("*M. vimineum*", "first-year *E. virginicus*", "adult *E. virginicus*")
 
 # dodge size
 dodge_width <- 0.5

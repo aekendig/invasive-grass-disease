@@ -1,6 +1,7 @@
 ##### outputs ####
 
 #### maybe don't need establishment from here ####
+#### don't need survival either -- overwinter is 100% ####
 
 # models
 # output/evS_establishment_model_2018_2019_density_exp.rda
@@ -26,8 +27,10 @@ rm(list=ls())
 # load packages
 library(tidyverse)
 library(brms)
-# library(tidybayes)
+library(tidybayes)
 library(broom.mixed)
+library(ggtext)
+library(patchwork)
 
 # import data
 survD1Dat <- read_csv("intermediate-data/all_processed_survival_2018_density_exp.csv")
@@ -95,17 +98,26 @@ source("code/figure-prep/figure_settings.R")
 #          year = "2")
 
 # annual perennial survival 2018-2019
+# must be alive at end of growing season
 evSurvD1Dat <- survD1Dat %>%
-  filter(month == "April" & sp == "Ev") %>%
-  left_join(plots) %>%
+  filter(month %in% c("October", "April") & sp == "Ev") %>%
   mutate(survival = case_when(seeds_produced == 1 ~ 1, 
-                              TRUE ~ survival),
-         fungicide = ifelse(treatment == "fungicide", 1, 0),
-         plotID = paste(site, plot, fungicide, sep = "_")) %>%
-         # background = if_else(background == "none", "Mv seedling", background)) %>% 
-  select(-c(month, field_notes, seeds_produced)) %>%
-  filter(!is.na(survival))
+                              TRUE ~ survival)) %>%
+  select(site, plot, treatment, sp, age, ID, focal, month, survival) %>%
+  pivot_wider(names_from = month, values_from = survival) # %>%
+  # filter(October == 1 & !is.na(April)) %>%
+  # mutate(fungicide = ifelse(treatment == "fungicide", 1, 0),
+  #        plotID = paste(site, plot, fungicide, sep = "_")) %>%
+  # select(-October) %>%
+  # rename(survival = April)
 # includes non-focal
+
+# look at data
+count(evSurvD1Dat, October, April, age)
+# anything alive in October made it to April
+
+# sample sizes for paper
+evSurvD1Dat %>% filter(October == 1) %>% count(age)
 
 # divide data by focal and combine years
 # evSEstDat <- filter(survD1Dat2, sp == "Ev" & age == "seedling") %>%
@@ -114,8 +126,8 @@ evSurvD1Dat <- survD1Dat %>%
 # mvEstDat <- filter(survD1Dat2, sp == "Mv" & age == "seedling") %>%
 #   full_join(filter(survD2Dat2, sp == "Mv" & age == "seedling"))
 
-evSSurvDat <- filter(evSurvD1Dat, age == "seedling" & focal == 1)
-evASurvDat <- filter(evSurvD1Dat, age == "adult" & focal == 1)
+evSSurvDat <- filter(evSurvD1Dat, age == "seedling")
+evASurvDat <- filter(evSurvD1Dat, age == "adult")
 
 
 #### fit establishment models ####
@@ -162,15 +174,15 @@ evASurvDat <- filter(evSurvD1Dat, age == "adult" & focal == 1)
 #### fit perennial survival models ####
 
 # initial visualization
-ggplot(evSSurvDat, aes(x = background_density, y = survival, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_wrap(~ treatment)
+ggplot(evSSurvDat, aes(x = treatment, y = survival)) +
+  stat_summary(geom = "errorbar", width = 0, fun.data = "mean_cl_boot") +
+  stat_summary(geom = "point", fun = "mean")
 
-ggplot(evASurvDat, aes(x = background_density, y = survival, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_wrap(~ treatment)
+ggplot(evASurvDat, aes(x = treatment, y = survival)) +
+  stat_summary(geom = "errorbar", width = 0, fun.data = "mean_cl_boot") +
+  stat_summary(geom = "point", fun = "mean")
+
+count(evASurvDat, treatment, survival) # almost all survived and fraction is about even
 
 # fit models
 evSSurvMod <- brm(data = evSSurvDat, family = bernoulli,
@@ -194,9 +206,58 @@ write_csv(tidy(evSSurvMod, conf.method = "HPDinterval"),
 write_csv(tidy(evASurvMod, conf.method = "HPDinterval"), 
           "output/evA_survival_model_2018_2019_density_exp.csv")
 
-# # load
-# load("output/evS_survival_model_2018_2019_density_exp.rda")
-# load("output/evA_survival_model_2018_2019_density_exp.rda")
+# load
+load("output/evS_survival_model_2018_2019_density_exp.rda")
+load("output/evA_survival_model_2018_2019_density_exp.rda")
+
+
+#### figures ####
+
+# prediction data
+pred_dat_trt <- evASurvDat %>%
+  distinct(fungicide, treatment) %>%
+  mutate(treatment = fct_relevel(treatment, "water"))
+
+# posterior draws
+evSSurvDraws <- pred_dat_trt %>%
+  add_epred_draws(evSSurvMod, re_formula = NA) %>% 
+  ungroup()
+evASurvDraws <- pred_dat_trt %>%
+  add_epred_draws(evASurvMod, re_formula = NA) %>% 
+  ungroup()
+
+# figure
+evS_surv_fig <- ggplot(evSSurvDraws, aes(x = treatment, y = .epred)) +
+  stat_pointinterval(fatten_point = 2,
+                     point_interval = mean_hdi,
+                     .width = c(0.80, 0.95)) +
+  labs(x = "Disease treatment", y = "First-year *E. virginicus* survival") +
+  fig_theme +
+  theme(axis.title.y = element_markdown())
+
+# ggplot(evASurvDraws, aes(x = treatment, y = .epred)) +
+#   stat_pointinterval(fatten_point = 2,
+#                      point_interval = mean_hdci,
+#                      .width = c(0.80, 0.95)) +
+#   labs(x = "Disease treatment", y = "Adult *E. virginicus* survival") +
+#   fig_theme +
+#   theme(axis.title.y = element_markdown())
+
+evA_surv_fig <- evASurvDat %>%
+  mutate(Survival = if_else(survival == 1, "alive", "dead"),
+         treatment = fct_relevel(treatment, "water")) %>%
+  ggplot(aes(x = treatment, fill = Survival)) +
+  geom_bar() +
+  scale_fill_manual(values = col_pal[c(4, 2)]) +
+  labs(x = "Disease treatment", y = "Adult *E. virginicus* survival") +
+  fig_theme +
+  theme(axis.title.y = element_markdown())
+
+# combine
+surv_fung_fig <- evS_surv_fig + evA_surv_fig + 
+  plot_annotation(tag_levels = "A")
+ggsave("output/survival_fungicide_figure_2018_2019_density_exp.png",
+       surv_fung_fig, width = 6, height = 3)
 
 
 #### maybe don't need to keep below ####

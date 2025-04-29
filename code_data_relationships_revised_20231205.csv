@@ -36,7 +36,7 @@ plots","all_processed_survival_2018_density_exp.csv
 all_replacement_2019_density_exp.csv
 plot_treatments_2018_2019_density_exp.csv","intermediate-data
 data
-data",no
+data",yes
 ,model-fitting,seeds_2018_2019_density_exp.R,"evS_seed_model_2018_2019_density_exp.rda (and .csv)
 evA_seed_model_2018_2019_density_exp.rda (and .csv)
 mv_seed_model_2018_2019_density_exp.rda (and .csv)

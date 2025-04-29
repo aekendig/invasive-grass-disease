@@ -233,7 +233,7 @@ evGermDraws <- pred_dat_trt %>%
   ungroup() %>%
   mutate(germ_frac = .epred / seeds_planted)
 
-# mv fig
+# figures
 mv_germ_fig <- ggplot(mvGermD1Draws, aes(x = treatment, y = germ_frac)) +
   stat_pointinterval(fatten_point = 2,
                      point_interval = mean_hdi,
