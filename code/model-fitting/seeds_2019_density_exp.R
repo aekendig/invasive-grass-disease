@@ -20,7 +20,10 @@ rm(list=ls())
 # load packages
 library(tidyverse)
 library(brms)
+library(tidybayes)
 library(broom.mixed)
+library(ggtext)
+library(patchwork)
 
 # import data
 mvSeedD2Dat <- read_csv("intermediate-data/mv_plant_level_seeds_2019_density_exp.csv") 
@@ -44,15 +47,13 @@ bh_fun <- function(dat_in, a){
   xmin = min(dat_in$background_density)
   xmax = max(dat_in$background_density)
   yE = filter(dat_in, sp == "Ev" & background_density == 0) %>%
-    summarise(mean_seeds = mean(seeds)) %>%
-    as.numeric() %>%
-    round()
+    pull(seeds) %>%
+    mean()
   print(yE)
   
   yM = filter(dat_in, sp == "Mv" & background_density == 0) %>%
-    summarise(mean_seeds = mean(seeds)) %>%
-    as.numeric() %>%
-    round()
+    pull(seeds) %>%
+    mean()
   print(yM)
   
   # create data
@@ -131,6 +132,11 @@ combMvSeedDat <- combSeedDat %>% filter(background %in% c("none", "Mv seedling")
 #### fit Beverton-Holt models ####
 
 # initial visualizations
+
+ggplot(combEvASeedDat, aes(x = seeds)) +
+  geom_density() +
+  facet_wrap(sp ~ treatment, scales = "free")
+
 combEvASeedDat %>% filter(treatment == "water") %>%
   bh_fun(a = 0)
 combEvASeedDat %>% filter(treatment == "fungicide") %>%
@@ -165,30 +171,21 @@ combEvASeedMod <- brm(data = combEvASeedDat, family = gaussian,
                                    nlpar = "s0"),
                              prior(normal(-358, 10), coef = 'spMv:fungicide', 
                                    nlpar = "s0"),
-                             prior(exponential(1), lb = 0, nlpar = "alpha"),
-                             prior(cauchy(0, 1), class = sigma)),
+                             prior(exponential(1), lb = 0, nlpar = "alpha")),
                   iter = 6000, warmup = 1000, chains = 3, cores = 3,
                   control = list(adapt_delta = 0.99))
 mod_check_fun(combEvASeedMod)
 
-combEvSSeedMod <- update(combEvASeedMod, newdata = combEvSSeedDat)
+combEvSSeedMod <- update(combEvASeedMod, newdata = combEvSSeedDat, cores = 3)
 mod_check_fun(combEvSSeedMod)
 
-combMvSeedMod <- update(combEvASeedMod, newdata = combMvSeedDat)
+combMvSeedMod <- update(combEvASeedMod, newdata = combMvSeedDat, cores = 3)
 mod_check_fun(combMvSeedMod)
 
 # save models
 save(combEvASeedMod, file = "output/evA_background_seed_model_2019_density_exp.rda")
 save(combEvSSeedMod, file = "output/evS_background_seed_model_2019_density_exp.rda")
 save(combMvSeedMod, file = "output/mv_background_seed_model_2019_density_exp.rda")
-
-# save tables
-write_csv(tidy(combEvASeedMod, conf.method = "HPDinterval"), 
-          "output/evA_background_seed_model_2019_density_exp.csv")
-write_csv(tidy(combEvSSeedMod, conf.method = "HPDinterval"), 
-          "output/evS_background_seed_model_2019_density_exp.csv")
-write_csv(tidy(combMvSeedMod, conf.method = "HPDinterval"), 
-          "output/mv_background_seed_model_2019_density_exp.csv")
 
 
 #### fit Ev age model ####
@@ -220,6 +217,94 @@ mod_check_fun(evSeedMod)
 # save model
 save(evSeedMod, file = "output/ev_seed_model_2019_density_exp.rda")
 
-# save table
-write_csv(tidy(evSeedMod, conf.method = "HPDinterval"), 
+
+#### figures and tables ####
+
+# load models
+load("output/evA_background_seed_model_2019_density_exp.rda")
+load("output/evS_background_seed_model_2019_density_exp.rda")
+load("output/mv_background_seed_model_2019_density_exp.rda")
+load("output/ev_seed_model_2019_density_exp.rda")
+
+# save tables
+write_csv(tidy(combEvASeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evA_background_seed_model_2019_density_exp.csv")
+write_csv(tidy(combEvSSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evS_background_seed_model_2019_density_exp.csv")
+write_csv(tidy(combMvSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mv_background_seed_model_2019_density_exp.csv")
+write_csv(tidy(evSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
           "output/ev_seed_model_2019_density_exp.csv")
+
+# prediction data
+combEvASeedDraws <- combEvASeedDat %>%
+  distinct(sp, fungicide, treatment) %>%
+  expand_grid(background_density = 
+                0:max(combEvASeedDat$background_density)) %>%
+  add_epred_draws(combEvASeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
+
+combEvSSeedDraws <- combEvSSeedDat %>%
+  distinct(sp, fungicide, treatment) %>%
+  expand_grid(background_density = 
+                0:max(combEvSSeedDat$background_density)) %>%
+  add_epred_draws(combEvSSeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
+
+combMvSeedDraws <- combMvSeedDat %>%
+  distinct(sp, fungicide, treatment) %>%
+  expand_grid(background_density = 0:max(combMvSeedDat$background_density)) %>%
+  add_epred_draws(combMvSeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
+
+# figures
+mvEvA_seed_fig <- filter(combEvASeedDraws, sp == "Mv") %>%
+  ggplot(aes(x = background_density, y = .epred)) +
+  stat_lineribbon(aes(fill = trt, color = trt), point_interval = mean_hdi, 
+                  .width = 0.95, alpha = 0.5) +
+  scale_fill_manual(values = c(coral_pal[2], grey_pal[2]), 
+                    name = "Disease treatment") +
+  scale_color_manual(values = c(coral_pal[3], grey_pal[3]),
+                     name = "Disease treatment") +
+  labs(x = "Adult *E. virginicus* density", 
+       y = "*M. vimineum* seed yield") +
+  fig_theme +
+  theme(axis.title = element_markdown())
+
+evEvA_seed_fig <- mvEvA_seed_fig %+%
+  filter(combEvASeedDraws, sp == "Ev") +
+  labs(y = "*E. virginicus* seed yield")
+
+mvEvS_seed_fig <- mvEvA_seed_fig %+%
+  filter(combEvSSeedDraws, sp == "Mv") +
+  labs(x = "First-year *E. virginicus* density")
+
+evEvS_seed_fig <- mvEvS_seed_fig %+%
+  filter(combEvSSeedDraws, sp == "Ev") +
+  labs(y = "*E. virginicus* seed yield")
+
+mvMv_seed_fig <- mvEvA_seed_fig %+%
+  filter(combMvSeedDraws, sp == "Mv") +
+  labs(x = "*M. vimineum* density")
+
+evMv_seed_fig <- mvMv_seed_fig %+%
+  filter(combMvSeedDraws, sp == "Ev") +
+  labs(y = "*E. virginicus* seed yield")
+
+# combine plots
+seed_fung_fig <- (mvMv_seed_fig + evMv_seed_fig +
+  plot_layout(axis_titles = "collect")) /
+  (mvEvA_seed_fig + evEvA_seed_fig +
+     plot_layout(axis_titles = "collect")) /
+  (mvEvS_seed_fig + evEvS_seed_fig +
+     plot_layout(axis_titles = "collect")) /
+  plot_layout(guides = "collect")  + 
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom") 
+
+ggsave("output/seed_fungicide_figure_2019_density_exp.png",
+       seed_fung_fig, width = 6, height = 8.2)
+  
