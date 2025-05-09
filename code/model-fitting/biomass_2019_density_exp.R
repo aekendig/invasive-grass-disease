@@ -167,8 +167,7 @@ mv_bio_fig <- ggplot(mvBioD2Draws, aes(x = biomass, y = trt)) +
   labs(y = "Disease treatment", x = "*M. vimineum* biomass (g)") +
   scale_fill_manual(values = coral_pal, name = "HDI") +
   fig_theme +
-  theme(axis.title.x = element_markdown(),
-        legend.position = "none")
+  theme(axis.title.x = element_markdown())
 
 ev_bio_fig <- ggplot(evBioD2Draws, aes(x = biomass, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
@@ -178,16 +177,14 @@ ev_bio_fig <- ggplot(evBioD2Draws, aes(x = biomass, y = trt)) +
   labs(y = "Disease treatment", x = "*E. virginicus* biomass (g)") +
   scale_fill_manual(values = coral_pal, name = "HDI") +
   fig_theme +
-  theme(axis.title.x = element_markdown(),
-        legend.position = "inside",
-        legend.position.inside = c(0.83, 0.75),
-        legend.direction = "vertical")
+  theme(axis.title.x = element_markdown())
 
 # combine figures
 bio_fung_fig <- mv_bio_fig + ev_bio_fig + 
   plot_annotation(tag_levels = "A") +
-  plot_layout(nrow = 1, axes = "collect")
+  plot_layout(nrow = 1, axes = "collect", guides = "collect") &
+  theme(legend.position = "bottom")
   
 ggsave("output/biomass_fungicide_figure_2019_density_exp.png",
-       bio_fung_fig, width = 6, height = 3)
+       bio_fung_fig, width = 6, height = 3.2)
   
