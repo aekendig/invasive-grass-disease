@@ -1,3 +1,6 @@
+# load packages
+library(RColorBrewer)
+
 # theme
 fig_theme <- theme_bw() +
   theme(panel.background = element_blank(),
@@ -23,6 +26,11 @@ fig_theme <- theme_bw() +
 col_pal <- palette.colors(n = 6)
 col_pal_grp <- col_pal[c(4, 6, 3)]
 names(col_pal_grp) <- c("*M. vimineum*", "first-year *E. virginicus*", "adult *E. virginicus*")
+
+grey_pal <- brewer.pal(n = 9, "Greys")[3:9]
+grey_pal3 <- shade_pal[c(3, 4, 5)]
+
+coral_pal <- c("coral", "coral3", "coral4")
 
 # dodge size
 dodge_width <- 0.5

@@ -35,7 +35,7 @@ library(patchwork)
 # import data
 survD1Dat <- read_csv("intermediate-data/all_processed_survival_2018_density_exp.csv")
 survD2Dat <- read_csv("data/all_replacement_2019_density_exp.csv")
-plots <- read_csv("data/plot_treatments_2018_2019_density_exp.csv")
+# plots <- read_csv("data/plot_treatments_2018_2019_density_exp.csv")
 
 # model functions
 mod_check_fun <- function(mod){
