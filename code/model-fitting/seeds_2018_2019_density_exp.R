@@ -1,18 +1,17 @@
 #### outputs #####
 
-#### don't need 2018: seeds depend on density and treatments were messed up ####
-
 # models
-# output/evS_seed_model_2018_2019_density_exp.rda
-# output/evA_seed_model_2018_2019_density_exp.rda
-# output/mv_seed_model_2018_2019_density_exp.rda
+# output/evS_background_seed_model_2019_density_exp.rda
+# output/evA_background_seed_model_2019_density_exp.rda
+# output/mv_background_seed_model_2019_density_exp.rda
+# output/ev_seed_model_2019_density_exp.rda
 # tables
-# output/evS_seed_model_2018_2019_density_exp.csv
-# output/evA_seed_model_2018_2019_density_exp.csv
-# output/mv_seed_model_2018_2019_density_exp.csv
+# output/evS_background_seed_model_2019_density_exp.csv
+# output/evA_background_seed_model_2019_density_exp.csv
+# output/mv_background_seed_model_2019_density_exp.csv
+# output/ev_seed_model_2019_density_exp.csv
 # figures
-# output/seed_fungicide_figure_2018_2019_density_exp.rda
-# output/seed_competition_figure_2018_2019_density_exp.rda
+# output/seed_fungicide_figure_2019_density_exp.png
 
 
 #### set up ####
@@ -23,18 +22,16 @@ rm(list=ls())
 # load packages
 library(tidyverse)
 library(brms)
-library(broom.mixed)
 library(tidybayes)
-library(janitor)
+library(broom.mixed)
 library(ggtext)
+library(patchwork)
 
 # import data
-mvSeedD1Dat <- read_csv("intermediate-data/mv_processed_seeds_2018_density_exp.csv")
 mvSeedD2Dat <- read_csv("intermediate-data/mv_plant_level_seeds_2019_density_exp.csv") 
-evSeedD1Dat <- read_csv("intermediate-data/ev_processed_seeds_both_year_conversion_2018_density_exp.csv") 
+evSeedD1Dat <- read_csv("intermediate-data/ev_processed_seeds_both_year_conversion_2018_density_exp.csv")
 evSeedD2Dat <- read_csv("intermediate-data/ev_processed_seeds_both_year_conversion_2019_density_exp.csv")
 survD1Dat <- read_csv("intermediate-data/all_processed_survival_2018_density_exp.csv")
-tillerD1Dat <- read_csv("intermediate-data/focal_processed_growth_2018_density_exp.csv")
 plots <- read_csv("data/plot_treatments_2018_2019_density_exp.csv")
 
 # model functions
@@ -47,21 +44,44 @@ mod_check_fun <- function(mod){
   
 }
 
+# Beverton-Holt function
+bh_fun <- function(dat_in, a){
+  
+  # extract values
+  xmin = min(dat_in$background_density)
+  xmax = max(dat_in$background_density)
+  yE = filter(dat_in, sp == "Ev" & background_density == 0) %>%
+    pull(seeds) %>%
+    mean()
+  print(yE)
+  
+  yM = filter(dat_in, sp == "Mv" & background_density == 0) %>%
+    pull(seeds) %>%
+    mean()
+  print(yM)
+  
+  # create data
+  datE<- tibble(x = seq(xmin, xmax, length.out = 100),
+                 sp = "Ev") %>%
+    mutate(y = yE / (1 + a * x))
+  datM <- tibble(x = seq(xmin, xmax, length.out = 100),
+                 sp = "Mv") %>%
+    mutate(y = yM / (1 + a * x))
+  dat = full_join(datE, datM)
+  
+  # plot
+  print(ggplot(dat_in, aes(x = background_density, y = seeds)) +
+          stat_summary(geom = "point", fun = "mean") +
+          stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1) +
+          geom_line(data = dat, aes(x = x, y = y)) +
+          facet_wrap(~ sp, scales = "free_y"))
+}
+
 # figure settings
 source("code/figure-prep/figure_settings.R")
 
 
-#### edit data ####
-
-# 2018 survival
-# make survival 1 if the plant produced seeds in summer
-# remove NA's 
-survD1Dat2 <- survD1Dat %>%
-  filter(month == "September" & focal == 1) %>%
-  mutate(survival = case_when(seeds_produced == 1 ~ 1, 
-                              TRUE ~ survival)) %>%
-  select(-c(month, field_notes, seeds_produced, focal)) %>%
-  filter(!is.na(survival))
+#### format 2019 data ####
 
 # 2019 list of all plants
 # all dead plants were replaced
@@ -76,24 +96,10 @@ focD2Dat <- plots %>%
               expand_grid(site = c("D1", "D2", "D3", "D4")) %>%
               expand_grid(tibble(ID = c("1", "2", "3", "A"),
                                  age = c(rep("seedling", 3), "adult"))) %>%
-              mutate(sp = "Ev"))
-
-# Ev seeds 2018
-evSeedD1Dat2 <- evSeedD1Dat %>%
-  filter(focal == 1 & ID_unclear == 0) %>%
-  group_by(site, plot, treatment, sp, age, ID) %>%
-  summarise(seeds = sum(seeds)) %>%
-  ungroup() %>%
-  full_join(survD1Dat2 %>%
-              filter(sp == "Ev" & survival == 1) %>%
-              select(-survival)) %>%
-  left_join(plots, by = c("plot", "treatment"),
-            relationship = "many-to-many") %>%
-  mutate(seeds = replace_na(seeds, 0),
-         year = "1",
-         fungicide = ifelse(treatment == "fungicide", 1, 0),
-         background = if_else(background == "none", "Mv seedling", background),
-         seeds1 = seeds + 1)
+              mutate(sp = "Ev")) %>%
+  mutate(fungicide = if_else(treatment == "fungicide", 1, 0),
+         treatment = fct_relevel(treatment, "water"),
+         plotID = paste(site, plot, fungicide, sep = "_"))
 
 # Ev seeds 2019
 evSeedD2Dat2 <- evSeedD2Dat %>%
@@ -105,259 +111,271 @@ evSeedD2Dat2 <- evSeedD2Dat %>%
   left_join(plots, by = c("plot", "treatment"),
             relationship = "many-to-many") %>%
   mutate(seeds = replace_na(seeds, 0),
-         year = "2",
-         fungicide = ifelse(treatment == "fungicide", 1, 0),
-         background = if_else(background == "none", "Mv seedling", background),
-         seeds1 = seeds + 1)
-
-# Mv seeds 2018
-# quadrat was 0.49 x 0.25 m
-mvSeedD1Dat2 <- mvSeedD1Dat %>% # none missing 
-  left_join(tillerD1Dat %>%
-              filter(sp == "Mv") %>%
-              select(site, plot, treatment, sp, ID, tillers_jul)) %>%
-  left_join(plots, by = c("plot", "treatment"),
-            relationship = "many-to-many") %>%
-  mutate(seeds = seeds_per_stem * tillers_jul,
-         year = "1",
-         fungicide = ifelse(treatment == "fungicide", 1, 0),
-         background = if_else(background == "none", "Mv seedling", background),
-         seeds1 = seeds + 1)
+         seeds1 = seeds + 1,
+         log_seeds = log(seeds1))
 
 # Mv seeds 2019
-mvSeedD2Dat2 <- mvSeedD2Dat %>%
+mvSeedDat <- mvSeedD2Dat %>%
   mutate(ID = as.character(plant)) %>%
   select(site, plot, treatment, sp, ID, seeds) %>%
   full_join(focD2Dat %>%
               filter(sp == "Mv")) %>%
   left_join(plots, by = c("plot", "treatment"),
             relationship = "many-to-many") %>%
+  mutate(seeds = replace_na(seeds, 0))
+
+# combine Ev adults and Mv
+evASeedDat <- evSeedD2Dat2 %>% filter(age == "adult")
+combSeedDat <- evASeedDat %>% full_join(mvSeedDat)
+
+# split by background
+combEvASeedDat <- combSeedDat %>% filter(background %in% c("none", "Ev adult"))
+combEvSSeedDat <- combSeedDat %>% filter(background %in% c("none", "Ev seedling"))
+combMvSeedDat <- combSeedDat %>% filter(background %in% c("none", "Mv seedling"))
+
+
+#### format Ev 2018 data ####
+
+# 2018 survival
+# make survival 1 if the plant produced seeds in summer
+# remove NA's 
+survD1Dat2 <- survD1Dat %>%
+  filter(month == "September" & focal == 1) %>%
+  mutate(survival = case_when(seeds_produced == 1 ~ 1, 
+                              TRUE ~ survival)) %>%
+  select(-c(month, field_notes, seeds_produced, focal)) %>%
+  filter(!is.na(survival))
+
+# Ev seeds 2018
+evSeedD1Dat2 <- evSeedD1Dat %>%
+  filter(focal == 1 & ID_unclear == 0) %>%
+  group_by(site, plot, treatment, sp, age, ID) %>%
+  summarise(seeds = sum(seeds)) %>%
+  ungroup() %>%
+  full_join(survD1Dat2 %>%
+              filter(sp == "Ev" & survival == 1) %>%
+              select(-survival)) %>%
   mutate(seeds = replace_na(seeds, 0),
-         year = "2",
-         fungicide = ifelse(treatment == "fungicide", 1, 0),
-         background = if_else(background == "none", "Mv seedling", background),
-         seeds1 = seeds + 1)
+         seeds1 = seeds + 1,
+         log_seeds = log(seeds1),
+         fungicide = if_else(treatment == "fungicide", 1, 0),
+         treatment = fct_relevel(treatment, "water"),
+         plotID = paste(site, plot, fungicide, sep = "_"))
 
-# combine by plant group
-evSSeedDat <- evSeedD1Dat2 %>%
-  filter(age == "seedling") %>%
-  full_join(evSeedD2Dat2 %>%
-              filter(age == "seedling"))
-
-evASeedDat <- evSeedD1Dat2 %>%
-  filter(age == "adult") %>%
-  full_join(evSeedD2Dat2 %>%
-              filter(age == "adult"))
-
-mvSeedDat <- full_join(mvSeedD1Dat2, mvSeedD2Dat2)
+# combine Ev seeds
+evSeedDat <- evSeedD2Dat2 %>%
+  mutate(yearf = "2019") %>%
+  full_join(evSeedD1Dat2 %>%
+              mutate(yearf = "2018"))
 
 
-#### fit models ####
+#### fit Beverton-Holt models ####
 
 # initial visualizations
-ggplot(evSSeedDat, aes(x = background_density, y = seeds, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_grid(year ~ treatment)
 
-ggplot(evSSeedDat, aes(x = log(seeds1))) +
-  geom_density()
+ggplot(combEvASeedDat, aes(x = seeds)) +
+  geom_density() +
+  facet_wrap(sp ~ treatment, scales = "free")
 
-ggplot(evASeedDat, aes(x = background_density, y = seeds, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_grid(year ~ treatment)
+combEvASeedDat %>% filter(treatment == "water") %>%
+  bh_fun(a = 0)
+combEvASeedDat %>% filter(treatment == "fungicide") %>%
+  bh_fun(a = 0)
 
-ggplot(evASeedDat, aes(x = log(seeds1))) +
-  geom_density()
+combEvSSeedDat %>% filter(treatment == "water") %>%
+  bh_fun(a = 0)
+combEvSSeedDat %>% filter(treatment == "fungicide") %>%
+  bh_fun(a = 0.01)
 
-ggplot(mvSeedDat, aes(x = background_density, y = seeds, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_grid(year ~ treatment)
+combMvSeedDat %>% filter(treatment == "water") %>%
+  bh_fun(a = 0.03)
+combMvSeedDat %>% filter(treatment == "fungicide") %>%
+  bh_fun(a = 0.03)
 
-ggplot(mvSeedDat, aes(x = log(seeds1))) +
-  geom_density()
-
+# check prior distribution
+val <- seq(0, 100, length.out = 50)
+dens <- dexp(val, 5)
+plot(val, dens, type = "l")
 
 # fit models
-evSSeedMod <- brm(data = evSSeedDat, family = lognormal,
-                  seeds1 ~ fungicide + background_density:background + background_density:background:fungicide + year + 
-                    (1|site/plot),
-                  prior <- c(prior(normal(0, 10), class = "Intercept"),
-                             prior(normal(0, 10), class = "b")), # use default for sigma
+combEvASeedMod <- brm(data = combEvASeedDat, family = gaussian,
+                  bf(seeds ~ s0/(1 + alpha * background_density),
+                     s0 ~ sp * fungicide + (1 | site/plotID), 
+                     alpha ~ treatment + 0, 
+                     nl = T),
+                  prior <- c(prior(normal(81, 10), coef = 'Intercept', 
+                                   nlpar = "s0"),
+                             prior(normal(1119, 100), coef = 'spMv',
+                                   nlpar = "s0"),
+                             prior(normal(52, 10), coef = 'fungicide', 
+                                   nlpar = "s0"),
+                             prior(normal(-358, 10), coef = 'spMv:fungicide', 
+                                   nlpar = "s0"),
+                             prior(exponential(1), lb = 0, nlpar = "alpha")),
                   iter = 6000, warmup = 1000, chains = 3, cores = 3,
                   control = list(adapt_delta = 0.99))
-mod_check_fun(evSSeedMod)
+mod_check_fun(combEvASeedMod)
 
-mvSeedMod <- update(evSSeedMod, newdata = mvSeedDat,
-                    control = list(adapt_delta = 0.999, max_treedepth = 15))
-mod_check_fun(mvSeedMod)
+combEvSSeedMod <- update(combEvASeedMod, newdata = combEvSSeedDat, cores = 3)
+mod_check_fun(combEvSSeedMod)
 
-evASeedMod <- brm(data = evASeedDat, family = lognormal,
-                  seeds1 ~ fungicide + background_density:background + background_density:background:fungicide + year + 
-                    (1|site),
-                  prior <- c(prior(normal(0, 10), class = "Intercept"),
-                             prior(normal(0, 10), class = "b")), # use default for sigma
-                  iter = 6000, warmup = 1000, chains = 3, cores = 3,
-                  control = list(adapt_delta = 0.99))
-mod_check_fun(evASeedMod)
-
+combMvSeedMod <- update(combEvASeedMod, newdata = combMvSeedDat, cores = 3)
+mod_check_fun(combMvSeedMod)
 
 # save models
-save(evSSeedMod, file = "output/evS_seed_model_2018_2019_density_exp.rda")
-save(evASeedMod, file = "output/evA_seed_model_2018_2019_density_exp.rda")
-save(mvSeedMod, file = "output/mv_seed_model_2018_2019_density_exp.rda")
+save(combEvASeedMod, file = "output/evA_background_seed_model_2019_density_exp.rda")
+save(combEvSSeedMod, file = "output/evS_background_seed_model_2019_density_exp.rda")
+save(combMvSeedMod, file = "output/mv_background_seed_model_2019_density_exp.rda")
+
+
+#### fit Ev age model ####
+
+# initial visualization
+ggplot(evSeedDat, aes(x = age, y = seeds)) +
+  geom_boxplot() +
+  facet_wrap(~ treatment + yearf)
+
+ggplot(evSeedDat, aes(x = seeds1)) +
+  geom_density()
+
+ggplot(evSeedDat, aes(x = log_seeds)) +
+  geom_density()  +
+  facet_wrap(~ age + treatment)
+
+evSeedDat %>%
+  filter(age == "adult" & fungicide == 0 & yearf == "2018") %>%
+  pull(log_seeds) %>%
+  mean()
+
+
+# fit model
+evSeedMod <- brm(data = evSeedDat, family = Gamma(link = "log"),
+                  seeds1 ~ age * fungicide + yearf + (1|site/plotID),
+                  prior <- c(prior(normal(3.7, 1), class = "Intercept"),
+                             prior(normal(0, 2), class = "b"),
+                             prior(exponential(1), class = "sd")),
+                  iter = 6000, warmup = 1000, chains = 3, cores = 3,
+                 control = list(adapt_delta = 0.99))
+mod_check_fun(evSeedMod)
+
+# save model
+save(evSeedMod, file = "output/ev_seed_model_2019_density_exp.rda")
+
+
+#### figures and tables ####
+
+# load models
+load("output/evA_background_seed_model_2019_density_exp.rda")
+load("output/evS_background_seed_model_2019_density_exp.rda")
+load("output/mv_background_seed_model_2019_density_exp.rda")
+load("output/ev_seed_model_2019_density_exp.rda")
 
 # save tables
-write_csv(tidy(evSSeedMod, conf.method = "HPDinterval"), 
-          "output/evS_seed_model_2018_2019_density_exp.csv")
-write_csv(tidy(evASeedMod, conf.method = "HPDinterval"), 
-          "output/evA_seed_model_2018_2019_density_exp.csv")
-write_csv(tidy(mvSeedMod, conf.method = "HPDinterval"), 
-          "output/mv_seed_model_2018_2019_density_exp.csv")
+write_csv(tidy(combEvASeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evA_background_seed_model_2019_density_exp.csv")
+write_csv(tidy(combEvSSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evS_background_seed_model_2019_density_exp.csv")
+write_csv(tidy(combMvSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mv_background_seed_model_2019_density_exp.csv")
+write_csv(tidy(evSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/ev_seed_model_2019_density_exp.csv")
 
-# load
-load("output/evS_seed_model_2018_2019_density_exp.rda")
-load("output/evA_seed_model_2018_2019_density_exp.rda")
-load("output/mv_seed_model_2018_2019_density_exp.rda")
+# prediction data
+combEvASeedDraws <- combEvASeedDat %>%
+  distinct(sp, fungicide, treatment) %>%
+  expand_grid(background_density = 
+                0:max(combEvASeedDat$background_density)) %>%
+  add_epred_draws(combEvASeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
 
+combEvSSeedDraws <- combEvSSeedDat %>%
+  distinct(sp, fungicide, treatment) %>%
+  expand_grid(background_density = 
+                0:max(combEvSSeedDat$background_density)) %>%
+  add_epred_draws(combEvSSeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
 
-#### fungicide effect without comp. figure ####
+combMvSeedDraws <- combMvSeedDat %>%
+  distinct(sp, fungicide, treatment) %>%
+  expand_grid(background_density = 0:max(combMvSeedDat$background_density)) %>%
+  add_epred_draws(combMvSeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
 
-# posterior draws
-evSSeedDraws <- as_draws_df(evSSeedMod)
-mvSeedDraws <- as_draws_df(mvSeedMod)
-evASeedDraws <- as_draws_df(evASeedMod)
+evSeedDraws <- evSeedD2Dat2 %>%
+  distinct(age, fungicide, treatment) %>%
+  mutate(yearf = NA) %>%
+  add_epred_draws(evSeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  select(.draw, fungicide, treatment, age, .epred) %>%
+  pivot_wider(names_from = age, values_from = .epred) %>%
+  mutate(ratio = seedling/adult,
+         trt = fct_recode(treatment, "ambient" = "water"))
 
-# combine for fungicide effect without competition
-SeedDraws <- tibble(sp = "E. virginicus",
-                    age = "first-year",
-                   int = evSSeedDraws$b_Intercept,
-                   beta = evSSeedDraws$b_fungicide) %>%
-  full_join(tibble(sp = "M. vimineum",
-                   age = "first-year",
-                   int = mvSeedDraws$b_Intercept,
-                   beta = mvSeedDraws$b_fungicide)) %>%
-  full_join(tibble(sp = "E. virginicus",
-                   age = "adult",
-                   int = evASeedDraws$b_Intercept,
-                   beta = evASeedDraws$b_fungicide)) %>%
-  mutate(sp = fct_relevel(sp, "M. vimineum"),
-         age = fct_relevel(age, "first-year"),
-         sp_age = paste(age, sp) %>%
-           fct_relevel("first-year M. vimineum",
-                       "first-year E. virginicus"),
-         resp_int = exp(int) - 1,
-         resp_fung = exp(int + beta) - 1,
-         resp_diff = resp_fung - resp_int,
-         resp_perc = 100 * resp_diff / resp_int)
+# check seed values
+range(evSeedDraws$adult)
+range(evSeedDraws$seedling)
 
-# fungicide effect without competition
-seed_fung_fig <- ggplot(SeedDraws, aes(x = sp_age, y = beta)) +
-  geom_hline(yintercept = 0) +
-  stat_pointinterval(fatten_point = 3,
-                     point_interval = mean_hdci,
-                     .width = c(0.95, 1)) +
-  scale_x_discrete(labels = c(~ atop(NA, atop(NA, textstyle(italic("M. vimineum")))),
-                              ~ atop(NA, atop(textstyle("first-year"), 
-                                              textstyle(italic("E. virginicus")))),
-                              ~ atop(NA, atop(textstyle("adult"), 
-                                              textstyle(italic("E. virginicus")))))) +
-  labs(y = "Fungicide effect on seeds (log)") +
+# density figures
+mvEvA_seed_fig <- filter(combEvASeedDraws, sp == "Mv") %>%
+  ggplot(aes(x = background_density, y = .epred)) +
+  stat_lineribbon(aes(fill = trt, color = trt), point_interval = mean_hdi, 
+                  .width = 0.95, alpha = 0.5) +
+  scale_fill_manual(values = c(coral_pal[2], grey_pal[2]), 
+                    name = "Disease treatment") +
+  scale_color_manual(values = c(coral_pal[3], grey_pal[3]),
+                     name = "Disease treatment") +
+  labs(x = "Adult *E. virginicus* density", 
+       y = "*M. vimineum* seed yield") +
   fig_theme +
-  theme(axis.title.x = element_blank(),
-        axis.text.x = element_text(vjust = 2))
+  theme(axis.title = element_markdown())
 
-save(seed_fung_fig, file = "output/seed_fungicide_figure_2018_2019_density_exp.rda")
+evEvA_seed_fig <- mvEvA_seed_fig %+%
+  filter(combEvASeedDraws, sp == "Ev") +
+  labs(y = "*E. virginicus* seed yield")
 
+mvEvS_seed_fig <- mvEvA_seed_fig %+%
+  filter(combEvSSeedDraws, sp == "Mv") +
+  labs(x = "First-year *E. virginicus* density")
 
-#### fungicide effect on competition ####
+evEvS_seed_fig <- mvEvS_seed_fig %+%
+  filter(combEvSSeedDraws, sp == "Ev") +
+  labs(y = "*E. virginicus* seed yield")
 
-# edit
-compSeedDraws <- tibble(fung = mvSeedDraws$`b_fungicide:background_density:backgroundEvadult`,
-                        ctrl = mvSeedDraws$`b_background_density:backgroundEvadult`,
-                        background = "adult *E. virginicus*") %>%
-  full_join(tibble(fung = mvSeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   ctrl = mvSeedDraws$`b_background_density:backgroundEvseedling`,
-                   background = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = mvSeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   ctrl = mvSeedDraws$`b_background_density:backgroundMvseedling`,
-                   background = "*M. vimineum*")) %>%
-  mutate(sp_age = "*M. vimineum*") %>%
-  full_join(tibble(fung = evSSeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   ctrl = evSSeedDraws$`b_background_density:backgroundEvseedling`,
-                   background = "first-year *E. virginicus*",
-                   sp_age = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = evSSeedDraws$`b_fungicide:background_density:backgroundEvadult`,
-                   ctrl = evSSeedDraws$`b_background_density:backgroundEvadult`,
-                   background = "adult *E. virginicus*",
-                   sp_age = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = evSSeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   ctrl = evSSeedDraws$`b_background_density:backgroundMvseedling`,
-                   background = "*M. vimineum*",
-                   sp_age = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = evASeedDraws$`b_fungicide:background_density:backgroundEvadult`,
-                   ctrl = evASeedDraws$`b_background_density:backgroundEvadult`,
-                   background = "adult *E. virginicus*",
-                   sp_age = "adult *E. virginicus*")) %>%
-  full_join(tibble(fung = evASeedDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   ctrl = evASeedDraws$`b_background_density:backgroundEvseedling`,
-                   background = "first-year *E. virginicus*",
-                   sp_age = "adult *E. virginicus*")) %>%
-  full_join(tibble(fung = evASeedDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   ctrl = evASeedDraws$`b_background_density:backgroundMvseedling`,
-                   background = "*M. vimineum*",
-                   sp_age = "adult *E. virginicus*")) %>%
-  mutate(background = fct_relevel(background, "*M. vimineum*",
-                                  "first-year *E. virginicus*"),
-         sp_age = fct_relevel(sp_age, "*M. vimineum*",
-                              "first-year *E. virginicus*"))
+mvMv_seed_fig <- mvEvA_seed_fig %+%
+  filter(combMvSeedDraws, sp == "Mv") +
+  labs(x = "*M. vimineum* density")
 
-# figure
-seed_comp_fig <- ggplot(compSeedDraws, aes(x = background, y = fung, color = sp_age)) +
-  geom_hline(yintercept = 0, color = "grey") +
-  stat_pointinterval(fatten_point = 5,
-                     shape = 95,
-                     point_interval = mean_hdci,
-                     .width = c(0.95, 1),
-                     position = position_dodge(0.5)) +
-  scale_color_manual(values = col_pal, name = "Focal group") +
-  labs(x = "Background group",
-       y = "Fungicide effect on\nseed response (log)") +
+evMv_seed_fig <- mvMv_seed_fig %+%
+  filter(combMvSeedDraws, sp == "Ev") +
+  labs(y = "*E. virginicus* seed yield")
+
+# combine plots
+seed_fung_fig <- (mvMv_seed_fig + evMv_seed_fig +
+  plot_layout(axis_titles = "collect")) /
+  (mvEvA_seed_fig + evEvA_seed_fig +
+     plot_layout(axis_titles = "collect")) /
+  (mvEvS_seed_fig + evEvS_seed_fig +
+     plot_layout(axis_titles = "collect")) /
+  plot_layout(guides = "collect")  + 
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom") 
+
+ggsave("output/seed_fungicide_figure_2019_density_exp.png",
+       seed_fung_fig, width = 6, height = 8.2)
+
+# ratio figure
+ratio_fung_fig <- ggplot(evSeedDraws, aes(x = ratio, y = trt)) +
+  stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
+            .width = c(.66, .95, 1)) +
+  stat_pointinterval(point_interval = mean_hdi, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  labs(y = "Disease treatment", x = "*E. virginicus* seed ratio") +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
   fig_theme +
-  theme(axis.text.x = element_markdown(),
-        legend.text = element_markdown())
+  theme(axis.title.x = element_markdown())
 
-save(seed_comp_fig, file = "output/seed_competition_figure_2018_2019_density_exp.rda")
-
-
-#### values for text ####
-
-# fungicide effects without neighbors
-SeedDraws %>%
-  group_by(sp, age) %>%
-  mean_hdci(resp_int)
-
-SeedDraws %>%
-  group_by(sp, age) %>%
-  mean_hdci(resp_diff)
-
-SeedDraws %>%
-  group_by(sp, age) %>%
-  mean_hdci(resp_perc)
-
-compSeedDraws %>%
-  group_by(sp_age, background) %>%
-  mean_hdci(fung)
-
-compSeedDraws %>%
-  group_by(sp_age, background) %>%
-  mean_hdci(ctrl)
-
-mvSeedDraws %>%
-  mutate(seed_none = exp(b_Intercept) - 1,
-         seed_Mv = exp(b_Intercept +
-                         `b_background_density:backgroundMvseedling` * 30) - 1) %>%
-  transmute(Mveffect = seed_Mv - seed_none) %>%
-  mean_hdci()
+ggsave("output/seed_ratio_fungicide_figure_2018_2019_density_exp.png",
+       ratio_fung_fig, width = 3, height = 3.2)  

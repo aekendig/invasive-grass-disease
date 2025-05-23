@@ -1,5 +1,14 @@
 ##### outputs ####
 
+# models
+# output/mv_biomass_fungicide_model_2019_density_exp.rda
+# output/ev_biomass_fungicide_model_2019_density_exp.rda
+# tables
+# output/mv_biomass_fungicide_model_2019_density_exp.csv
+# output/ev_biomass_fungicide_model_2019_density_exp.csv
+# figure
+# biomass_fungicide_figure_2019_density_exp.png
+
 
 #### set up ####
 
