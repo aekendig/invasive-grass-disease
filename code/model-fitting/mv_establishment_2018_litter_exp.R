@@ -79,7 +79,6 @@ mvEstL1Dat <- estL1Dat %>%
          prop_germ_adj = if_else(prop_germ < 0, 0, prop_germ))
 
 
-
 #### model ####
 
 # initial visualization
@@ -108,7 +107,7 @@ val <- seq(0, 100, length.out = 50)
 dens <- dexp(val, 6)
 plot(val, dens, type = "l")
 
-# fit models
+# fit model
 mvEstL1Mod <- brm(data = mvEstL1Dat, family = gaussian,
                       bf(prop_germ_adj ~ e0/(1 + beta * litter.g.m2),
                          e0 ~ 1 + (1 | site), 
@@ -156,5 +155,25 @@ mv_est_fig <- ggplot(mvEstL1Draws, aes(x = litter.g.m2, y = .epred)) +
   fig_theme +
   theme(axis.title = element_markdown())
 
+# beta values
+mvEstL1Beta <- gather_draws(mvEstL1Mod,
+                            c(b_beta_sterilizedsterilized, 
+                              b_beta_sterilizedlive)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "live"),
+                       "ambient", "sterilized") %>%
+           fct_relevel("sterilized"))
+
+mv_beta_fig <- ggplot(mvEstL1Beta, aes(x = .value, y = trt)) +
+  stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdci, 
+            .width = c(.66, .95, 1)) +
+  stat_pointinterval(point_interval = mean_hdci, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  labs(x = "*M. vimineum* response to litter", y = "Disease treatment") +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
+  fig_theme +
+  theme(axis.title.x = element_markdown())
+
 # save to combine with EV establishment
 save(mv_est_fig, file = "output/mv_establishment_figure_2018_litter_exp.rda")
+save(mv_beta_fig, file = "output/mv_establishment_beta_figure_2018_litter_exp.rda")
