@@ -314,6 +314,30 @@ evSeedDraws <- evSeedD2Dat2 %>%
   mutate(ratio = seedling/adult,
          trt = fct_recode(treatment, "ambient" = "water"))
 
+combEvAAlphaDraws <- combEvASeedMod %>%
+  gather_draws(c(b_alpha_treatmentfungicide, 
+                 b_alpha_treatmentwater)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "water"), "ambient", 
+                       "fungicide") %>%
+           fct_relevel("fungicide"))
+
+combEvSAlphaDraws <- combEvSSeedMod %>%
+  gather_draws(c(b_alpha_treatmentfungicide, 
+                 b_alpha_treatmentwater)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "water"), "ambient", 
+                       "fungicide") %>%
+           fct_relevel("fungicide"))
+
+combMvAlphaDraws <- combMvSeedMod %>%
+  gather_draws(c(b_alpha_treatmentfungicide, 
+                 b_alpha_treatmentwater)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "water"), "ambient", 
+                       "fungicide") %>%
+           fct_relevel("fungicide"))
+
 # check seed values
 range(evSeedDraws$adult)
 range(evSeedDraws$seedling)
@@ -366,6 +390,24 @@ seed_fung_fig <- (mvMv_seed_fig + evMv_seed_fig +
 ggsave("output/seed_fungicide_figure_2019_density_exp.png",
        seed_fung_fig, width = 6, height = 8.2)
 
+# alpha figures
+evA_alpha_fig <- ggplot(combEvAAlphaDraws, aes(x = .value, y = trt)) +
+  stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
+            .width = c(.66, .95, 1)) +
+  stat_pointinterval(point_interval = mean_hdci, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  labs(x = "Adult *E. virginicus* effect on seed yield", 
+       y = "Disease treatment") +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
+  fig_theme +
+  theme(axis.title.x = element_markdown())
+
+evS_alpha_fig <- evA_alpha_fig %+% combEvSAlphaDraws +
+  labs(x = "First-year *E. virginicus* effect on seed yield")
+
+mv_alpha_fig <- evA_alpha_fig %+% combMvAlphaDraws +
+  labs(x = "*M. vimineum* effect on seed yield")
+
 # ratio figure
 ratio_fung_fig <- ggplot(evSeedDraws, aes(x = ratio, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
@@ -377,5 +419,11 @@ ratio_fung_fig <- ggplot(evSeedDraws, aes(x = ratio, y = trt)) +
   fig_theme +
   theme(axis.title.x = element_markdown())
 
-ggsave("output/seed_ratio_fungicide_figure_2018_2019_density_exp.png",
-       ratio_fung_fig, width = 3, height = 3.2)  
+# combine plots
+alpha_ratio_fig <- mv_alpha_fig + evA_alpha_fig + evS_alpha_fig + ratio_fung_fig +
+  plot_layout(ncol = 2, guides = "collect", axes = "collect_y")  + 
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom")
+
+ggsave("output/seed_alphas_ratio_figure_2018_2019_density_exp.png",
+       alpha_ratio_fig, width = 6, height = 6.2)  
