@@ -70,6 +70,7 @@ all_leaf_scans_2019_density_exp.csv
 plot_treatments_2018_2019_density_exp.csv","intermediate-data
 intermediate-data
 data",no
+,model-fitting,litter_reu_establishment_analysis,"explored model fitting, but litter values were too low/establishment values were too high",,,,,yes
 ,figure-prep,figure_settings.R,"fig_theme
 col_pal
 dodge_width",called by source,,,,

@@ -21,6 +21,10 @@ library(patchwork)
 estL2Dat <- read_csv("data/both_germination_disease_jun_2019_litter_exp.csv")
 plots <- read_csv("data/litter_weight_apr_2019_litter_exp.csv")
 
+# load germination model and data
+load("output/ev_germination_fungicide_model_2018_2019_density_exp.rda")
+evGermDat <- read_csv("intermediate-data/ev_germination_2018_2019_density_exp.csv")
+
 # model functions
 mod_check_fun <- function(mod){
   
@@ -38,7 +42,7 @@ bh_fun <- function(dat_in, b){
   xmin = min(dat_in$litter.g.m2)
   xmax = max(dat_in$litter.g.m2)
   V = filter(dat_in, litter.g.m2 == xmin) %>%
-    pull(ev_prop_germ) %>%
+    pull(prop_est_adj) %>%
     mean()
   print(V)
   
@@ -47,7 +51,7 @@ bh_fun <- function(dat_in, b){
     mutate(v = V / (1 + b * x))
   
   # plot
-  print(ggplot(dat_in, aes(x = litter.g.m2, y = ev_prop_germ)) +
+  print(ggplot(dat_in, aes(x = litter.g.m2, y = prop_est_adj)) +
           stat_summary(geom = "point", fun = "mean") +
           stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1) +
           geom_line(data = dat, aes(x = x, y = v)))
@@ -79,23 +83,35 @@ plots2 <- plots %>%
 plant <- tibble(treatment = c("removal", "control", "addition"),
                 ev_tot = c(50, 26, 26)) 
 
+# average germination with fungicide
+prop_germ <- tibble(fungicide = 0,
+                    yearf = "2018",
+                    age = "adult",
+                    seeds_planted = round(mean(evGermDat$seeds_planted))) %>%
+  add_epred_draws(evGermMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds_planted) %>%
+  pull(germ_frac) %>%
+  mean()
+
 # June germination data
 # none of the germinants were infected
 evEstL2Dat <- estL2Dat %>%
   select(-c(date, flag_color, mv_germ, mv_infec)) %>%
   full_join(plots2) %>%
   full_join(plant) %>%
-  mutate(ev_prop_germ = ev_germ / ev_tot,
+  mutate(prop_est = ev_germ / ev_tot,
+         prop_est_adj = prop_est / prop_germ,
          treatment = fct_relevel(treatment, "removal", "control"))
 
 
 #### fit model ####
 
 # visualize
-ggplot(evEstL2Dat, aes(x = litter.g.m2, y = ev_prop_germ)) +
+ggplot(evEstL2Dat, aes(x = litter.g.m2, y = prop_est_adj)) +
   geom_point()
 
-ggplot(evEstL2Dat, aes(x = litter.g.m2, y = ev_prop_germ)) +
+ggplot(evEstL2Dat, aes(x = litter.g.m2, y = prop_est_adj)) +
   geom_point(position = position_jitter(width = 1)) +
   facet_wrap(~ site_block)
 
@@ -106,15 +122,20 @@ evEstL2Dat %>%
   filter(litter.g.m2 > 0 & ev_germ > 0)
 # only one
 
+# check prior distribution
+val <- seq(0, 1, length.out = 50)
+dens <- dexp(val, 1)
+plot(val, dens, type = "l")
+
 # fit model
 evEstL2Mod <- brm(data = evEstL2Dat, family = gaussian,
-                  bf(ev_prop_germ ~ e0/(1 + beta * litter.g.m2),
+                  bf(prop_est_adj ~ e0/(1 + beta * litter.g.m2),
                      e0 ~ 1 + (1 | site_block),
                      beta ~ 1,
                      nl = T),
-                  prior <- c(prior(normal(0.04, 0.02), coef = 'Intercept', 
+                  prior <- c(prior(normal(0.16, 0.05), coef = 'Intercept', 
                                    nlpar = "e0"),
-                             prior(exponential(3), lb = 0, nlpar = "beta")),
+                             prior(exponential(1), lb = 0, nlpar = "beta")),
                   iter = 6000, warmup = 1000, chains = 3, cores = 3,
                   control = list(adapt_delta = 0.99))
 

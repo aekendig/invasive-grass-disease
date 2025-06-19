@@ -19,6 +19,10 @@ library(ggtext)
 estL1Dat <- read_csv("data/both_germination_disease_jul_2018_litter_exp.csv")
 plots <- read_csv("data/plot_treatments_2018_litter_exp.csv")
 
+# load germination model and data
+load("output/mv_germination_fungicide_model_2018_density_exp.rda")
+mvGermDat <- read_csv("intermediate-data/mv_germination_disease_2018_density_exp.csv")
+
 # model functions
 mod_check_fun <- function(mod){
   
@@ -36,7 +40,7 @@ bh_fun <- function(dat_in, b){
   xmin = min(dat_in$litter.g.m2)
   xmax = max(dat_in$litter.g.m2)
   V = filter(dat_in, litter.g.m2 == xmin) %>%
-    pull(prop_germ_adj) %>%
+    pull(prop_est_adj2) %>%
     mean()
   print(V)
   
@@ -45,7 +49,7 @@ bh_fun <- function(dat_in, b){
     mutate(v = V / (1 + b * x))
   
   # plot
-  print(ggplot(dat_in, aes(x = litter.g.m2, y = prop_germ_adj)) +
+  print(ggplot(dat_in, aes(x = litter.g.m2, y = prop_est_adj2)) +
           stat_summary(geom = "point", fun = "mean") +
           stat_summary(geom = "errorbar", fun.data = "mean_se", width = 0.1) +
           geom_line(data = dat, aes(x = x, y = v)))
@@ -66,56 +70,59 @@ plots2 <- plots %>%
          litter.g.m2 = litter_weight.g) %>%
   select(-c(flag_color, justification, litter_weight.g))
 
+# average germination with fungicide
+prop_germ <- tibble(fungicide = 1,
+                  seeds = round(mean(mvGermDat$seeds))) %>%
+  add_epred_draws(mvGermD1Mod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(germ_frac = .epred / seeds) %>%
+  pull(germ_frac) %>%
+  mean()
+  
 # select plots with seeds added only
 mvEstL1Dat <- estL1Dat %>%
   filter(seeds_added == "yes") %>%
   left_join(plots2) %>%
   select(-c(date, seeds_added, ev_germ, ev_infec)) %>%
-  group_by(site) %>%
-  mutate(mv_germ_ev_avg = mean(mv_germ_ev)) %>%
-  ungroup() %>%
-  mutate(mv_germ_planted = mv_germ - mv_germ_ev, # (planted + background) - only background (none planted in Ev section)
-         prop_germ = mv_germ_planted/200,
-         prop_germ_adj = if_else(prop_germ < 0, 0, prop_germ))
+  mutate(mv_est_planted = mv_germ - mv_germ_ev, # (planted + background) - only background (none planted in Ev section)
+         prop_est = mv_est_planted/200,
+         prop_est_adj = if_else(prop_est < 0, 0, prop_est),
+         prop_est_adj2 = prop_est_adj/prop_germ)
+
+range(mvEstL1Dat$prop_est) # some negative - added in adjustment above
 
 
 #### model ####
 
 # initial visualization
-ggplot(mvEstL1Dat, aes(x = litter.g.m2, y = prop_germ, color = sterilized)) +
+ggplot(mvEstL1Dat, aes(x = litter.g.m2, y = prop_est_adj, color = sterilized)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width = 0)
 
-range(mvEstL1Dat$prop_germ) # some negative
-
-ggplot(mvEstL1Dat, aes(x = litter.g.m2, y = prop_germ_adj, color = sterilized)) +
+ggplot(mvEstL1Dat, aes(x = litter.g.m2, y = prop_est_adj2, color = sterilized)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun.data = mean_cl_boot, geom = "errorbar", width = 0)
-
-ggplot(mvEstL1Dat, aes(mv_germ_ev, mv_germ)) +
-  geom_abline(slope = 1, intercept = 0) +
-  geom_point()
 
 # beverton-holt
 mvEstL1Dat %>% filter(sterilized == "sterilized") %>%
   bh_fun(b = 0.008)
-mvEstL1Dat %>% filter(sterilized == "live") %>%
-  bh_fun(b = 0.005)
+mvEstL1Dat %>% filter(sterilized == "live" | litter.g.m2 == 0) %>%
+  bh_fun(b = 0.01)
 
 # check prior distribution
-val <- seq(0, 100, length.out = 50)
-dens <- dexp(val, 6)
+val <- seq(0, 1, length.out = 50)
+dens <- dexp(val, 7)
 plot(val, dens, type = "l")
 
 # fit model
 mvEstL1Mod <- brm(data = mvEstL1Dat, family = gaussian,
-                      bf(prop_germ_adj ~ e0/(1 + beta * litter.g.m2),
+                      bf(prop_est_adj2 ~ e0/(1 + beta * litter.g.m2),
                          e0 ~ 1 + (1 | site), 
                          beta ~ sterilized + 0, 
                          nl = T),
-                      prior <- c(prior(normal(0.6, 0.5), coef = 'Intercept', 
+                      prior <- c(prior(normal(0.8, 0.5), coef = 'Intercept', 
                                        nlpar = "e0"),
-                                 prior(exponential(6), lb = 0, nlpar = "beta")),
+                                 prior(exponential(7), lb = 0, nlpar = "beta")),
                       iter = 6000, warmup = 1000, chains = 3, cores = 3,
                       control = list(adapt_delta = 0.99))
 mod_check_fun(mvEstL1Mod)
