@@ -5,16 +5,21 @@ library(tidyverse)
 library(brms)
 library(tidybayes)
 
+# notation
+# parameter value lowercase
+# species group uppercase (A = annual, P = perennial adult, S = perennial first-year)
+# disease condition underscore (_d = disease/ambient, _h = healthy/suppressed)
+
 
 #### values from literature ####
 
 sA <- 0.15 # annual seed survival (Redwood et al. 2018)
 sP <- 0.05 # perennial seed survival (Garrison and Stier 2010)
-# d <- 0.61 # litter decomposition (DeMeester and Richter 2010) - look at Brett's paper for this
-# h <- 0.29 # seedling survival from germination to establishment (Emery et al. 2013) - probably don't need, use germination/establishment from litter field experiment
+d_d <- 0.50 # litter decomposition infected sites (Lane et al. in review)
+d_h <- 0.47 # litter decomposition non-infected sites (Lane et al. in review)
 
 
-#### posterior draws ####
+#### import posterior draws ####
 
 # import models
 load("output/evS_survival_model_2018_2019_density_exp.rda")
