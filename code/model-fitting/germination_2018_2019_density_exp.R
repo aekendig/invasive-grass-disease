@@ -10,8 +10,12 @@
 # output/mv_germination_infection_model_2018_density_exp.csv
 # output/mv_seed_infection_dark_model_2018_density_exp.csv
 # output/ev_germination_fungicide_model_2018_2019_density_exp.csv
+# parameter draws
+# intermediate-data/gA_fung_draws.csv
+# intermediate-data/gP_draws.csv
+# intermediate-data/gA_inf_draws.csv
 # figures
-# output/germination_fungicide_figure_2018_2019_density_exp.rda
+# output/germination_fungicide_figure_2018_2019_density_exp.png
 # output/germination_infection_figure_2018_density_exp.png
 
 
@@ -274,6 +278,25 @@ evGermDraws <- pred_dat_trt %>%
   add_epred_draws(evGermMod, re_formula = ~0) %>% 
   ungroup() %>%
   mutate(germ_frac = .epred / seeds_planted)
+
+# save draws
+mvGermD1Draws2 <- mvGermD1Draws %>%
+  select(fungicide, .draw, germ_frac) %>%
+  rename(value = germ_frac)
+
+evGermDraws2 <- evGermDraws %>%
+  select(fungicide, .draw, germ_frac) %>%
+  rename(value = germ_frac)
+
+mvGermInfDarkD1Draws2 <- mvGermInfDarkD1Draws %>%
+  filter(prop_dark %in% range(prop_dark)) %>%
+  mutate(infection = if_else(prop_dark == min(prop_dark), 0, 1),
+         value = germ_frac) %>%
+  select(infection, .draw, value)
+
+write_csv(mvGermD1Draws2, "intermediate-data/gA_fung_draws.csv")
+write_csv(evGermDraws2, "intermediate-data/gP_draws.csv")
+write_csv(mvGermInfDarkD1Draws2, "intermediate-data/gA_inf_draws.csv")
 
 # figures
 mv_germ_fig <- ggplot(mvGermD1Draws, aes(x = germ_frac, y = trt)) +

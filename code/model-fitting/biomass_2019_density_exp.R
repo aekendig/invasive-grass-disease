@@ -6,6 +6,9 @@
 # tables
 # output/mv_biomass_fungicide_model_2019_density_exp.csv
 # output/ev_biomass_fungicide_model_2019_density_exp.csv
+# parameter draws
+# intermediate-data/bA_draws.csv
+# intermediate-data/bP_draws.csv
 # figure
 # biomass_fungicide_figure_2019_density_exp.png
 
@@ -167,6 +170,20 @@ evBioD2Draws <- pred_dat_trt %>%
   ungroup() %>%
   mutate(biomass = exp(.epred))
 
+# save draws
+mvBioD2Draws2 <- mvBioD2Draws %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .epred) %>%
+  rename(value = .epred)
+
+evBioD2Draws2 <- evBioD2Draws %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .epred) %>%
+  rename(value = .epred)
+
+write_csv(mvBioD2Draws2, "intermediate-data/bA_draws.csv")
+write_csv(evBioD2Draws2, "intermediate-data/bP_draws.csv")
+  
 # figures
 mv_bio_fig <- ggplot(mvBioD2Draws, aes(x = biomass, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 

@@ -6,8 +6,11 @@
 # tables
 # output/evS_survival_model_2018_2019_density_exp.csv
 # output/evA_survival_model_2018_2019_density_exp.csv
+# parameter draws
+# intermediate-data/pS_draws.csv
+# intermediate-data/pP_draws.csv
 # figures
-# output/survival_fungicide_figure_2018_2019_density_exp.rda
+# output/survival_fungicide_figure_2018_2019_density_exp.png
 
 #### set up ####
 
@@ -131,7 +134,7 @@ evASurvDraws <- pred_dat_trt %>%
   add_epred_draws(evASurvMod, re_formula = ~0) %>% 
   ungroup()
 
-# save
+# save draws
 evSSurvDraws2 <- evSSurvDraws %>%
   select(fungicide, .draw, .epred) %>%
   rename(value = .epred)
@@ -140,8 +143,8 @@ evASurvDraws2 <- evASurvDraws %>%
   select(fungicide, .draw, .epred) %>%
   rename(value = .epred)
 
-write_csv(evSSurvDraws2, "output/pS_draws.csv")
-write_csv(evASurvDraws2, "output/pP_draws.csv")
+write_csv(evSSurvDraws2, "intermediate-data/pS_draws.csv")
+write_csv(evASurvDraws2, "intermediate-data/pP_draws.csv")
 
 # figure
 evS_surv_fig <- ggplot(evSSurvDraws, aes(x = .epred, y = trt)) +

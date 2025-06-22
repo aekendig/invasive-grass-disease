@@ -10,8 +10,16 @@
 # output/evA_background_seed_model_2019_density_exp.csv
 # output/mv_background_seed_model_2019_density_exp.csv
 # output/ev_seed_model_2019_density_exp.csv
+# parameter draws
+# intermediate-data/yA_draws.csv
+# intermediate-data/yP_draws.csv
+# intermediate-data/f_draws.csv
+# intermediate-data/alphaA_draws.csv
+# intermediate-data/alphaP_draws.csv
+# intermediate-data/gamma_draws.csv
 # figures
 # output/seed_fungicide_figure_2019_density_exp.png
+# output/seed_alphas_ratio_figure_2018_2019_density_exp.png
 
 
 #### set up ####
@@ -280,7 +288,7 @@ write_csv(tidy(combMvSeedMod, conf.method = "HPDinterval", rhat = T, ess = T),
 write_csv(tidy(evSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
           "output/ev_seed_model_2019_density_exp.csv")
 
-# prediction data
+# predicted seed yield
 combEvASeedDraws <- combEvASeedDat %>%
   distinct(sp, fungicide, treatment) %>%
   expand_grid(background_density = 
@@ -304,6 +312,7 @@ combMvSeedDraws <- combMvSeedDat %>%
   ungroup() %>%
   mutate(trt = fct_recode(treatment, "ambient" = "water"))
 
+# perennial seed ratio
 evSeedDraws <- evSeedD2Dat2 %>%
   distinct(age, fungicide, treatment) %>%
   mutate(yearf = NA) %>%
@@ -314,6 +323,7 @@ evSeedDraws <- evSeedD2Dat2 %>%
   mutate(ratio = seedling/adult,
          trt = fct_recode(treatment, "ambient" = "water"))
 
+# competition coefficients
 combEvAAlphaDraws <- combEvASeedMod %>%
   gather_draws(c(b_alpha_treatmentfungicide, 
                  b_alpha_treatmentwater)) %>%
@@ -330,6 +340,12 @@ combEvSAlphaDraws <- combEvSSeedMod %>%
                        "fungicide") %>%
            fct_relevel("fungicide"))
 
+ratioEvAlphaDraws <- combEvSAlphaDraws %>%
+  rename(evS = .value) %>%
+  full_join(combEvAAlphaDraws %>%
+              rename(evA = .value)) %>%
+  mutate(ratio = evS / evA)
+
 combMvAlphaDraws <- combMvSeedMod %>%
   gather_draws(c(b_alpha_treatmentfungicide, 
                  b_alpha_treatmentwater)) %>%
@@ -341,6 +357,43 @@ combMvAlphaDraws <- combMvSeedMod %>%
 # check seed values
 range(evSeedDraws$adult)
 range(evSeedDraws$seedling)
+
+# save draws
+mvYDraws <- combMvSeedDraws %>%
+  filter(background_density == 0 & sp == "Mv") %>%
+  select(fungicide, .draw, .epred) %>%
+  rename(value = .epred)
+
+evYDraws <- combMvSeedDraws %>%
+  filter(background_density == 0 & sp == "Ev") %>%
+  select(fungicide, .draw, .epred) %>%
+  rename(value = .epred)
+
+evSeedDraws2 <- evSeedDraws %>%
+  select(fungicide, .draw, ratio) %>%
+  rename(value = ratio)
+
+combMvAlphaDraws2 <- combMvAlphaDraws %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .value) %>%
+  rename(value = .value)
+
+combEvAAlphaDraws2 <- combEvAAlphaDraws %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .value) %>%
+  rename(value = .value)
+
+ratioEvAlphaDraws2 <- ratioEvAlphaDraws %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, ratio) %>%
+  rename(value = ratio)
+
+write_csv(mvYDraws, "intermediate-data/yA_draws.csv")
+write_csv(evYDraws, "intermediate-data/yP_draws.csv")
+write_csv(evSeedDraws2, "intermediate-data/f_draws.csv")
+write_csv(combMvAlphaDraws2, "intermediate-data/alphaA_draws.csv")
+write_csv(combEvAAlphaDraws2, "intermediate-data/alphaP_draws.csv")
+write_csv(ratioEvAlphaDraws2, "intermediate-data/gamma_draws.csv")
 
 # density figures
 mvEvA_seed_fig <- filter(combEvASeedDraws, sp == "Mv") %>%
@@ -408,7 +461,20 @@ evS_alpha_fig <- evA_alpha_fig %+% combEvSAlphaDraws +
 mv_alpha_fig <- evA_alpha_fig %+% combMvAlphaDraws +
   labs(x = "*M. vimineum* effect on seed yield")
 
-# ratio figure
+# alpha ratio figure
+ggplot(ratioEvAlphaDraws, aes(x = ratio, y = trt)) +
+  stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
+            .width = c(.66, .95, 1)) +
+  stat_pointinterval(point_interval = mean_hdi, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  labs(y = "Disease treatment", x = "*E. virginicus* effect ratio") +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
+  coord_cartesian(xlim = c(0, 100)) +
+  fig_theme +
+  theme(axis.title.x = element_markdown())
+# a lot of extreme values because of vey low evA values, can't visualize properly
+
+# seed ratio figure
 ratio_fung_fig <- ggplot(evSeedDraws, aes(x = ratio, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
             .width = c(.66, .95, 1)) +

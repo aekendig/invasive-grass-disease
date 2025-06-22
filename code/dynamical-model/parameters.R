@@ -17,62 +17,37 @@ sA <- 0.15 # annual seed survival (Redwood et al. 2018)
 sP <- 0.05 # perennial seed survival (Garrison and Stier 2010)
 d_d <- 0.50 # litter decomposition infected sites (Lane et al. in review)
 d_h <- 0.47 # litter decomposition non-infected sites (Lane et al. in review)
+b_T <- 0 # set other sources of litter to zero
+delta <- 1 # set fraction of perennial biomass that affects establishment as 1
 
 
 #### import posterior draws ####
 
-# import models
-load("output/evS_survival_model_2018_2019_density_exp.rda")
-load("output/evA_survival_model_2018_2019_density_exp.rda")
-load("output/evS_background_seed_model_2019_density_exp.rda")
-load("output/evA_background_seed_model_2019_density_exp.rda")
-load("output/mv_background_seed_model_2019_density_exp.rda")
-load("output/ev_seed_model_2019_density_exp.rda") # for f
-load("output/mv_germination_fungicide_model_2018_density_exp.rda")
-load("output/mv_germination_infection_model_2018_density_exp.rda")
-load("output/ev_germination_fungicide_model_2018_2019_density_exp.rda")
-load("output/evS_establishment_model_2018_2019_density_exp.rda") # not from seed, combine with below
-load("output/mv_establishment_model_2018_2019_density_exp.rda") # not from seed, combine with below
-load("output/ev_establishment_model_2019_litter_exp.rda") # field germination/establishment without litter
-load("output/mv_establishment_model_2018_litter_exp.rda") # field germination/establishment without litter, live litter effect
-load("output/mv_establishment_model_2018_greenhouse_exp.rda") # for litter sensitivity
-load("output/ev_establishment_model_2018_greenhouse_exp.rda") # for litter sensitivity
-
-# no background plot data
-# pred_dat_no_bg <- tibble(fungicide = 0, background_density = 0,
-#                          background = "Mv seedling") %>%
-#   add_row(fungicide = 1, background_density = 0,
-#           background = "Mv seedling")
-
-pred_dat_trt <- tibble(fungicide = c(0, 1))
-
-# posterior draws on response scale
-pred_pS <- pred_dat_trt %>% 
-  add_epred_draws(evSSurvMod, re_formula = NA) %>% ungroup()
-pred_pA <- pred_dat_trt %>% 
-  add_epred_draws(evASurvMod, re_formula = NA) %>% ungroup()
+pS_draws <- read_csv("intermediate-data/pS_draws.csv")
+pP_draws <- read_csv("intermediate-data/pP_draws.csv")
+yA_draws <- read_csv("intermediate-data/yA_draws.csv")
+yP_draws <- read_csv("intermediate-data/yP_draws.csv")
+f_draws <- read_csv("intermediate-data/f_draws.csv")
+alphaA_draws <- read_csv("intermediate-data/alphaA_draws.csv")
+alphaP_draws <- read_csv("intermediate-data/alphaP_draws.csv")
+gamma_draws <- read_csv("intermediate-data/gamma_draws.csv")
+gA_fung_draws <- read_csv("intermediate-data/gA_fung_draws.csv")
+gA_inf_draws <- read_csv("intermediate-data/gA_inf_draws.csv")
+gP_draws <- read_csv("intermediate-data/gP_draws.csv")
+eA_draws <- read_csv("intermediate-data/eA_draws.csv")
+eP_draws <- read_csv("intermediate-data/eP_draws.csv")
+betaA_draws <- read_csv("intermediate-data/betaA_draws.csv")
+betaP_draws <- read_csv("intermediate-data/betaP_draws.csv")
 
 
 
-
-evSSeedDraws <- as_draws_df(evSSeedMod)
-evASeedDraws <- as_draws_df(evASeedMod)
-mvSeedDraws <- as_draws_df(mvSeedMod)
-mvGermD1Draws <- as_draws_df(mvGermD1Mod)
-mvGermInfD1Draws <- as_draws_df(mvGermInfD1Mod)
-evGermDraws <- as_draws_df(evGermMod)
-evSEstDraws <- as_draws_df(evSEstMod)
-mvEstDraws <- as_draws_df(mvEstMod)
-evEstL2Draws <- as_draws_df(evEstL2Mod)
-mvEstL1Draws <- as_draws_df(mvEstL1Mod)
-mvEstGhDraws <- as_draws_df(mvEstGhMod)
-evEstGhDraws <- as_draws_df(evEstGhMod)
 
 
 #### parameter functions ####
 
 # parameters with control conditions
-params_fun <- function(iters){
+### to do: gA_type uses either fungicide or infection ####
+params_fun <- function(iters, gA_type){
   
   # iterations to take from each posterior
   i <- sample(1:15000, iters, replace = FALSE)

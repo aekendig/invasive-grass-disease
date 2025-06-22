@@ -1,7 +1,16 @@
 ##### outputs ####
 
-# mv_establishment_model_2018_litter_exp.rda
-# mv_establishment_model_2018_litter_exp.csv
+# model
+# output/mv_establishment_model_2018_litter_exp.rda
+# table
+# output/mv_establishment_model_2018_litter_exp.csv
+# posterior draws
+# intermediate-data/eA_draws.csv
+# intermediate-data/betaA_draws.csv
+# figure
+# output/mv_establishment_figure_2018_litter_exp.rda
+# output/mv_establishment_beta_figure_2018_litter_exp.rda
+
 
 #### set up ####
 
@@ -149,6 +158,29 @@ mvEstL1Draws <- mvEstL1Dat %>%
   ungroup() %>%
   mutate(trt = fct_recode(sterilized, "ambient" = "live"))
 
+# beta value
+mvEstL1Beta <- gather_draws(mvEstL1Mod,
+                            c(b_beta_sterilizedsterilized, 
+                              b_beta_sterilizedlive)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "live"),
+                       "ambient", "sterilized") %>%
+           fct_relevel("sterilized"))
+
+# save draws
+mvEstL1Draws2 <- mvEstL1Draws %>%
+  filter(litter.g.m2 == 0 & sterilized == "sterilized") %>%
+  select(.draw, .epred) %>%
+  rename(value = .epred)
+
+mvEstL1Beta2 <- mvEstL1Beta %>%
+  mutate(sterilized = if_else(trt == "sterilized", 1, 0),
+         value = .value) %>%
+  select(sterilized, .draw, value)
+
+write_csv(mvEstL1Draws2, "intermediate-data/eA_draws.csv")
+write_csv(mvEstL1Beta2, "intermediate-data/betaA_draws.csv")
+
 # figure
 mv_est_fig <- ggplot(mvEstL1Draws, aes(x = litter.g.m2, y = .epred)) +
   stat_lineribbon(aes(fill = trt, color = trt), point_interval = mean_hdci, 
@@ -163,14 +195,6 @@ mv_est_fig <- ggplot(mvEstL1Draws, aes(x = litter.g.m2, y = .epred)) +
   theme(axis.title = element_markdown())
 
 # beta values
-mvEstL1Beta <- gather_draws(mvEstL1Mod,
-                            c(b_beta_sterilizedsterilized, 
-                              b_beta_sterilizedlive)) %>%
-  ungroup() %>%
-  mutate(trt = if_else(str_detect(.variable, "live"),
-                       "ambient", "sterilized") %>%
-           fct_relevel("sterilized"))
-
 mv_beta_fig <- ggplot(mvEstL1Beta, aes(x = .value, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdci, 
             .width = c(.66, .95, 1)) +

@@ -1,7 +1,14 @@
 ##### outputs ####
 
-# ev_establishment_model_2019_litter_exp.rda
-# ev_establishment_model_2018_litter_exp.csv
+# model
+# output/ev_establishment_model_2019_litter_exp.rda
+# table
+# output/ev_establishment_model_2018_litter_exp.csv
+# posterior draws
+# intermediate-data/eP_draws.csv
+# intermediate-data/betaP_draws.csv
+# figure
+# output/establishment_figure_2018_2019_litter_exp.png
 
 
 #### set up ####
@@ -24,6 +31,10 @@ plots <- read_csv("data/litter_weight_apr_2019_litter_exp.csv")
 # load germination model and data
 load("output/ev_germination_fungicide_model_2018_2019_density_exp.rda")
 evGermDat <- read_csv("intermediate-data/ev_germination_2018_2019_density_exp.csv")
+
+# load Mv figures
+load("output/mv_establishment_figure_2018_litter_exp.rda")
+load("output/mv_establishment_beta_figure_2018_litter_exp.rda")
 
 # model functions
 mod_check_fun <- function(mod){
@@ -160,6 +171,23 @@ evEstL2Draws <- tibble (litter.g.m2 = seq(0, max(evEstL2Dat$litter.g.m2),
   add_epred_draws(evEstL2Mod, re_formula = ~0) %>% 
   ungroup()
 
+# beta draws
+evEstL2Beta <- spread_draws(evEstL2Mod, b_beta_Intercept) %>%
+  mutate(trt = "ambient")
+
+# save draws
+evEstL2Draws2 <- evEstL2Draws %>%
+  filter(litter.g.m2 == 0) %>%
+  select(.draw, .epred) %>%
+  rename(value = .epred)
+
+evEstL2Beta2 <- evEstL2Beta %>%
+  rename(value = b_beta_Intercept) %>%
+  select(.draw, value)
+
+write_csv(evEstL2Draws2, "intermediate-data/eP_draws.csv")
+write_csv(evEstL2Beta2, "intermediate-data/betaP_draws.csv")
+
 # figure
 ev_est_fig <- ggplot(evEstL2Draws, aes(x = litter.g.m2, y = .epred)) +
   stat_lineribbon(color = grey_pal[3], fill = grey_pal[2],
@@ -171,9 +199,6 @@ ev_est_fig <- ggplot(evEstL2Draws, aes(x = litter.g.m2, y = .epred)) +
   theme(axis.title = element_markdown())
 
 # beta values
-evEstL2Beta <- spread_draws(evEstL2Mod, b_beta_Intercept) %>%
-  mutate(trt = "ambient")
-
 ev_beta_fig <- ggplot(evEstL2Beta, aes(x = b_beta_Intercept, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdci, 
             .width = c(.66, .95, 1)) +
@@ -183,10 +208,6 @@ ev_beta_fig <- ggplot(evEstL2Beta, aes(x = b_beta_Intercept, y = trt)) +
   scale_fill_manual(values = coral_pal, name = "HDI") +
   fig_theme +
   theme(axis.title.x = element_markdown())
-
-# load Mv figures
-load("output/mv_establishment_figure_2018_litter_exp.rda")
-load("output/mv_establishment_beta_figure_2018_litter_exp.rda")
 
 # combine
 est_litter_fig <- mv_est_fig + mv_beta_fig + ev_est_fig + ev_beta_fig +
