@@ -1,27 +1,26 @@
-# Nick's script translated from Matlab to R
+# Nick's APL_Sim_Tree script translated from Matlab to R and edited for iterations
 
-APL_Sim_Tree <- function(gen, init_cond, parameters) {
+dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
   # Function for simulating dynamics with annuals, perennials, and litter, including tree litter effects.
   
-  # Unpack parameters
-  s <- parameters[[1]]  # [sA, sP, pS, pP]
-  sA <- s[1]; sP <- s[2]; pS <- s[3]; pP <- s[4]
+  s <- parameters[["s"]][iter, ]  # [sA, sP, pS, pP]
+  sA <- s$sA; sP <- s$sP; pS <- s$pS; pP <- s$pP
   
-  y <- parameters[[2]]  # [yA, yP, f]
-  yA <- y[1]; yP <- y[2]; f <- y[3]
+  y <- parameters[["y"]][iter, ]  # [yA, yP, f]
+  yA <- y$yA; yP <- y$yP; f <- y$f
   
-  g <- parameters[[3]]  # [gA, gP]
-  gA <- g[1]; gP <- g[2]
+  g <- parameters[["g"]][iter, ]  # [gA, gP]
+  gA <- g$gA; gP <- g$gP
   
-  e <- parameters[[4]]  # [eA, eP]
+  e <- as.numeric(parameters[["e"]][iter, ])  # [eA, eP]
   
-  decay <- parameters[[5]]  # [bA, bP, d, bT, delta]
-  bA <- decay[1]; bP <- decay[2]; d <- decay[3]; bT <- decay[4]; delta <- decay[5]
+  decay <- parameters[["decay"]][iter, ]  # [bA, bP, d, bT, delta]
+  bA <- decay$bA; bP <- decay$bP; d <- decay$d; bT <- decay$bT; delta <- decay$delta
   
-  alpha <- parameters[[6]]  # [alphaA, alphaP, gamma]
-  alphaA <- alpha[1]; alphaP <- alpha[2]; gamma <- alpha[3]
+  alpha <- parameters[["alpha"]][iter, ]  # [alphaA, alphaP, gamma]
+  alphaA <- alpha$alphaA; alphaP <- alpha$alphaP; gamma <- alpha$gamma
   
-  beta <- parameters[[7]]  # [betaA, betaP]
+  beta <- as.numeric(parameters[[7]][iter, ])  # [betaA, betaP]
   
   # Initialize vectors
   N_A <- numeric(gen) # number of generations
@@ -31,10 +30,10 @@ APL_Sim_Tree <- function(gen, init_cond, parameters) {
   # Set initial conditions
   N_A[1] <- init_cond[1]
   L[1] <- init_cond[2]
-  N_P[,1] <- init_cond[3:4]
+  N_P[,1] <- init_cond[3:4] # perennial seeds, perennial adults
   
   # initialize germination and competition
-  E <- matrix(0, nrow = 2, ncol = gen)
+  E <- matrix(0, nrow = 2, ncol = gen) # Rows: [annual seeds, perennial seeds]
   C <- numeric(gen)
   
   E[,1] <- e / (1 + beta * L[1]) # first year establishment
