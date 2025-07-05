@@ -223,8 +223,5 @@ params_fun <- function(iters, gA_type = "fungicide"){
                        alpha = alpha_d, beta = beta_d)
   
   # return list of parameters
-  return(list(parameters_h, parameters_d))
+  return(list(healthy = parameters_h, disease = parameters_d))
 }
-
-test <- params_fun(100, gA_type = "fungicide")
-parameters <- test[[1]]  # healthy parameters

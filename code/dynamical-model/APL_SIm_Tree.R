@@ -69,5 +69,15 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
   
   # Combine outputs
   sys <- rbind(N_A, L, N_P)  # Rows: 1. Annual seeds, 2. Litter, 3. Perennial seeds, 4. Perennial adults
-  return(sys)
+  
+  # convert to tibble
+  out <- tibble(
+    generation = 1:gen,
+    annual_seeds = sys[1, ],
+    litter = sys[2, ],
+    perennial_seeds = sys[3, ],
+    perennial_adults = sys[4, ]
+  )
+  
+  return(out)
 }
