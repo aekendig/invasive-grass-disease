@@ -51,7 +51,7 @@ params_gfung <- params_fun(iters = params_iters, gA_type = "fungicide")
 params_ginf <- params_fun(iters = params_iters, gA_type = "infection")
 
 # generations
-gens <- 100
+gens <- 500
 
 
 #### simple simulations ####
@@ -116,7 +116,48 @@ sims_gfung_P <- sims_comb_fun(sims_gfung_P_h, sims_gfung_P_d)
 sims_gfung_AP <- sims_comb_fun(sims_gfung_AP_h, sims_gfung_AP_d)
 sims_ginf_AP <- sims_comb_fun(sims_ginf_AP_h, sims_ginf_AP_d)
 
-# mean hdci figures
+# have the population stabilized?
+ggplot(sims_gfung_A[["long"]], aes(x = generation, y = annual_seeds,
+                                   group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease)
+
+ggplot(sims_ginf_AP[["long"]], aes(x = generation, y = annual_seeds,
+                                   group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease)
+
+ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = annual_seeds,
+                                   group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease)
+
+ggplot(sims_ginf_A[["long"]], aes(x = generation, y = annual_seeds,
+                                  group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease)
+
+ggplot(sims_gfung_P[["long"]], aes(x = generation, y = perennial_seeds,
+                                   group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease)
+
+ggplot(sims_gfung_P[["long"]], aes(x = generation, y = perennial_adults,
+                                   group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease)
+
+ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_seeds,
+                                   group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease) # no
+
+ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_adults,
+                                   group = iteration, color = iteration)) +
+  geom_line() +
+  facet_wrap(~ disease)
+
+# mean hdci time series figures
 (fig_dens_gfung_A <- ggplot(sims_gfung_A[["long"]], aes(x = generation, y = annual_seeds)) +
     stat_lineribbon(aes(fill = disease, color = disease), 
                     point_interval = mean_hdci, # multiple simulations were multi-modal 
@@ -137,6 +178,7 @@ sims_ginf_AP <- sims_comb_fun(sims_ginf_AP_h, sims_ginf_AP_d)
     sims_gfung_P[["long"]] +
     aes(y = perennial_seeds) +
     labs(y = "*E. virginicus* seed density"))
+
 
 (fig_dens_gfung_P <- fig_dens_gfung_A %+%
     sims_gfung_P[["long"]] +
