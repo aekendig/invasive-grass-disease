@@ -29,9 +29,12 @@ pP_draws <- read_csv("intermediate-data/pP_draws.csv")
 yA_draws <- read_csv("intermediate-data/yA_draws.csv")
 yP_draws <- read_csv("intermediate-data/yP_draws.csv")
 f_draws <- read_csv("intermediate-data/f_draws.csv")
-alphaA_draws <- read_csv("intermediate-data/alphaA_draws.csv")
-alphaP_draws <- read_csv("intermediate-data/alphaP_draws.csv")
-gamma_draws <- read_csv("intermediate-data/gamma_draws.csv")
+alphaAA_draws <- read_csv("intermediate-data/alphaAA_draws.csv")
+alphaAP_draws <- read_csv("intermediate-data/alphaAP_draws.csv")
+alphaAS_draws <- read_csv("intermediate-data/alphaAS_draws.csv")
+alphaPA_draws <- read_csv("intermediate-data/alphaPA_draws.csv")
+alphaPP_draws <- read_csv("intermediate-data/alphaPP_draws.csv")
+alphaPS_draws <- read_csv("intermediate-data/alphaPS_draws.csv")
 gA_fung_draws <- read_csv("intermediate-data/gA_fung_draws.csv")
 gA_inf_draws <- read_csv("intermediate-data/gA_inf_draws.csv")
 gP_draws <- read_csv("intermediate-data/gP_draws.csv")
@@ -171,33 +174,61 @@ params_fun <- function(iters, gA_type = "fungicide"){
   decay_h <- tibble(bA = bA_h, bP = bP_h, d = d_h, bT, delta)
   decay_d <- tibble(bA = bA_d, bP = bP_d, d = d_d, bT, delta)
   
-  # annual effect on seed yield 
-  alphaA_h <- alphaA_draws %>%
+  # alphaAA
+  alphaAA_h <- alphaAA_draws %>%
     filter(fungicide == 1 & .draw %in% i) %>%
     pull(value)
-  alphaA_d <- alphaA_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
-    pull(value)
-
-  # perennial adult effect on seed yield
-  alphaP_h <- alphaP_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
-    pull(value)
-  alphaP_d <- alphaP_draws %>%
+  alphaAA_d <- alphaAA_draws %>%
     filter(fungicide == 0 & .draw %in% i) %>%
     pull(value)
   
-  # perennial effect ratio
-  gamma_h <- gamma_draws %>%
+  # alphaAP
+  alphaAP_h <- alphaAP_draws %>%
     filter(fungicide == 1 & .draw %in% i) %>%
     pull(value)
-  gamma_d <- gamma_draws %>%
+  alphaAP_d <- alphaAP_draws %>%
+    filter(fungicide == 0 & .draw %in% i) %>%
+    pull(value)
+  
+  # alphaAS
+  alphaAS_h <- alphaAS_draws %>%
+    filter(fungicide == 1 & .draw %in% i) %>%
+    pull(value)
+  alphaAS_d <- alphaAS_draws %>%
+    filter(fungicide == 0 & .draw %in% i) %>%
+    pull(value)
+
+  # alphaPA
+  alphaPA_h <- alphaPA_draws %>%
+    filter(fungicide == 1 & .draw %in% i) %>%
+    pull(value)
+  alphaPA_d <- alphaPA_draws %>%
+    filter(fungicide == 0 & .draw %in% i) %>%
+    pull(value)
+  
+  # alphaPP
+  alphaPP_h <- alphaPP_draws %>%
+    filter(fungicide == 1 & .draw %in% i) %>%
+    pull(value)
+  alphaPP_d <- alphaPP_draws %>%
+    filter(fungicide == 0 & .draw %in% i) %>%
+    pull(value)
+  
+  # alphaPS
+  alphaPS_h <- alphaPS_draws %>%
+    filter(fungicide == 1 & .draw %in% i) %>%
+    pull(value)
+  alphaPS_d <- alphaPS_draws %>%
     filter(fungicide == 0 & .draw %in% i) %>%
     pull(value)
   
   # combine alpha
-  alpha_h <- tibble(alphaA = alphaA_h, alphaP = alphaP_h, gamma = gamma_h)
-  alpha_d <- tibble(alphaA = alphaA_d, alphaP = alphaP_d, gamma = gamma_d)
+  alpha_h <- tibble(alphaAA = alphaAA_h, alphaAP = alphaAP_h, 
+                    alphaAS = alphaAS_h, alphaPA = alphaPA_h, 
+                    alphaPP = alphaPP_h, alphaPS = alphaPS_h,)
+  alpha_d <- tibble(alphaAA = alphaAA_d, alphaAP = alphaAP_d, 
+                    alphaAS = alphaAS_d, alphaPA = alphaPA_d, 
+                    alphaPP = alphaPP_d, alphaPS = alphaPS_d,)
   
   # annual response to litter 
   betaA_h <- betaA_draws %>%

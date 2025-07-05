@@ -34,17 +34,21 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
   
   # initialize germination and competition
   E <- matrix(0, nrow = 2, ncol = gen) # Rows: [annual seeds, perennial seeds]
-  C <- numeric(gen)
+  CA <- numeric(gen)
+  CP <- numeric(gen)
   
   E[,1] <- e / (1 + beta * L[1]) # first year establishment
-  C[1] <- 1 + alphaA * E[1,1] * gA * N_A[1] + # first year competitive effects
-    alphaP * gamma * gP * E[2,1] * N_P[1,1] +
-    alphaP * N_P[2,1]
+  CA[1] <- 1 + alphaAA * E[1,1] * gA * N_A[1] + # first year competitive effects
+    alphaAS * gP * E[2,1] * N_P[1,1] +
+    alphaAP * N_P[2,1]
+  CP[1] <- 1 + alphaPA * E[1,1] * gA * N_A[1] + # first year competitive effects
+    alphaPS * gP * E[2,1] * N_P[1,1] +
+    alphaPP * N_P[2,1]
   
   # Time loop
   for (t in 2:gen) {
     # Annual Dynamics
-    N_A[t] <- N_A[t-1] * (sA * (1 - gA) + gA * E[1,t-1] * yA / C[t-1])
+    N_A[t] <- N_A[t-1] * (sA * (1 - gA) + gA * E[1,t-1] * yA / CA[t-1])
     
     # Litter Dynamics
     L[t] <- bA * N_A[t-1] * E[1,t-1] * gA +
@@ -53,8 +57,8 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
       (1 - d) * L[t-1] + bT
     
     # Perennial Dynamics
-    M <- matrix(c(sP * (1 - gP) + E[2,t-1] * gP * yP * f / C[t-1],
-                  yP / C[t-1],
+    M <- matrix(c(sP * (1 - gP) + E[2,t-1] * gP * yP * f / CP[t-1],
+                  yP / CP[t-1],
                   gP * E[2,t-1] * pS,
                   pP), nrow = 2, byrow = TRUE)
     

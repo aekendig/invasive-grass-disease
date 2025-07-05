@@ -121,15 +121,12 @@ mvSeedDat <- mvSeedD2Dat %>%
             relationship = "many-to-many") %>%
   mutate(seeds = replace_na(seeds, 0))
 
-# isolate adult see data
-evASeedDat <- evSeedD2Dat2 %>% filter(age == "adult")
-
 # split by background
-evAEvASeedDat <- evASeedDat %>% 
+evAEvASeedDat <- evSeedD2Dat2 %>% 
   filter(background %in% c("none", "Ev adult"))
-evAEvSSeedDat <- evASeedDat %>% 
+evAEvSSeedDat <- evSeedD2Dat2 %>% 
   filter(background %in% c("none", "Ev seedling"))
-evAMvSeedDat <- evASeedDat %>% 
+evAMvSeedDat <- evSeedD2Dat2 %>% 
   filter(background %in% c("none", "Mv seedling"))
 
 mvEvASeedDat <- mvSeedDat %>% 
@@ -181,7 +178,7 @@ evSeedDat <- evSeedD2Dat2 %>%
 
 ggplot(evAEvASeedDat, aes(x = seeds)) +
   geom_density() +
-  facet_wrap(~ treatment, scales = "free")
+  facet_wrap(age ~ treatment, scales = "free")
 
 ggplot(mvEvASeedDat, aes(x = seeds)) +
   geom_density() +
@@ -193,17 +190,23 @@ dens <- dexp(val, 5)
 plot(val, dens, type = "l")
 
 # fit EvA models
-evAEvASeedDat %>% filter(treatment == "water") %>% bh_fun(a = 0)
-evAEvASeedDat %>% filter(treatment == "fungicide") %>% bh_fun(a = 0)
+evAEvASeedDat %>% filter(treatment == "water" & age == "adult") %>% bh_fun(a = 0)
+evAEvASeedDat %>% filter(treatment == "water" & age == "seedling") %>% bh_fun(a = 0)
+evAEvASeedDat %>% filter(treatment == "fungicide" & age == "adult") %>% bh_fun(a = 0)
+evAEvASeedDat %>% filter(treatment == "fungicide" & age == "seedling") %>% bh_fun(a = 0)
 
 evAEvASeedMod <- brm(data = evAEvASeedDat, family = gaussian,
                   bf(seeds ~ s0/(1 + alpha * background_density),
-                     s0 ~ fungicide + (1 | site), 
+                     s0 ~ age * fungicide + (1 | site/plotID), 
                      alpha ~ treatment + 0, 
                      nl = T),
                   prior <- c(prior(normal(81, 10), coef = 'Intercept', 
                                    nlpar = "s0"),
+                             prior(normal(-73, 10), coef = 'ageseedling', 
+                                   nlpar = "s0"),
                              prior(normal(52, 10), coef = 'fungicide', 
+                                   nlpar = "s0"),
+                             prior(normal(-47, 10), coef = 'ageseedling:fungicide', 
                                    nlpar = "s0"),
                              prior(exponential(1), lb = 0, nlpar = "alpha")),
                   iter = 6000, warmup = 1000, chains = 3, cores = 3,
@@ -334,6 +337,7 @@ evAEvASeedDraws <- evAEvASeedDat %>%
   distinct(fungicide, treatment) %>%
   expand_grid(background_density = 
                 0:max(evAEvASeedDat$background_density)) %>%
+  mutate(age = "adult") %>%
   add_epred_draws(evAEvASeedMod, re_formula = ~0) %>% 
   ungroup() %>%
   mutate(trt = fct_recode(treatment, "ambient" = "water"))
@@ -342,6 +346,7 @@ evAEvSSeedDraws <- evAEvSSeedDat %>%
   distinct(fungicide, treatment) %>%
   expand_grid(background_density = 
                 0:max(evAEvSSeedDat$background_density)) %>%
+  mutate(age = "adult") %>%
   add_epred_draws(evAEvSSeedMod, re_formula = ~0) %>% 
   ungroup() %>%
   mutate(trt = fct_recode(treatment, "ambient" = "water"))
@@ -349,6 +354,7 @@ evAEvSSeedDraws <- evAEvSSeedDat %>%
 evAMvSeedDraws <- evAMvSeedDat %>%
   distinct(fungicide, treatment) %>%
   expand_grid(background_density = 0:max(evAMvSeedDat$background_density)) %>%
+  mutate(age = "adult") %>%
   add_epred_draws(evAMvSeedMod, re_formula = ~0) %>% 
   ungroup() %>%
   mutate(trt = fct_recode(treatment, "ambient" = "water"))
@@ -511,7 +517,7 @@ mvEvA_seed_fig <- mvEvASeedDraws %>%
 
 evEvA_seed_fig <- mvEvA_seed_fig %+%
   evAEvASeedDraws +
-  labs(y = "*E. virginicus* seed yield")
+  labs(y = "Adult *E. virginicus* seed yield")
 
 mvEvS_seed_fig <- mvEvA_seed_fig %+%
   mvEvSSeedDraws +
@@ -519,24 +525,15 @@ mvEvS_seed_fig <- mvEvA_seed_fig %+%
 
 evEvS_seed_fig <- mvEvS_seed_fig %+%
   evAEvSSeedDraws +
-  labs(y = "*E. virginicus* seed yield")
+  labs(y = "Adult *E. virginicus* seed yield")
 
 mvMv_seed_fig <- mvEvA_seed_fig %+%
   mvMvSeedDraws +
   labs(x = "*M. vimineum* density")
 
-evMv_seed_fig <- evAMvSeedDraws %>%
-  ggplot(aes(x = background_density, y = .epred)) +
-  stat_lineribbon(aes(fill = trt, color = trt), point_interval = mean_hdci, 
-                  .width = 0.95, alpha = 0.5) +
-  scale_fill_manual(values = c(coral_pal[2], grey_pal[2]), 
-                    name = "Disease treatment") +
-  scale_color_manual(values = c(coral_pal[3], grey_pal[3]),
-                     name = "Disease treatment") +
-  labs(x = "*M. vimineum* density", 
-       y = "*E. virginicus* seed yield") +
-  fig_theme +
-  theme(axis.title = element_markdown())
+evMv_seed_fig <- mvMv_seed_fig %+%
+  evAMvSeedDraws +
+  labs(y = "Adult *E. virginicus* seed yield")
 
 # combine plots
 seed_fung_fig <- (mvMv_seed_fig + evMv_seed_fig +
