@@ -152,20 +152,20 @@ evS_surv_fig <- ggplot(evSSurvDraws, aes(x = .epred, y = trt)) +
             .width = c(.66, .95, 1)) +
   stat_pointinterval(point_interval = mean_hdi, .width = c(.66, .95),
                      shape = 21, fill = "white", point_size = 1.5) +
-  labs(x = "Disease treatment", y = "First-year *E. virginicus* survival") +
+  labs(x = "First-year *E. virginicus* survival", y = "Disease treatment") +
   scale_fill_manual(values = coral_pal, name = "HDI") +
   fig_theme +
-  theme(axis.title.y = element_markdown())
+  theme(axis.title.x = element_markdown())
 
 evA_surv_fig <- ggplot(evASurvDraws, aes(x = .epred, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
             .width = c(.66, .95, 1)) +
   stat_pointinterval(point_interval = mean_hdi, .width = c(.66, .95),
                      shape = 21, fill = "white", point_size = 1.5) +
-  labs(x = "Disease treatment", y = "Adult *E. virginicus* survival") +
+  labs(x = "Adult *E. virginicus* survival", y = "Disease treatment") +
   scale_fill_manual(values = coral_pal, name = "HDI") +
   fig_theme +
-  theme(axis.title.y = element_markdown())
+  theme(axis.title.x = element_markdown())
 
 # combine
 surv_fung_fig <- evS_surv_fig + evA_surv_fig + 

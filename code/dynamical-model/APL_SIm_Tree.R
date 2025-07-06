@@ -17,8 +17,9 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
   decay <- parameters[["decay"]][iter, ]  # [bA, bP, d, bT, delta]
   bA <- decay$bA; bP <- decay$bP; d <- decay$d; bT <- decay$bT; delta <- decay$delta
   
-  alpha <- parameters[["alpha"]][iter, ]  # [alphaA, alphaP, gamma]
-  alphaA <- alpha$alphaA; alphaP <- alpha$alphaP; gamma <- alpha$gamma
+  alpha <- parameters[["alpha"]][iter, ]  # [alphaAA, alphaAP, alphaAS, alphaPA, alphaPP, alphaPS]
+  alphaAA <- alpha$alphaAA; alphaAP <- alpha$alphaAP; alphaAS <- alpha$alphaAS
+  alphaPA <- alpha$alphaPA; alphaPP <- alpha$alphaPP; alphaPS <- alpha$alphaPS
   
   beta <- as.numeric(parameters[[7]][iter, ])  # [betaA, betaP]
   
@@ -66,9 +67,12 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
     
     # Update E and C
     E[,t] <- e / (1 + beta * L[t])
-    C[t] <- 1 + alphaA * E[1,t] * gA * N_A[t] +
-      alphaP * gamma * gP * E[2,t] * N_P[1,t] +
-      alphaP * N_P[2,t]
+    CA[t] <- 1 + alphaAA * E[1,t] * gA * N_A[t] +
+      alphaAS * gP * E[2,t] * N_P[1,t] +
+      alphaAP * N_P[2,t]
+    CP[t] <- 1 + alphaPA * E[1,t] * gA * N_A[t] +
+      alphaPS * gP * E[2,t] * N_P[1,t] +
+      alphaPP * N_P[2,t]
   }
   
   # Combine outputs
@@ -76,6 +80,7 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
   
   # convert to tibble
   out <- tibble(
+    .draw = parameters[["draws"]][iter, ]$.draw,
     generation = 1:gen,
     annual_seeds = sys[1, ],
     litter = sys[2, ],

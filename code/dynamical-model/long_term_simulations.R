@@ -1,5 +1,8 @@
 #### set-up ####
 
+# clear environment
+rm(list = ls())
+
 # load packages
 library(tidybayes)
 library(ggtext)
@@ -23,7 +26,7 @@ sims_comb_fun <- function(sims_h, sims_d){
   out_long <- bind_rows(sims_h, .id = "iteration") %>%
     mutate(disease = "suppressed") %>%
     full_join(bind_rows(sims_d, .id = "iteration") %>%
-                mutate(disease = "infected")) %>%
+                mutate(disease = "ambient")) %>%
     mutate(iteration = as.numeric(iteration),
            disease = fct_relevel(disease, "suppressed"))
   
@@ -51,30 +54,30 @@ params_gfung <- params_fun(iters = params_iters, gA_type = "fungicide")
 params_ginf <- params_fun(iters = params_iters, gA_type = "infection")
 
 # generations
-gens <- 500
+gens <- 100
 
 
-#### simple simulations ####
+#### single species simulations ####
 
 # initial conditions (annual seeds, litter, perennial seeds, perennial adults)
 initsA <- c(1, 0, 0, 0)
 initsP <- c(0, 0, 0, 1)
-initsAP <- c(1, 0, 0, 1)
+# initsAP <- c(1, 0, 0, 1)
 
 # output lits
 sims_gfung_A_h <- list()
 sims_gfung_P_h <- list()
-sims_gfung_AP_h <- list()
+# sims_gfung_AP_h <- list()
 
 sims_gfung_A_d <- list()
 sims_gfung_P_d <- list()
-sims_gfung_AP_d <- list()
+# sims_gfung_AP_d <- list()
 
 sims_ginf_A_h <- list()
-sims_ginf_AP_h <- list()
+# sims_ginf_AP_h <- list()
 
 sims_ginf_A_d <- list()
-sims_ginf_AP_d <- list()
+# sims_ginf_AP_d <- list()
 
 # cycle through parameters
 for(i in 1:params_iters){
@@ -84,28 +87,28 @@ for(i in 1:params_iters){
                                      parameters = params_gfung[["healthy"]])
   sims_gfung_P_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsP,
                                      parameters = params_gfung[["healthy"]])
-  sims_gfung_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
-                                      parameters = params_gfung[["healthy"]])
+  # sims_gfung_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
+  #                                     parameters = params_gfung[["healthy"]])
   
   # fungicide effect, disease
   sims_gfung_A_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsA,
                                      parameters = params_gfung[["disease"]])
   sims_gfung_P_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsP,
                                      parameters = params_gfung[["disease"]])
-  sims_gfung_AP_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
-                                      parameters = params_gfung[["disease"]])
+  # sims_gfung_AP_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
+  #                                     parameters = params_gfung[["disease"]])
   
   # infection effect, healthy
   sims_ginf_A_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsA,
                                      parameters = params_ginf[["healthy"]])
-  sims_ginf_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
-                                     parameters = params_ginf[["healthy"]])
+  # sims_ginf_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
+  #                                    parameters = params_ginf[["healthy"]])
   
   # infection effect, disease
   sims_ginf_A_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsA,
                                     parameters = params_ginf[["disease"]])
-  sims_ginf_AP_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
-                                     parameters = params_ginf[["disease"]])
+  # sims_ginf_AP_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, init_cond = initsAP,
+  #                                    parameters = params_ginf[["disease"]])
   
 }
 
@@ -113,49 +116,59 @@ for(i in 1:params_iters){
 sims_gfung_A <- sims_comb_fun(sims_gfung_A_h, sims_gfung_A_d)
 sims_ginf_A <- sims_comb_fun(sims_ginf_A_h, sims_ginf_A_d)
 sims_gfung_P <- sims_comb_fun(sims_gfung_P_h, sims_gfung_P_d)
-sims_gfung_AP <- sims_comb_fun(sims_gfung_AP_h, sims_gfung_AP_d)
-sims_ginf_AP <- sims_comb_fun(sims_ginf_AP_h, sims_ginf_AP_d)
+# sims_gfung_AP <- sims_comb_fun(sims_gfung_AP_h, sims_gfung_AP_d)
+# sims_ginf_AP <- sims_comb_fun(sims_ginf_AP_h, sims_ginf_AP_d)
 
-# have the population stabilized?
-ggplot(sims_gfung_A[["long"]], aes(x = generation, y = annual_seeds,
-                                   group = iteration, color = iteration)) +
+# have the population stabilized? 
+# (memory too limited to show all -> subsample)
+sims_gfung_A[["long"]] %>% 
+  filter(iteration %in% sample(1:15000, 1000)) %>%
+  ggplot(aes(x = generation, y = annual_seeds,
+           group = iteration, color = iteration)) +
   geom_line() +
   facet_wrap(~ disease)
 
-ggplot(sims_ginf_AP[["long"]], aes(x = generation, y = annual_seeds,
-                                   group = iteration, color = iteration)) +
+# ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = annual_seeds,
+#                                    group = iteration, color = iteration)) +
+#   geom_line() +
+#   facet_wrap(~ disease)
+
+sims_ginf_A[["long"]] %>%
+  filter(iteration %in% sample(1:15000, 1000)) %>%
+  ggplot(aes(x = generation, y = annual_seeds,
+             group = iteration, color = iteration)) +
   geom_line() +
   facet_wrap(~ disease)
 
-ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = annual_seeds,
-                                   group = iteration, color = iteration)) +
+# ggplot(sims_ginf_AP[["long"]], aes(x = generation, y = annual_seeds,
+#                                    group = iteration, color = iteration)) +
+#   geom_line() +
+#   facet_wrap(~ disease) +
+#   coord_cartesian(ylim = c(0, 70000))
+
+sims_gfung_P[["long"]] %>%
+  filter(iteration %in% sample(1:15000, 1000)) %>% 
+  ggplot(aes(x = generation, y = perennial_seeds,
+             group = iteration, color = iteration)) +
   geom_line() +
   facet_wrap(~ disease)
 
-ggplot(sims_ginf_A[["long"]], aes(x = generation, y = annual_seeds,
-                                  group = iteration, color = iteration)) +
+sims_gfung_P[["long"]] %>%
+  filter(iteration %in% sample(1:15000, 1000)) %>% 
+  ggplot(aes(x = generation, y = perennial_adults,
+             group = iteration, color = iteration)) +
   geom_line() +
   facet_wrap(~ disease)
 
-ggplot(sims_gfung_P[["long"]], aes(x = generation, y = perennial_seeds,
-                                   group = iteration, color = iteration)) +
-  geom_line() +
-  facet_wrap(~ disease)
-
-ggplot(sims_gfung_P[["long"]], aes(x = generation, y = perennial_adults,
-                                   group = iteration, color = iteration)) +
-  geom_line() +
-  facet_wrap(~ disease)
-
-ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_seeds,
-                                   group = iteration, color = iteration)) +
-  geom_line() +
-  facet_wrap(~ disease) # no
-
-ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_adults,
-                                   group = iteration, color = iteration)) +
-  geom_line() +
-  facet_wrap(~ disease)
+# ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_seeds,
+#                                    group = iteration, color = iteration)) +
+#   geom_line() +
+#   facet_wrap(~ disease) # no
+# 
+# ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_adults,
+#                                    group = iteration, color = iteration)) +
+#   geom_line() +
+#   facet_wrap(~ disease)
 
 # mean hdci time series figures
 (fig_dens_gfung_A <- ggplot(sims_gfung_A[["long"]], aes(x = generation, y = annual_seeds)) +
@@ -179,29 +192,28 @@ ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_adults,
     aes(y = perennial_seeds) +
     labs(y = "*E. virginicus* seed density"))
 
-
 (fig_dens_gfung_P <- fig_dens_gfung_A %+%
     sims_gfung_P[["long"]] +
     aes(y = perennial_adults) +
     labs(y = "*E. virginicus* adult density"))
 
-(fig_dens_gfung_AP_A <- fig_dens_gfung_A %+%
-    sims_gfung_AP[["long"]])
-
-(fig_dens_ginf_AP_A <- fig_dens_gfung_A %+%
-    sims_ginf_AP[["long"]])
-
-(fig_dens_gfung_AP_S <- fig_dens_gfung_S %+%
-    sims_gfung_AP[["long"]])
-
-(fig_dens_gfung_AP_P <- fig_dens_gfung_P %+%
-    sims_gfung_AP[["long"]])
-
-(fig_dens_ginf_AP_S <- fig_dens_gfung_S %+%
-    sims_ginf_AP[["long"]])
-
-(fig_dens_ginf_AP_P <- fig_dens_gfung_P %+%
-    sims_ginf_AP[["long"]])
+# (fig_dens_gfung_AP_A <- fig_dens_gfung_A %+%
+#     sims_gfung_AP[["long"]])
+# 
+# (fig_dens_ginf_AP_A <- fig_dens_gfung_A %+%
+#     sims_ginf_AP[["long"]])
+# 
+# (fig_dens_gfung_AP_S <- fig_dens_gfung_S %+%
+#     sims_gfung_AP[["long"]])
+# 
+# (fig_dens_gfung_AP_P <- fig_dens_gfung_P %+%
+#     sims_gfung_AP[["long"]])
+# 
+# (fig_dens_ginf_AP_S <- fig_dens_gfung_S %+%
+#     sims_ginf_AP[["long"]])
+# 
+# (fig_dens_ginf_AP_P <- fig_dens_gfung_P %+%
+#     sims_ginf_AP[["long"]])
 
 # healthy - disease figures
 (fig_diff_gfung_A <- ggplot(sims_gfung_A[["wide"]], 
@@ -227,3 +239,93 @@ ggplot(sims_gfung_AP[["long"]], aes(x = generation, y = perennial_adults,
     sims_gfung_P[["wide"]] +
     aes(y = perennial_adults_infected - perennial_adults_suppressed) +
     labs(y = "Effect of disease on *E. virginicus* seed density"))
+
+
+#### single species values ####
+
+# alpha values
+alpha_gfung_A <- params_gfung[["healthy"]][["alpha"]] %>%
+  select(alphaPA) %>%
+  mutate(disease = "suppressed",
+         .draw = params_gfung[["healthy"]][["draws"]]$.draw) %>%
+  full_join(params_gfung[["disease"]][["alpha"]] %>%
+              select(alphaPA) %>%
+              mutate(disease = "ambient",
+                     .draw = params_gfung[["disease"]][["draws"]]$.draw))
+
+# save last time point
+eq_gfung_A <- sims_gfung_A[["long"]] %>%
+  filter(generation == gens) %>%
+  left_join(alpha_gfung_A) %>%
+  mutate(comp_eff = annual_seeds * alphaPA)
+  
+eq_gfung_A_wide <- sims_gfung_A[["wide"]] %>%
+  filter(generation == gens) %>%
+  left_join(alpha_gfung_A) %>%
+  mutate(comp_eff_diff = alphaPA * (annual_seeds_ambient - 
+                                      annual_seeds_suppressed))
+
+eq_ginf_A <- sims_ginf_A[["long"]] %>%
+  filter(generation == gens)
+
+eq_gfung_P <- sims_gfung_P[["long"]] %>%
+  filter(generation == gens)
+
+# litter
+eq_gfung_A %>%
+  group_by(disease) %>%
+  mean_hdci(litter)
+
+eq_ginf_A %>%
+  group_by(disease) %>%
+  mean_hdci(litter)
+
+eq_gfung_P %>%
+  group_by(disease) %>%
+  mean_hdci(litter)
+
+# competition
+eq_gfung_A %>%
+  group_by(disease) %>%
+  mean_hdci(comp_eff)
+
+# figure
+ggplot(eq_gfung_A, aes(x = litter, y = disease)) +
+  # stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
+  #           .width = c(.66, .95, 1)) + # use limits argument to cut-off tail
+  stat_pointinterval(point_interval = mean_hdci, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
+  labs(x = "*M. vimineum* effect on litter", y = "Disease treatment") +
+  fig_theme +
+  theme(axis.title.x = element_markdown())
+
+ggplot(eq_gfung_A, aes(x = comp_eff, y = disease)) +
+  stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi,
+            .width = c(.66, .95, 1)) + # use limits argument to cut-off tail
+  stat_pointinterval(point_interval = mean_hdci, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
+  labs(x = "*M. vimineum* effect on litter", y = "Disease treatment") +
+  fig_theme +
+  theme(axis.title.x = element_markdown())
+
+ggplot(eq_gfung_A_wide, aes(x = litter_ambient - litter_suppressed)) +
+  stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi,
+            .width = c(.66, .95, 1)) +
+  stat_pointinterval(point_interval = mean_hdci, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
+  labs(x = "Disease mediation of *M. vimineum* effect on litter") +
+  fig_theme +
+  theme(axis.title.x = element_markdown())
+
+ggplot(eq_gfung_A_wide, aes(x = comp_eff_diff)) +
+  stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdci,
+            .width = c(.66, .95, 1)) +
+  stat_pointinterval(point_interval = mean_hdci, .width = c(.66, .95),
+                     shape = 21, fill = "white", point_size = 1.5) +
+  scale_fill_manual(values = coral_pal, name = "HDI") +
+  labs(x = "Disease mediation of *M. vimineum* competitive effect") +
+  fig_theme +
+  theme(axis.title.x = element_markdown())

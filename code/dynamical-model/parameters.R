@@ -53,22 +53,30 @@ bP_draws <- read_csv("intermediate-data/bP_draws.csv")
 params_fun <- function(iters, gA_type = "fungicide"){
   
   # iterations to take from each posterior
-  i <- sample(1:15000, iters, replace = FALSE)
+  draws <- tibble(.draw = sample(1:15000, iters, replace = FALSE))
   
   # perennial seedling interannual survival
   pS_h <- pS_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   pS_d <- pS_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # perennial adult interannual survival
   pP_h <- pP_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   pP_d <- pP_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # combine survival
@@ -77,26 +85,38 @@ params_fun <- function(iters, gA_type = "fungicide"){
   
   # annual seed yield without competition
   yA_h <- yA_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   yA_d <- yA_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # perennial seed yield without competition
   yP_h <- yP_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   yP_d <- yP_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # perennial seed yield ratio
   f_h <- f_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   f_d <- f_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # combine seed yield
@@ -107,19 +127,27 @@ params_fun <- function(iters, gA_type = "fungicide"){
   if(gA_type == "fungicide"){
     
     gA_h <- gA_fung_draws %>%
-      filter(fungicide == 1 & .draw %in% i) %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
       pull(value)
     gA_d <- gA_fung_draws %>%
-      filter(fungicide == 0 & .draw %in% i) %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
       pull(value)
     
   }else if(gA_type == "infection"){
     
     gA_h <- gA_inf_draws %>%
-      filter(infection == 0 & .draw %in% i) %>%
+      filter(infection == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
       pull(value)
     gA_d <- gA_inf_draws %>%
-      filter(infection == 1 & .draw %in% i) %>%
+      filter(infection == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
       pull(value)
     
   }else{
@@ -130,10 +158,14 @@ params_fun <- function(iters, gA_type = "fungicide"){
   
   # perennial germination
   gP_h <- gP_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   gP_d <- gP_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # combine germination
@@ -142,13 +174,18 @@ params_fun <- function(iters, gA_type = "fungicide"){
   
   # annual establishment without litter
   eA <- eA_draws %>%
-    filter(.draw %in% i) %>%
-    mutate(value = if_else(value > 1, 1, value)) %>%  # cap at 1
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
+    mutate(value = if_else(value > 1, 1, value),
+           value = if_else(value < 0, 0, value)) %>% 
     pull(value)
   
   # perennial establishment without litter
   eP <- eP_draws %>%
-    filter(.draw %in% i) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
+    mutate(value = if_else(value > 1, 1, value),
+           value = if_else(value < 0, 0, value)) %>% 
     pull(value)
   
   # combine establishment
@@ -156,18 +193,26 @@ params_fun <- function(iters, gA_type = "fungicide"){
   
   # annual biomass
   bA_h <- bA_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   bA_d <- bA_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # perennial biomass
   bP_h <- bP_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   bP_d <- bP_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # combine decay
@@ -176,50 +221,74 @@ params_fun <- function(iters, gA_type = "fungicide"){
   
   # alphaAA
   alphaAA_h <- alphaAA_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   alphaAA_d <- alphaAA_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # alphaAP
   alphaAP_h <- alphaAP_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   alphaAP_d <- alphaAP_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # alphaAS
   alphaAS_h <- alphaAS_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   alphaAS_d <- alphaAS_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
-
+  
   # alphaPA
   alphaPA_h <- alphaPA_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   alphaPA_d <- alphaPA_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # alphaPP
   alphaPP_h <- alphaPP_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   alphaPP_d <- alphaPP_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # alphaPS
   alphaPS_h <- alphaPS_draws %>%
-    filter(fungicide == 1 & .draw %in% i) %>%
+    filter(fungicide == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   alphaPS_d <- alphaPS_draws %>%
-    filter(fungicide == 0 & .draw %in% i) %>%
+    filter(fungicide == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # combine alpha
@@ -232,26 +301,31 @@ params_fun <- function(iters, gA_type = "fungicide"){
   
   # annual response to litter 
   betaA_h <- betaA_draws %>%
-    filter(sterilized == 1 & .draw %in% i) %>%
+    filter(sterilized == 1) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   betaA_d <- betaA_draws %>%
-    filter(sterilized == 0 & .draw %in% i) %>%
+    filter(sterilized == 0) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
   
   # perennial response to litter
   betaP <- betaP_draws %>%
-    filter(.draw %in% i) %>%
+    inner_join(draws) %>%
+    arrange(match(.draw, draws$.draw)) %>%
     pull(value)
-
+  
   # combine beta
   beta_h <- tibble(betaA = betaA_h, betaP)
   beta_d <- tibble(betaA = betaA_d, betaP)
     
   # combine all parameters
   parameters_h <- list(s = s_h, y = y_h, g = g_h, e = e, decay = decay_h, 
-                       alpha = alpha_h, beta = beta_h)
+                       alpha = alpha_h, beta = beta_h, draws = draws)
   parameters_d <- list(s = s_d, y = y_d, g = g_d, e = e, decay = decay_d, 
-                       alpha = alpha_d, beta = beta_d)
+                       alpha = alpha_d, beta = beta_d, draws = draws)
   
   # return list of parameters
   return(list(healthy = parameters_h, disease = parameters_d))
