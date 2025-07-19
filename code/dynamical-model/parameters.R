@@ -50,10 +50,14 @@ bP_draws <- read_csv("intermediate-data/bP_draws.csv")
 
 # pull parameter values based on number of iterations
 # gA_type can be fungicide or infection
-params_fun <- function(iters, gA_type = "fungicide"){
+params_fun <- function(iters, gA_type = "fungicide", draws = NULL){
   
   # iterations to take from each posterior
-  draws <- tibble(.draw = sample(1:15000, iters, replace = FALSE))
+  if(is.null(draws)){
+    
+    draws <- tibble(.draw = sample(1:15000, iters, replace = FALSE))
+    
+  }
   
   # perennial seedling interannual survival
   pS_h <- pS_draws %>%

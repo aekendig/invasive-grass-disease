@@ -21,7 +21,7 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters, init_C = NULL) {
   alphaAA <- alpha$alphaAA; alphaAP <- alpha$alphaAP; alphaAS <- alpha$alphaAS
   alphaPA <- alpha$alphaPA; alphaPP <- alpha$alphaPP; alphaPS <- alpha$alphaPS
   
-  beta <- as.numeric(parameters[[7]][iter, ])  # [betaA, betaP]
+  beta <- as.numeric(parameters[["beta"]][iter, ])  # [betaA, betaP]
   
   # Initialize vectors
   N_A <- numeric(gen) # number of generations
