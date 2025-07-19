@@ -1,6 +1,6 @@
 # Nick's APL_Sim_Tree script translated from Matlab to R and edited for iterations
 
-dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
+dyn_mod_fun <- function(iter, gen, init_cond, parameters, init_C = NULL) {
   # Function for simulating dynamics with annuals, perennials, and litter, including tree litter effects.
   
   s <- parameters[["s"]][iter, ]  # [sA, sP, pS, pP]
@@ -33,18 +33,32 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
   L[1] <- init_cond[2]
   N_P[,1] <- init_cond[3:4] # perennial seeds, perennial adults
   
-  # initialize germination and competition
+  # initialize establishment
   E <- matrix(0, nrow = 2, ncol = gen) # Rows: [annual seeds, perennial seeds]
+  E[,1] <- e / (1 + beta * L[1]) # first year establishment
+  
+  # initialize competition
   CA <- numeric(gen)
   CP <- numeric(gen)
   
-  E[,1] <- e / (1 + beta * L[1]) # first year establishment
-  CA[1] <- 1 + alphaAA * E[1,1] * gA * N_A[1] + # first year competitive effects
-    alphaAS * gP * E[2,1] * N_P[1,1] +
-    alphaAP * N_P[2,1]
-  CP[1] <- 1 + alphaPA * E[1,1] * gA * N_A[1] + # first year competitive effects
-    alphaPS * gP * E[2,1] * N_P[1,1] +
-    alphaPP * N_P[2,1]
+  # first year competitive effects
+  if(is.null(init_C)){
+    
+    # based on initial conditions
+    CA[1] <- 1 + alphaAA * E[1,1] * gA * N_A[1] + 
+      alphaAS * gP * E[2,1] * N_P[1,1] +
+      alphaAP * N_P[2,1]
+    CP[1] <- 1 + alphaPA * E[1,1] * gA * N_A[1] + 
+      alphaPS * gP * E[2,1] * N_P[1,1] +
+      alphaPP * N_P[2,1]
+    
+  } else {
+    
+    # based on provided values
+    CA[1] <- init_C[1] # experienced by annual
+    CP[1] <- init_C[2] # experienced by perennial
+    
+  }
   
   # Time loop
   for (t in 2:gen) {
@@ -75,17 +89,16 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters) {
       alphaPP * N_P[2,t]
   }
   
-  # Combine outputs
-  sys <- rbind(N_A, L, N_P)  # Rows: 1. Annual seeds, 2. Litter, 3. Perennial seeds, 4. Perennial adults
-  
   # convert to tibble
   out <- tibble(
     .draw = parameters[["draws"]][iter, ]$.draw,
     generation = 1:gen,
-    annual_seeds = sys[1, ],
-    litter = sys[2, ],
-    perennial_seeds = sys[3, ],
-    perennial_adults = sys[4, ]
+    annual_seeds = N_A,
+    litter = L,
+    perennial_seeds = N_P[1, ],
+    perennial_adults = N_P[2, ],
+    annual_competition = CA,
+    perennial_competition = CP
   )
   
   return(out)
