@@ -11,7 +11,7 @@ fig_theme <- theme_bw() +
         legend.text = element_text(size = 8),
         legend.title = element_text(size = 8),
         legend.background = element_blank(),
-        legend.margin = margin(-0.3, 0, -0.1, 0, unit = "cm"),
+        legend.margin = margin(-0.3, 0, -0.1, -0.2, unit = "cm"),
         legend.position = "bottom",
         legend.direction = "horizontal",
         strip.background = element_blank(),
@@ -30,6 +30,11 @@ names(col_pal_grp) <- c("*M. vimineum*", "first-year *E. virginicus*", "adult *E
 grey_pal <- brewer.pal(n = 9, "Greys")[6:8]
 
 coral_pal <- c("coral", "coral3", "coral4")
+
+col_pal4 <- c("black", coral_pal[2], "goldenrod", grey_pal[1])
+
+# shapes
+shape_pal4 <- c(19, 15, 17, 5)
 
 # dodge size
 dodge_width <- 0.5
