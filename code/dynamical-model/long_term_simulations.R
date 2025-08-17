@@ -60,7 +60,8 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
     
     # simulate one year under baseline conditions
     sim_base <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
-                            parameters = parameters)
+                            parameters = parameters,
+                            return_M = T)
     
     # inflate competition factors
     inits_L2 <- inits
@@ -74,23 +75,27 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
     
     # simulate one year with inflation for each species
     sim_L <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_L2,
-                         parameters = parameters, init_C = inits_comp)
+                         parameters = parameters, init_C = inits_comp,
+                         return_M = T)
     sim_compA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
                              parameters = parameters, init_C = inits_compA2)
     sim_compP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
-                             parameters = parameters, init_C = inits_compP2)
+                             parameters = parameters, init_C = inits_compP2,
+                             return_M = T)
     
-    # calculate growth rates r = lnN(t+1) -  lnN(t)
-    gr_baseA <- log(sim_base$annual_seeds[2] / sim_base$annual_seeds[1])
-    gr_LA <- log(sim_L$annual_seeds[2] / sim_L$annual_seeds[1])
+    # output dataframe
+    out_base <- sim_base[[1]]
+    out_L <- sim_L[[1]]
+
+    # calculate growth rates r = (ln[N(t+1)] -  ln[N(t)])/delta_t
+    gr_baseA <- log(out_base$annual_seeds[2] / out_base$annual_seeds[1])
+    gr_LA <- log(out_L$annual_seeds[2] / out_L$annual_seeds[1])
     gr_CA <- log(sim_compA$annual_seeds[2] / sim_compA$annual_seeds[1])
     
-    gr_baseP <- log((sim_base$perennial_seeds[2] + sim_base$perennial_adults[2]) / 
-                      (sim_base$perennial_seeds[1] + sim_base$perennial_adults[1]))
-    gr_LP <- log((sim_L$perennial_seeds[2] + sim_L$perennial_adults[2]) / 
-                   (sim_L$perennial_seeds[1] + sim_L$perennial_adults[1]))
-    gr_CP <- log((sim_compP$perennial_seeds[2] + sim_compP$perennial_adults[2]) / 
-                   (sim_compP$perennial_seeds[1] + sim_compP$perennial_adults[1]))
+    # calculate growth rates dominant eigenvalue
+    gr_baseP <- eigen(sim_base[[2]], only.values = T)$values[1]
+    gr_LP <- eigen(sim_L[[2]], only.values = T)$values[1]
+    gr_CP <- eigen(sim_compP[[2]], only.values = T)$values[1]
     
     # calculate responses
     resp_LA <- (gr_LA - gr_baseA) / (inits_L2[2] - inits[2])
@@ -116,7 +121,7 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
     sim_base_AP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_AP,
                                parameters = parameters)
     sim_base_PA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_PA,
-                               parameters = parameters)
+                               parameters = parameters, return_M = T)
     
     # initial competition values (experienced by annual, perennial)
     inits_compA <- c(sim_base_AP$annual_competition[1],
@@ -141,25 +146,23 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
     sim_LA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_LA2,
                           parameters = parameters, init_C = inits_compA)
     sim_LP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_LP2,
-                          parameters = parameters, init_C = inits_compP)
+                          parameters = parameters, init_C = inits_compP,
+                          return_M = T)
     sim_compA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_AP,
                              parameters = parameters, init_C = inits_compA2)
     sim_compP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_PA,
-                             parameters = parameters, init_C = inits_compP2)
+                             parameters = parameters, init_C = inits_compP2,
+                             return_M = T)
     
     # calculate growth rates r = lnN(t+1) -  lnN(t)
     gr_baseA <- log(sim_base_AP$annual_seeds[2] / sim_base_AP$annual_seeds[1])
     gr_LA <- log(sim_LA$annual_seeds[2] / sim_LA$annual_seeds[1])
     gr_CA <- log(sim_compA$annual_seeds[2] / sim_compA$annual_seeds[1])
     
-    gr_baseP <- log((sim_base_PA$perennial_seeds[2] + 
-                       sim_base_PA$perennial_adults[2]) / 
-                      (sim_base_PA$perennial_seeds[1] + 
-                         sim_base_PA$perennial_adults[1]))
-    gr_LP <- log((sim_LP$perennial_seeds[2] + sim_LP$perennial_adults[2]) / 
-                   (sim_LP$perennial_seeds[1] + sim_LP$perennial_adults[1]))
-    gr_CP <- log((sim_compP$perennial_seeds[2] + sim_compP$perennial_adults[2]) / 
-                   (sim_compP$perennial_seeds[1] + sim_compP$perennial_adults[1]))
+    # calculate growth rates dominant eigenvalue
+    gr_baseP <- eigen(sim_base_PA[[2]], only.values = T)$values[1]
+    gr_LP <- eigen(sim_LP[[2]], only.values = T)$values[1]
+    gr_CP <- eigen(sim_compP[[2]], only.values = T)$values[1]
     
     # calculate responses
     resp_LA <- (gr_LA - gr_baseA) / (inits_LA2[2] - inits_AP[2])
@@ -259,16 +262,16 @@ load("output/time_series_gfung_parms_perennial_only_20250719.rda")
 #### single species time series figures ####
 
 # select random rows for visualization
-viz_row_sample <- sample(1:15000, 1000)
+viz_draw_sample <- sample(1:15000, 1000)
 
 # combine datasets
 sims_gfung_single <- sims_gfung_A[["long"]] %>% 
-  filter(iteration %in% viz_row_sample) %>%
+  filter(.draw %in% viz_draw_sample) %>%
   select(disease, generation, .draw, annual_seeds, litter) %>%
   rename(annual_litter = litter,
          annual = annual_seeds) %>%
   full_join(sims_gfung_P[["long"]] %>% 
-              filter(iteration %in% viz_row_sample) %>%
+              filter(.draw %in% viz_draw_sample) %>%
               mutate(perennial = perennial_seeds + perennial_adults) %>%
               select(disease, generation, .draw, perennial, litter) %>%
               rename(perennial_litter = litter)) %>%
@@ -286,7 +289,7 @@ sims_gfung_single <- sims_gfung_A[["long"]] %>%
          species = fct_reorder(species, as.numeric(as.factor(name))))
 
 sims_ginf_single <- sims_ginf_A[["long"]] %>% 
-  filter(iteration %in% viz_row_sample) %>%
+  filter(.draw %in% viz_draw_sample) %>%
   select(disease, generation, .draw, annual_seeds, litter) %>%
   rename(annual_litter = litter,
          annual = annual_seeds) %>%
@@ -330,148 +333,6 @@ ggsave("output/time_series_gfung_parms_single_species.png",
        sims_gfung_single_fig, width = 6, height = 8.5)
 ggsave("output/time_series_ginf_parms_single_species.png", 
        sims_ginf_single_fig, width = 6, height = 4.5)
-
-
-#### evaluate single species dynamics ####
-
-# years to get 2 adults
-perennial_2_adults <- sims_gfung_P[["long"]] %>%
-  filter(perennial_adults >= 2) %>%
-  group_by(disease, .draw) %>%
-  mutate(min_gen = min(generation)) %>%
-  filter(generation == min_gen)
-# some never do (nrows < 30,000)
-
-# visualize
-ggplot(perennial_2_adults, aes(x = generation)) +
-  geom_histogram(binwidth = 1) +
-  geom_vline(xintercept = gens_inv_P, color = "red") +
-  facet_wrap(~disease, scales = "free")
-
-# quantiles
-perennial_2_adults %>%
-  group_by(disease) %>%
-  reframe(quantile(generation))
-
-# cut-off for invasion growth rate calculation
-gens_inv_P <- 2
-gens_inv_A <- 2
-
-# density at gen years
-perennial_gen_years <- sims_gfung_P[["long"]] %>%
-  filter(generation == gens_inv_P) %>%
-  mutate(perennial = perennial_adults + perennial_seeds)
-
-# visualize
-ggplot(perennial_gen_years, aes(x = perennial)) +
-  geom_histogram(binwidth = 1) +
-  facet_wrap(~disease, scales = "free")
-# too many first-years, which can impact the annual
-
-# collapse (very few seeds)
-perennial_10_seeds <- sims_gfung_P[["long"]] %>%
-  filter(generation > 1 & perennial_seeds <= 10) %>%
-  distinct(disease, .draw) %>%
-  inner_join(sims_gfung_P[["long"]]) %>%
-  mutate(perennial = perennial_adults + perennial_seeds,
-         iter = paste(disease, .draw))
-
-# dynamics
-ggplot(perennial_10_seeds, aes(x = generation, y = perennial,
-                               color = iter)) +
-  geom_line()
-# yes, these all collapse
-
-perennial_10_seeds %>% filter(generation == 31)
-perennial_10_seeds %>% filter(generation == gens)
-
-# cut-off for establishment
-gens_est_P <- 1000
-gens_est_A <- 31
-
-# density at year two related to longer-term establishment?
-perennial_inv_est_years <- sims_gfung_P[["long"]] %>%
-  filter(generation %in% c(gens_inv_P, gens_est_P)) %>%
-  mutate(perennial = perennial_adults + perennial_seeds,
-         generation = if_else(generation == gens_inv_P, "inv", "est")) %>%
-  select(disease, generation, .draw, starts_with("perennial")) %>%
-  pivot_wider(names_from = generation,
-              values_from = starts_with("perennial")) %>%
-  # mutate(established = if_else(perennial_adults_est > 1,
-  #                              "established",
-  #                              "not established"))
-  mutate(established = if_else(perennial_est > 1, 
-                               "established",
-                               "not established"))
-
-annual_inv_est_years <- sims_gfung_A[["long"]] %>%
-  filter(generation %in% c(gens_inv_A, gens_est_A)) %>%
-  mutate(generation = if_else(generation == gens_inv_A, "inv", "est")) %>%
-  select(disease, generation, .draw, annual_seeds) %>%
-  pivot_wider(names_from = generation,
-              values_from = annual_seeds,
-              names_glue = "annual_seeds_{generation}") %>%
-  mutate(established = if_else(annual_seeds_est > 1, 
-                               "established",
-                               "not established"))
-
-# visualize perennial
-ggplot(perennial_inv_est_years, aes(x = log(perennial_inv) / (gens_inv_P - 1), 
-                                 y = log(perennial_est) /  (gens_est_P - 1))) +
-  geom_point(aes(color = established)) +
-  facet_wrap(~ disease, scales = "free")
-# disease has a distinct effect on perennial density at 2 years, but not 
-# adult long-term. the two variables are not related
-
-ggplot(perennial_inv_est_years, aes(x = log(perennial_adults_inv) / (gens_inv_P - 1), 
-                                   y = log(perennial_est) /  (gens_est_P - 1))) +
-  geom_point(aes(color = established)) +
-  facet_wrap(~ disease, scales = "free")
-
-ggplot(perennial_inv_est_years, aes(x = log(perennial_seeds_inv) / (gens_inv_P - 1), 
-                                   y = log(perennial_est) /  (gens_est_P - 1))) +
-  geom_point(aes(color = established)) +
-  facet_wrap(~ disease, scales = "free")
-# need to separately evaluate growth after one year and establishment
-
-# visualize annual
-ggplot(annual_inv_est_years, aes(x = log(annual_seeds_inv) / (gens_inv_A - 1), 
-                                    y = log(annual_seeds_est) /  (gens_est_A - 1))) +
-  geom_point(aes(color = established)) +
-  facet_wrap(~ disease, scales = "free")
-# look completely aligned
-
-# how well is the establishment cut-off related to 1,000 year value?
-perennial_inv_est_years %>%
-  filter(established == "not established") %>%
-  select(disease, .draw, established) %>%
-  full_join(sims_gfung_P[["long"]] %>%
-               filter(generation == gens & perennial_adults <= 1)) %>%
-  select(disease, .draw, established, perennial_adults) %>%
-  data.frame()
-# completely aligned
-
-annual_inv_est_years %>%
-  filter(established == "not established") %>%
-  select(disease, .draw, established) %>%
-  full_join(sims_gfung_A[["long"]] %>%
-              filter(generation == gens & annual_seeds <= 1)) %>%
-  select(disease, .draw, established, annual_seeds) %>%
-  data.frame()
-# completely aligned
-
-# long-term dynamics
-perennial_non_est <- perennial_inv_est_years %>%
-  filter(established == "not established") %>%
-  select(disease, .draw) %>%
-  inner_join(sims_gfung_P[["long"]]) %>%
-  mutate(perennial = perennial_adults + perennial_seeds,
-         iter = paste(disease, .draw))
-
-ggplot(perennial_non_est, aes(x = generation, y = perennial,
-                               color = iter)) +
-  geom_line()
-# only a subset collapse, the others persist at reasonable densities
 
 
 #### single-species equilibrium and effects ####
@@ -620,6 +481,12 @@ sims_ginf_PA_h <- list()
 sims_ginf_AP_d <- list()
 sims_ginf_PA_d <- list()
 
+grwr_gfung_PA_h <- list()
+grwr_gfung_PA_d <- list()
+
+grwr_ginf_PA_h <- list()
+grwr_ginf_PA_d <- list()
+
 # cycle through parameters
 for(i in 1:params_iters){
   
@@ -630,14 +497,14 @@ for(i in 1:params_iters){
   draw_ginf_d <- params_ginf[["disease"]][["draws"]]$.draw[i] 
   
   # select equilibrium values
-  inits_gfung_P_h <- eq_gfung_P %>% 
+  inits_gfung_P_h <- eq_gfung_P %>%
     filter(disease == "h" & .draw == draw_gfung_h)
-  inits_gfung_P_d <- eq_gfung_P %>% 
+  inits_gfung_P_d <- eq_gfung_P %>%
     filter(disease == "d" & .draw == draw_gfung_h)
-  
-  inits_ginf_P_h <- eq_gfung_P %>% 
+
+  inits_ginf_P_h <- eq_gfung_P %>%
     filter(disease == "h" & .draw == draw_ginf_h)
-  inits_ginf_P_d <- eq_gfung_P %>% 
+  inits_ginf_P_d <- eq_gfung_P %>%
     filter(disease == "d" & .draw == draw_ginf_h)
   
   inits_gfung_A_h <- eq_gfung_A %>% 
@@ -660,7 +527,7 @@ for(i in 1:params_iters){
                           inits_gfung_P_d$litter,
                           inits_gfung_P_d$perennial_seeds,
                           inits_gfung_P_d$perennial_adults)
-  
+
   inits_ginf_resP_h <- c(1,
                           inits_ginf_P_h$litter,
                           inits_ginf_P_h$perennial_seeds,
@@ -689,36 +556,56 @@ for(i in 1:params_iters){
                           1)
   
   # fungicide effect, healthy
-  sims_gfung_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, 
+  sims_gfung_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens,
                                       init_cond = inits_gfung_resP_h,
                                       parameters = params_gfung[["healthy"]])
-  sims_gfung_PA_h[[i]] <- dyn_mod_fun(iter = i, gen = gens,
-                                      init_cond = inits_gfung_resA_h,
-                                      parameters = params_gfung[["healthy"]])
+  sims_gfung_PA_h_out <- dyn_mod_fun(iter = i, gen = gens,
+                                     init_cond = inits_gfung_resA_h,
+                                     parameters = params_gfung[["healthy"]],
+                                     return_M = T)
+  sims_gfung_PA_h[[i]] <- sims_gfung_PA_h_out[[1]]
+  grwr_gfung_PA_h[[i]] <- tibble(grwr = eigen(sims_gfung_PA_h_out[[2]], 
+                                              only.values = T)$values[1],
+                                 .draw = draw_gfung_h)
   
   # fungicide effect, disease
   sims_gfung_AP_d[[i]] <- dyn_mod_fun(iter = i, gen = gens,
                                       init_cond = inits_gfung_resP_d,
                                       parameters = params_gfung[["disease"]])
-  sims_gfung_PA_d[[i]] <- dyn_mod_fun(iter = i, gen = gens,
+  sims_gfung_PA_d_out <- dyn_mod_fun(iter = i, gen = gens,
                                       init_cond = inits_gfung_resA_d,
-                                      parameters = params_gfung[["disease"]])
+                                      parameters = params_gfung[["disease"]],
+                                      return_M = T)
+  sims_gfung_PA_d[[i]] <- sims_gfung_PA_d_out[[1]]
+  grwr_gfung_PA_d[[i]] <- tibble(grwr = eigen(sims_gfung_PA_d_out[[2]], 
+                                              only.values = T)$values[1],
+                                 .draw = draw_gfung_d)
   
   # infection effect, healthy
-  sims_ginf_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, 
+  sims_ginf_AP_h[[i]] <- dyn_mod_fun(iter = i, gen = gens,
                                      init_cond = inits_ginf_resP_h,
                                      parameters = params_ginf[["healthy"]])
-  sims_ginf_PA_h[[i]] <- dyn_mod_fun(iter = i, gen = gens, 
+  sims_ginf_PA_h_out <- dyn_mod_fun(iter = i, gen = gens, 
                                      init_cond = inits_ginf_resA_h,
-                                     parameters = params_ginf[["healthy"]])
+                                     parameters = params_ginf[["healthy"]],
+                                     return_M = T)
+  sims_ginf_PA_h[[i]] <- sims_ginf_PA_h_out[[1]]
+  grwr_ginf_PA_h[[i]] <- tibble(grwr = eigen(sims_ginf_PA_h_out[[2]], 
+                                             only.values = T)$values[1],
+                                .draw = draw_ginf_h)
   
   # infection effect, disease
   sims_ginf_AP_d[[i]] <- dyn_mod_fun(iter = i, gen = gens,
-                                     init_cond = inits_ginf_resP_d, 
+                                     init_cond = inits_ginf_resP_d,
                                      parameters = params_ginf[["disease"]])
-  sims_ginf_PA_d[[i]] <- dyn_mod_fun(iter = i, gen = gens, 
+  sims_ginf_PA_d_out <- dyn_mod_fun(iter = i, gen = gens, 
                                      init_cond = inits_ginf_resA_d,
-                                     parameters = params_ginf[["disease"]])
+                                     parameters = params_ginf[["disease"]],
+                                     return_M = T)
+  sims_ginf_PA_d[[i]] <- sims_ginf_PA_d_out[[1]]
+  grwr_ginf_PA_d[[i]] <- tibble(grwr = eigen(sims_ginf_PA_d_out[[2]], 
+                                             only.values = T)$values[1],
+                                .draw = draw_ginf_h)
   
 }
 
@@ -727,12 +614,50 @@ sims_gfung_AP <- sims_comb_fun(sims_gfung_AP_h, sims_gfung_AP_d)
 sims_gfung_PA <- sims_comb_fun(sims_gfung_PA_h, sims_gfung_PA_d)
 sims_ginf_AP <- sims_comb_fun(sims_ginf_AP_h, sims_ginf_AP_d)
 sims_ginf_PA <- sims_comb_fun(sims_ginf_PA_h, sims_ginf_PA_d)
+grwr_gfung_PA <- bind_rows(grwr_gfung_PA_h, .id = "iteration") %>%
+  mutate(disease = "h") %>%
+  full_join(bind_rows(grwr_gfung_PA_d, .id = "iteration") %>%
+              mutate(disease = "d")) %>%
+  mutate(iteration = as.numeric(iteration),
+         disease = fct_relevel(disease, "h"))
+grwr_ginf_PA <- bind_rows(grwr_ginf_PA_h, .id = "iteration") %>%
+  mutate(disease = "h") %>%
+  full_join(bind_rows(grwr_ginf_PA_d, .id = "iteration") %>%
+              mutate(disease = "d")) %>%
+  mutate(iteration = as.numeric(iteration),
+         disease = fct_relevel(disease, "h"))
+
+# divide for smaller files
+sims_gfung_AP_long <- sims_gfung_AP[["long"]]
+sims_gfung_AP_wide <- sims_gfung_AP[["wide"]]
+sims_gfung_PA_long <- sims_gfung_PA[["long"]]
+sims_gfung_PA_wide <- sims_gfung_PA[["wide"]]
+sims_ginf_AP_long <- sims_ginf_AP[["long"]]
+sims_ginf_AP_wide <- sims_ginf_AP[["wide"]]
+sims_ginf_PA_long <- sims_ginf_PA[["long"]]
+sims_ginf_PA_wide <- sims_ginf_PA[["wide"]]
 
 # save
-save(sims_gfung_AP, file = "output/time_series_gfung_parms_annual_invasion_20250719.rda")
-save(sims_gfung_PA, file = "output/time_series_gfung_parms_perennial_invasion_20250719.rda")
-save(sims_ginf_AP, file = "output/time_series_ginf_parms_annual_invasion_20250719.rda")
-save(sims_ginf_PA, file = "output/time_series_ginf_parms_perennial_invasion_20250719.rda")
+save(sims_gfung_AP_long, 
+     file = "output/time_series_gfung_parms_annual_invasion_20250719.rda")
+save(sims_gfung_AP_wide, 
+     file = "output/time_series_wide_gfung_parms_annual_invasion_20250719.rda")
+save(sims_gfung_PA_long, 
+     file = "output/time_series_gfung_parms_perennial_invasion_20250719.rda")
+save(sims_gfung_PA_wide, 
+     file = "output/time_series_wide_gfung_parms_perennial_invasion_20250719.rda")
+save(sims_ginf_AP_long, 
+     file = "output/time_series_ginf_parms_annual_invasion_20250719.rda")
+save(sims_ginf_AP_wide, 
+     file = "output/time_series_wide_ginf_parms_annual_invasion_20250719.rda")
+save(sims_ginf_PA_long, 
+     file = "output/time_series_ginf_parms_perennial_invasion_20250719.rda")
+save(sims_ginf_PA_wide, 
+     file = "output/time_series_wide_ginf_parms_perennial_invasion_20250719.rda")
+save(grwr_gfung_PA, 
+     file = "output/grwr_gfung_parms_perennial_invasion_20250719.rda")
+save(grwr_ginf_PA, 
+     file = "output/grwr_ginf_parms_perennial_invasion_20250719.rda")
 
 # reload if needed
 load("output/time_series_gfung_parms_annual_invasion_20250719.rda")
@@ -744,12 +669,12 @@ load("output/time_series_ginf_parms_perennial_invasion_20250719.rda")
 #### invasion time series figures ####
 
 # combine datasets
-sims_gfung_inv <- sims_gfung_AP[["long"]] %>% 
-  filter(iteration %in% viz_row_sample) %>%
+sims_gfung_inv <- sims_gfung_AP_long %>% 
+  filter(.draw %in% viz_draw_sample) %>%
   select(disease, generation, .draw, annual_seeds) %>%
   rename(annual = annual_seeds) %>%
-  full_join(sims_gfung_PA[["long"]] %>% 
-              filter(iteration %in% viz_row_sample) %>%
+  full_join(sims_gfung_PA_long %>% 
+              filter(.draw %in% viz_draw_sample) %>%
               mutate(perennial = perennial_seeds + perennial_adults) %>%
               select(disease, generation, .draw, perennial)) %>%
   mutate(disease_name = fct_recode(disease,
@@ -762,12 +687,12 @@ sims_gfung_inv <- sims_gfung_AP[["long"]] %>%
                               "*E. virginicus* density" = "perennial"),
          species = fct_reorder(species, as.numeric(as.factor(name))))
 
-sims_ginf_inv <- sims_ginf_AP[["long"]] %>% 
-  filter(iteration %in% viz_row_sample) %>%
+sims_ginf_inv <- sims_ginf_AP_long %>% 
+  filter(.draw %in% viz_draw_sample) %>%
   select(disease, generation, .draw, annual_seeds) %>%
   rename(annual = annual_seeds) %>%
-  full_join(sims_ginf_PA[["long"]] %>% 
-              filter(iteration %in% viz_row_sample) %>%
+  full_join(sims_ginf_PA_long %>% 
+              filter(.draw %in% viz_draw_sample) %>%
               mutate(perennial = perennial_seeds + perennial_adults) %>%
               select(disease, generation, .draw, perennial)) %>%
   mutate(disease_name = fct_recode(disease,
@@ -814,57 +739,34 @@ ggsave("output/time_series_ginf_parms_invasions.png",
 
 #### invasion outcomes ####
 
-# generations to assess invasion
-gens_inv_A <- 2
-gens_inv_P <- 2
-
-# perennial densities at end
-inv_gfung_PA_fin <- sims_gfung_PA[["long"]] %>%
-  filter(generation == gens) %>%
-  mutate(perennial_fin = perennial_adults + perennial_seeds) %>%
-  distinct(disease, .draw, perennial_fin)
-
-inv_ginf_PA_fin <- sims_ginf_PA[["long"]] %>%
-  filter(generation == gens) %>%
-  mutate(perennial_fin = perennial_adults + perennial_seeds) %>%
-  distinct(disease, .draw, perennial_fin)
-
-# select year
-# was invasion successful?
-inv_gfung_AP <- sims_gfung_AP[["long"]] %>%
-  filter(generation == gens_inv_A) %>%
-  mutate(annual_gr = log(annual_seeds)/(gens_inv_A - 1),
+# calculate growth rates r = (ln[N(t+1)] -  ln[N(t)])/delta_t (or log(lambda))
+inv_gfung_AP <- sims_gfung_AP_long %>%
+  filter(generation == 2) %>%
+  mutate(annual_gr = log(annual_seeds),
          annual_invasion = if_else(annual_gr > 0, "yes", "no"))
 
-inv_gfung_PA <- sims_gfung_PA[["long"]] %>%
-  filter(generation == gens_inv_P) %>%
-  left_join(inv_gfung_PA_fin) %>%
-  mutate(perennial = perennial_adults + perennial_seeds,
-         perennial_gr = log(perennial)/(gens_inv_P - 1),
-         perennial_invasion = if_else(perennial_gr > 0 & perennial_fin > 1 , 
+inv_gfung_PA <- grwr_gfung_PA %>%
+  mutate(perennial_gr = log(grwr),
+         perennial_invasion = if_else(perennial_gr > 0, 
                                       "yes", "no"))
 
-inv_ginf_AP <- sims_ginf_AP[["long"]] %>%
-  filter(generation == gens_inv_A) %>%
-  mutate(annual_gr = log(annual_seeds)/(gens_inv_A - 1),
+inv_ginf_AP <- sims_ginf_AP_long %>%
+  filter(generation == 2) %>%
+  mutate(annual_gr = log(annual_seeds),
          annual_invasion = if_else(annual_gr > 0, "yes", "no"))
 
-inv_ginf_PA <- sims_ginf_PA[["long"]] %>%
-  filter(generation == gens_inv_P) %>%
-  left_join(inv_ginf_PA_fin) %>%
-  mutate(perennial = perennial_adults + perennial_seeds,
-         perennial_gr = log(perennial)/(gens_inv_P - 1),
-         perennial_invasion = if_else(perennial_gr > 0 & perennial_fin > 1 , 
+inv_ginf_PA <- grwr_ginf_PA %>%
+  mutate(perennial_gr = log(grwr),
+         perennial_invasion = if_else(perennial_gr > 0, 
                                       "yes", "no"))
 
 # combine invasion outcomes
 # add final values from annual invasion
 # add final values from each species alone
 inv_gfung <- inv_gfung_AP %>%
-  select(iteration, .draw, disease, annual_invasion, annual_gr) %>%
+  select(.draw, disease, annual_invasion, annual_gr) %>%
   full_join(inv_gfung_PA %>%
-              select(iteration, .draw, disease, perennial_invasion, 
-                     perennial_gr)) %>%
+              select(.draw, disease, perennial_invasion, perennial_gr)) %>%
   mutate(coexist = if_else(annual_invasion == "yes" & 
                              perennial_invasion == "yes",
                            "yes", "no"),
@@ -875,22 +777,22 @@ inv_gfung <- inv_gfung_AP %>%
                                annual_invasion == "no" ~ "perennial only",
                              TRUE ~ "priority effect") %>%
            fct_relevel("coexist")) %>%
-  left_join(sims_gfung_AP[["long"]] %>%
-              filter(generation == gens)) %>%
+  left_join(sims_gfung_AP_long %>%
+              filter(generation == gens) %>%
+              select(-c(generation, iteration))) %>%
   left_join(eq_gfung_P %>%
-              select(-generation) %>%
+              select(-c(generation, iteration)) %>%
               rename_with(.fn = ~paste0(.x, "_P"),
-                          .cols = -c(iteration, .draw, disease, disease_name))) %>%
+                          .cols = -c(.draw, disease, disease_name))) %>%
   left_join(eq_gfung_A %>%
-              select(-generation) %>%
+              select(-c(generation, iteration)) %>%
               rename_with(.fn = ~paste0(.x, "_A"),
-                          .cols = -c(iteration, .draw, disease, disease_name)))
+                          .cols = -c(.draw, disease, disease_name)))
 
 inv_ginf <- inv_ginf_AP %>%
-  select(iteration, .draw, disease, annual_invasion, annual_gr) %>%
+  select(.draw, disease, annual_invasion, annual_gr) %>%
   full_join(inv_ginf_PA %>%
-              select(iteration, .draw, disease, perennial_invasion, 
-                     perennial_gr)) %>%
+              select(.draw, disease, perennial_invasion, perennial_gr)) %>%
   mutate(coexist = if_else(annual_invasion == "yes" & 
                              perennial_invasion == "yes",
                            "yes", "no"),
@@ -901,32 +803,34 @@ inv_ginf <- inv_ginf_AP %>%
                                annual_invasion == "no" ~ "perennial only",
                              TRUE ~ "priority effect") %>%
            fct_relevel("coexist")) %>%
-  left_join(sims_ginf_AP[["long"]] %>%
-              filter(generation == gens)) %>%
+  left_join(sims_ginf_AP_long %>%
+              filter(generation == gens) %>%
+              select(-c(generation, iteration))) %>%
   left_join(eq_gfung_P %>% # don't need ginf parameters for P alone
-              select(-generation) %>%
+              select(-c(generation, iteration)) %>%
               rename_with(.fn = ~paste0(.x, "_P"),
-                          .cols = -c(iteration, .draw, disease, disease_name))) %>%
+                          .cols = -c(.draw, disease, disease_name))) %>%
   left_join(eq_ginf_A %>%
-              select(-generation) %>%
+              select(-c(generation, iteration)) %>%
               rename_with(.fn = ~paste0(.x, "_A"),
-                          .cols = -c(iteration, .draw, disease, disease_name)))
+                          .cols = -c(.draw, disease, disease_name)))
 
 # priority effect simulations
 inv_gfung %>%
   filter(outcome == "priority effect") %>%
-  select(.draw, disease, annual_seeds_A, perennial_seeds_P, 
+  select(.draw, disease, annual_seeds_A, perennial_seeds_P,
          perennial_adults_P) %>%
-  head(n = 50) %>%
-  data.frame()
-# can establish
+  mutate(perennial_P = perennial_seeds_P + perennial_adults_P) %>%
+  filter(annual_seeds_A < 1 | perennial_P < 1)
+# both can establish
 
 inv_ginf %>%
   filter(outcome == "priority effect") %>%
   select(.draw, disease, annual_seeds_A, perennial_seeds_P, 
          perennial_adults_P) %>%
-  head(n = 50) %>%
-  data.frame()
+  mutate(perennial_P = perennial_seeds_P + perennial_adults_P) %>%
+  filter(annual_seeds_A < 1 | perennial_P < 1)
+# both can establish
 
 # split by disease (for response simulations)
 inv_gfung_h <- inv_gfung %>%
@@ -955,7 +859,7 @@ inv_ginf_sum <- inv_ginf %>%
 # summary figure
 coex_gfung_sum_fig <- ggplot(inv_gfung_sum, aes(x = disease_name, y = prop, 
                           fill = outcome)) +
-  geom_col(position = "dodge", show.legend = F) +
+  geom_col(position = "dodge") +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_manual(values = col_pal4, name = "Invasion outcome") +
   labs(y = "Parameter draws", title = "A") +
@@ -1099,8 +1003,6 @@ mv_litter_resp_dist <- ggplot(resp_gfung_long, aes(x = resp_LA)) +
 ev_litter_resp_dist <- mv_litter_resp_dist %+%
   aes(x = resp_LP) +
   labs(x = "*E. virginicus* response to litter", title = "D")
-# lots of errors, but seems like most accurate representation from all the geoms
-# tried histogram, freqpoly, and dots
 
 mv_comp_resp_dist <- mv_litter_resp_dist %+%
   aes(x = resp_CA) +
@@ -1109,7 +1011,6 @@ mv_comp_resp_dist <- mv_litter_resp_dist %+%
 ev_comp_resp_dist <- ev_litter_resp_dist %+%
   aes(x = resp_CP) +
   labs(x = "*E. virginicus* response to competition")
-
 
 mv_litter_resp_dist2 <- mv_litter_resp_dist %+%
   resp_ginf_long
@@ -1144,7 +1045,6 @@ mv_comp_resp_pt <- mv_litter_resp_pt %+%
 
 ev_comp_resp_pt <- ev_litter_resp_pt %+%
   aes(y = resp_CP)
-
 
 mv_litter_resp_pt2 <- mv_litter_resp_pt %+%
   resp_ginf_long

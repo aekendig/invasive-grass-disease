@@ -1,6 +1,6 @@
 # Nick's APL_Sim_Tree script translated from Matlab to R and edited for iterations
 
-dyn_mod_fun <- function(iter, gen, init_cond, parameters, init_C = NULL) {
+dyn_mod_fun <- function(iter, gen, init_cond, parameters, init_C = NULL, return_M = F) {
   # Function for simulating dynamics with annuals, perennials, and litter, including tree litter effects.
   
   s <- parameters[["s"]][iter, ]  # [sA, sP, pS, pP]
@@ -77,7 +77,14 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters, init_C = NULL) {
                   gP * E[2,t-1] * pS,
                   pP), nrow = 2, byrow = TRUE)
     
-    N_P[,t] <- M %*% N_P[,t-1]
+    N_P[,t] <- M %*% N_P[,t-1] 
+    
+    # save matrix for grwr
+    if(t == 2){
+      
+      M_out <- M
+      
+    }
     
     # Update E and C
     E[,t] <- e / (1 + beta * L[t])
@@ -101,5 +108,15 @@ dyn_mod_fun <- function(iter, gen, init_cond, parameters, init_C = NULL) {
     perennial_competition = CP
   )
   
-  return(out)
+  # return
+  if(return_M == T){
+    
+    return(list(out, M_out))
+    
+  } else {
+    
+    return(out)
+  
+    }
+  
 }
