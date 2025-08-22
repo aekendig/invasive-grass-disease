@@ -44,18 +44,155 @@ betaA_draws <- read_csv("intermediate-data/betaA_draws.csv")
 betaP_draws <- read_csv("intermediate-data/betaP_draws.csv")
 bA_draws <- read_csv("intermediate-data/bA_draws.csv")
 bP_draws <- read_csv("intermediate-data/bP_draws.csv")
+yA_drawsP <- read_csv("intermediate-data/yA_draws_Stricker_priors.csv")
+alphaAA_drawsP <- read_csv("intermediate-data/alphaAA_draws_Stricker_priors.csv")
+alphaAP_drawsP <- read_csv("intermediate-data/alphaAP_draws_Stricker_priors.csv")
+alphaAS_drawsP <- read_csv("intermediate-data/alphaAS_draws_Stricker_priors.csv")
+bA_drawsP <- read_csv("intermediate-data/bA_draws_Stricker_priors.csv")
 
 
 #### parameter function ####
 
 # pull parameter values based on number of iterations
 # gA_type can be fungicide or infection
-params_fun <- function(iters, gA_type = "fungicide", draws = NULL){
+params_fun <- function(iters, gA_type = "fungicide", draws = NULL,
+                       priors = "baseline"){
   
   # iterations to take from each posterior
   if(is.null(draws)){
     
     draws <- tibble(.draw = sample(1:15000, iters, replace = FALSE))
+    
+  }
+  
+  # parameters affected by priors
+  if(priors == "baseline"){
+    
+    # annual seed yield without competition
+    yA_h <- yA_draws %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    yA_d <- yA_draws %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # annual biomass
+    bA_h <- bA_draws %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    bA_d <- bA_draws %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # alphaAA
+    alphaAA_h <- alphaAA_draws %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    alphaAA_d <- alphaAA_draws %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # alphaAP
+    alphaAP_h <- alphaAP_draws %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    alphaAP_d <- alphaAP_draws %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # alphaAS
+    alphaAS_h <- alphaAS_draws %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    alphaAS_d <- alphaAS_draws %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+  }else if(priors == "Stricker"){
+    
+    # annual seed yield without competition
+    yA_h <- yA_drawsP %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    yA_d <- yA_drawsP %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # annual biomass
+    bA_h <- bA_drawsP %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    bA_d <- bA_drawsP %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # alphaAA
+    alphaAA_h <- alphaAA_drawsP %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    alphaAA_d <- alphaAA_drawsP %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # alphaAP
+    alphaAP_h <- alphaAP_drawsP %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    alphaAP_d <- alphaAP_drawsP %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+    # alphaAS
+    alphaAS_h <- alphaAS_drawsP %>%
+      filter(fungicide == 1) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    alphaAS_d <- alphaAS_drawsP %>%
+      filter(fungicide == 0) %>%
+      inner_join(draws) %>%
+      arrange(match(.draw, draws$.draw)) %>%
+      pull(value)
+    
+  }else{
+    
+    stop("priors must be 'baseline' or 'Stricker'")
     
   }
   
@@ -86,18 +223,6 @@ params_fun <- function(iters, gA_type = "fungicide", draws = NULL){
   # combine survival
   s_h <- tibble(sA, sP, pS = pS_h, pP = pP_h)
   s_d <- tibble(sA, sP, pS = pS_d, pP = pP_d)
-  
-  # annual seed yield without competition
-  yA_h <- yA_draws %>%
-    filter(fungicide == 1) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  yA_d <- yA_draws %>%
-    filter(fungicide == 0) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
   
   # perennial seed yield without competition
   yP_h <- yP_draws %>%
@@ -195,18 +320,6 @@ params_fun <- function(iters, gA_type = "fungicide", draws = NULL){
   # combine establishment
   e <- tibble(eA, eP)
   
-  # annual biomass
-  bA_h <- bA_draws %>%
-    filter(fungicide == 1) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  bA_d <- bA_draws %>%
-    filter(fungicide == 0) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  
   # perennial biomass
   bP_h <- bP_draws %>%
     filter(fungicide == 1) %>%
@@ -222,42 +335,6 @@ params_fun <- function(iters, gA_type = "fungicide", draws = NULL){
   # combine decay
   decay_h <- tibble(bA = bA_h, bP = bP_h, d = d_h, bT, delta)
   decay_d <- tibble(bA = bA_d, bP = bP_d, d = d_d, bT, delta)
-  
-  # alphaAA
-  alphaAA_h <- alphaAA_draws %>%
-    filter(fungicide == 1) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  alphaAA_d <- alphaAA_draws %>%
-    filter(fungicide == 0) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  
-  # alphaAP
-  alphaAP_h <- alphaAP_draws %>%
-    filter(fungicide == 1) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  alphaAP_d <- alphaAP_draws %>%
-    filter(fungicide == 0) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  
-  # alphaAS
-  alphaAS_h <- alphaAS_draws %>%
-    filter(fungicide == 1) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
-  alphaAS_d <- alphaAS_draws %>%
-    filter(fungicide == 0) %>%
-    inner_join(draws) %>%
-    arrange(match(.draw, draws$.draw)) %>%
-    pull(value)
   
   # alphaPA
   alphaPA_h <- alphaPA_draws %>%

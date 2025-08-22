@@ -107,6 +107,37 @@ save(mvBioD2Mod,
      file = "output/mv_biomass_fungicide_model_2019_density_exp.rda")
 
 
+#### Mv model with Stricker priors ####
+
+# values
+mvBioDat %>%
+  filter(fungicide == 0) %>%
+  pull(biomass_weight.g) %>%
+  mean() 
+
+mvBioDat %>%
+  filter(fungicide == 0) %>%
+  pull(log_bio) %>%
+  mean() 
+
+# 39% increase with fungicide (translated to log scale)
+15.15*1.39
+exp(log(15.15) + log(1.39))
+log(1.39)
+
+# model
+mvBioD2ModP <- brm(data = mvBioDat, family = gaussian,
+                  log_bio ~ fungicide + (1|site/plotID), 
+                  prior <- c(prior(normal(2.5, 0.5), class = "Intercept"),
+                             prior(normal(0.33, 1), class = "b"),
+                             prior(exponential(1), class = "sd")), # use default for sigma
+                  control = list(adapt_delta = 0.9999, max_treedepth = 12), 
+                  iter = 6000, warmup = 1000, chains = 3, cores = 3)
+mod_check_fun(mvBioD2ModP)
+save(mvBioD2ModP, 
+     file = "output/mv_biomass_fungicide_model_Stricker_priors_2019_density_exp.rda")
+
+
 #### Ev model ####
 
 # initial visualizations
@@ -145,11 +176,14 @@ save(evBioD2Mod,
 
 # load
 load("output/mv_biomass_fungicide_model_2019_density_exp.rda")
+load("output/mv_biomass_fungicide_model_Stricker_priors_2019_density_exp.rda")
 load("output/ev_biomass_fungicide_model_2019_density_exp.rda")
 
 # tables
 write_csv(tidy(mvBioD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
           "output/mv_biomass_fungicide_model_2019_density_exp.csv")
+write_csv(tidy(mvBioD2ModP, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mv_biomass_fungicide_model_Stricker_priors_2019_density_exp.csv")
 write_csv(tidy(evBioD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
           "output/ev_biomass_fungicide_model_2019_density_exp.csv")
 
@@ -165,6 +199,11 @@ mvBioD2Draws <- pred_dat_trt %>%
   ungroup() %>%
   mutate(biomass = exp(.epred))
 
+mvBioD2DrawsP <- pred_dat_trt %>%
+  add_epred_draws(mvBioD2ModP, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(biomass = exp(.epred))
+
 evBioD2Draws <- pred_dat_trt %>%
   add_epred_draws(evBioD2Mod, re_formula = ~0) %>% 
   ungroup() %>%
@@ -176,12 +215,18 @@ mvBioD2Draws2 <- mvBioD2Draws %>%
   select(fungicide, .draw, .epred) %>%
   rename(value = .epred)
 
+mvBioD2DrawsP2 <- mvBioD2DrawsP %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .epred) %>%
+  rename(value = .epred)
+
 evBioD2Draws2 <- evBioD2Draws %>%
   mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
   select(fungicide, .draw, .epred) %>%
   rename(value = .epred)
 
 write_csv(mvBioD2Draws2, "intermediate-data/bA_draws.csv")
+write_csv(mvBioD2DrawsP2, "intermediate-data/bA_draws_Stricker_priors.csv")
 write_csv(evBioD2Draws2, "intermediate-data/bP_draws.csv")
   
 # figures
@@ -194,6 +239,9 @@ mv_bio_fig <- ggplot(mvBioD2Draws, aes(x = biomass, y = trt)) +
   scale_fill_manual(values = coral_pal, name = "HDI") +
   fig_theme +
   theme(axis.title.x = element_markdown())
+
+mv_bio_figP <- mv_bio_fig %+%
+  mvBioD2DrawsP
 
 ev_bio_fig <- ggplot(evBioD2Draws, aes(x = biomass, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
@@ -213,4 +261,12 @@ bio_fung_fig <- mv_bio_fig + ev_bio_fig +
   
 ggsave("output/biomass_fungicide_figure_2019_density_exp.png",
        bio_fung_fig, width = 6, height = 3.2)
+
+bio_fung_figP <- mv_bio_fig + mv_bio_figP + 
+  plot_annotation(tag_levels = "A") +
+  plot_layout(nrow = 1, axes = "collect", guides = "collect") &
+  theme(legend.position = "bottom")
+
+ggsave("output/biomass_fungicide_figure_Stricker_priors_2019_density_exp.png",
+       bio_fung_figP, width = 6, height = 3.2)
   

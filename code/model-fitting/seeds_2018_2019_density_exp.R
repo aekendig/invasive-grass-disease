@@ -271,6 +271,50 @@ save(mvMvSeedMod,
      file = "output/mv_focal_mv_background_seed_model_2019_density_exp.rda")
 
 
+#### fit Mv models with Stricker priors ####
+
+# fit Mv models
+mvEvASeedDat %>% filter(treatment == "water") %>% bh_fun(a = 0)
+mvEvASeedDat %>% filter(treatment == "fungicide") %>% bh_fun(a = 0)
+
+# Stricker et al. 2016: fungicide increased ambient seed prod. by 68%
+0.68 * 1200
+
+mvEvASeedModP <- brm(data = mvEvASeedDat, family = gaussian,
+                    bf(seeds ~ s0/(1 + alpha * background_density),
+                       s0 ~ fungicide + (1 | site/plotID), 
+                       alpha ~ treatment + 0, 
+                       nl = T),
+                    prior <- c(prior(normal(1200, 100), coef = 'Intercept', 
+                                     nlpar = "s0"),
+                               prior(normal(816, 100), coef = 'fungicide', 
+                                     nlpar = "s0"),
+                               prior(exponential(1), lb = 0, nlpar = "alpha")),
+                    iter = 6000, warmup = 1000, chains = 3, cores = 3,
+                    control = list(adapt_delta = 0.99))
+mod_check_fun(mvEvASeedModP)
+
+mvEvSSeedDat %>% filter(treatment == "water") %>% bh_fun(a = 0)
+mvEvSSeedDat %>% filter(treatment == "fungicide") %>% bh_fun(a = 0.01)
+
+mvEvSSeedModP <- update(mvEvASeedModP, newdata = mvEvSSeedDat, cores = 3)
+mod_check_fun(mvEvSSeedMod2)
+
+mvMvSeedDat %>% filter(treatment == "water") %>% bh_fun(a = 0.03)
+mvMvSeedDat %>% filter(treatment == "fungicide") %>% bh_fun(a = 0.03)
+
+mvMvSeedModP <- update(mvEvASeedModP, newdata = mvMvSeedDat, cores = 3)
+mod_check_fun(mvMvSeedMod2)
+
+# save models
+save(mvEvASeedModP, 
+     file = "output/mv_focal_evA_background_seed_model_Stricker_priors_2019_density_exp.rda")
+save(mvEvSSeedModP, 
+     file = "output/mv_focal_evS_background_seed_model_Stricker_priors_2019_density_exp.rda")
+save(mvMvSeedModP, 
+     file = "output/mv_focal_mv_background_seed_model_Stricker_priors_2019_density_exp.rda")
+
+
 #### fit Ev age model ####
 
 # initial visualization
@@ -314,6 +358,9 @@ load("output/evA_focal_mv_background_seed_model_2019_density_exp.rda")
 load("output/mv_focal_evA_background_seed_model_2019_density_exp.rda")
 load("output/mv_focal_evS_background_seed_model_2019_density_exp.rda")
 load("output/mv_focal_mv_background_seed_model_2019_density_exp.rda")
+load("output/mv_focal_evA_background_seed_model_Stricker_priors_2019_density_exp.rda")
+load("output/mv_focal_evS_background_seed_model_Stricker_priors_2019_density_exp.rda")
+load("output/mv_focal_mv_background_seed_model_Stricker_priors_2019_density_exp.rda")
 load("output/ev_seed_model_2019_density_exp.rda")
 
 # save tables
@@ -329,6 +376,12 @@ write_csv(tidy(mvEvSSeedMod, conf.method = "HPDinterval", rhat = T, ess = T),
           "output/mv_focal_evS_background_seed_model_2019_density_exp.csv")
 write_csv(tidy(mvMvSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
           "output/mv_focal_mv_background_seed_model_2019_density_exp.csv")
+write_csv(tidy(mvEvASeedModP, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mv_focal_evA_background_seed_model_Stricker_priors_2019_density_exp.csv")
+write_csv(tidy(mvEvSSeedModP, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mv_focal_evS_background_seed_model_Stricker_priors_2019_density_exp.csv")
+write_csv(tidy(mvMvSeedModP, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mv_focal_mv_background_seed_model_Stricker_priors_2019_density_exp.csv")
 write_csv(tidy(evSeedMod, conf.method = "HPDinterval", rhat = T, ess = T), 
           "output/ev_seed_model_2019_density_exp.csv")
 
@@ -379,6 +432,29 @@ mvMvSeedDraws <- mvMvSeedDat %>%
   distinct(fungicide, treatment) %>%
   expand_grid(background_density = 0:max(mvMvSeedDat$background_density)) %>%
   add_epred_draws(mvMvSeedMod, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
+
+mvEvASeedDrawsP <- mvEvASeedDat %>%
+  distinct(fungicide, treatment) %>%
+  expand_grid(background_density = 
+                0:max(mvEvASeedDat$background_density)) %>%
+  add_epred_draws(mvEvASeedModP, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
+
+mvEvSSeedDrawsP <- mvEvSSeedDat %>%
+  distinct(fungicide, treatment) %>%
+  expand_grid(background_density = 
+                0:max(mvEvSSeedDat$background_density)) %>%
+  add_epred_draws(mvEvSSeedModP, re_formula = ~0) %>% 
+  ungroup() %>%
+  mutate(trt = fct_recode(treatment, "ambient" = "water"))
+
+mvMvSeedDrawsP <- mvMvSeedDat %>%
+  distinct(fungicide, treatment) %>%
+  expand_grid(background_density = 0:max(mvMvSeedDat$background_density)) %>%
+  add_epred_draws(mvMvSeedModP, re_formula = ~0) %>% 
   ungroup() %>%
   mutate(trt = fct_recode(treatment, "ambient" = "water"))
 
@@ -442,12 +518,41 @@ mvMvAlphaDraws <- mvMvSeedMod %>%
                        "fungicide") %>%
            fct_relevel("fungicide"))
 
+mvEvAAlphaDrawsP <- mvEvASeedModP %>%
+  gather_draws(c(b_alpha_treatmentfungicide, 
+                 b_alpha_treatmentwater)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "water"), "ambient", 
+                       "fungicide") %>%
+           fct_relevel("fungicide"))
+
+mvEvSAlphaDrawsP <- mvEvSSeedModP %>%
+  gather_draws(c(b_alpha_treatmentfungicide, 
+                 b_alpha_treatmentwater)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "water"), "ambient", 
+                       "fungicide") %>%
+           fct_relevel("fungicide"))
+
+mvMvAlphaDrawsP <- mvMvSeedModP %>%
+  gather_draws(c(b_alpha_treatmentfungicide, 
+                 b_alpha_treatmentwater)) %>%
+  ungroup() %>%
+  mutate(trt = if_else(str_detect(.variable, "water"), "ambient", 
+                       "fungicide") %>%
+           fct_relevel("fungicide"))
+
 # check seed values
 range(evSeedDraws$adult)
 range(evSeedDraws$seedling)
 
 # save draws
 mvYDraws <- mvMvSeedDraws %>%
+  filter(background_density == 0) %>%
+  select(fungicide, .draw, .epred) %>%
+  rename(value = .epred)
+
+mvYDrawsP <- mvMvSeedDrawsP %>%
   filter(background_density == 0) %>%
   select(fungicide, .draw, .epred) %>%
   rename(value = .epred)
@@ -491,7 +596,23 @@ mvEvSAlphaDraws2 <- mvEvSAlphaDraws %>%
   select(fungicide, .draw, .value) %>%
   rename(value = .value)
 
+mvMvAlphaDrawsP2 <- mvMvAlphaDrawsP %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .value) %>%
+  rename(value = .value)
+
+mvEvAAlphaDrawsP2 <- mvEvAAlphaDrawsP %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .value) %>%
+  rename(value = .value)
+
+mvEvSAlphaDrawsP2 <- mvEvSAlphaDrawsP %>%
+  mutate(fungicide = if_else(trt == "fungicide", 1, 0)) %>%
+  select(fungicide, .draw, .value) %>%
+  rename(value = .value)
+
 write_csv(mvYDraws, "intermediate-data/yA_draws.csv")
+write_csv(mvYDrawsP, "intermediate-data/yA_draws_Stricker_priors.csv")
 write_csv(evYDraws, "intermediate-data/yP_draws.csv")
 write_csv(evSeedDraws2, "intermediate-data/f_draws.csv")
 write_csv(evAMvAlphaDraws2, "intermediate-data/alphaPA_draws.csv")
@@ -500,6 +621,9 @@ write_csv(evAEvSAlphaDraws2, "intermediate-data/alphaPS_draws.csv")
 write_csv(mvMvAlphaDraws2, "intermediate-data/alphaAA_draws.csv")
 write_csv(mvEvAAlphaDraws2, "intermediate-data/alphaAP_draws.csv")
 write_csv(mvEvSAlphaDraws2, "intermediate-data/alphaAS_draws.csv")
+write_csv(mvMvAlphaDrawsP2, "intermediate-data/alphaAA_draws_Stricker_priors.csv")
+write_csv(mvEvAAlphaDrawsP2, "intermediate-data/alphaAP_draws_Stricker_priors.csv")
+write_csv(mvEvSAlphaDrawsP2, "intermediate-data/alphaAS_draws_Stricker_priors.csv")
 
 # density figures
 mvEvA_seed_fig <- mvEvASeedDraws %>%
@@ -515,6 +639,9 @@ mvEvA_seed_fig <- mvEvASeedDraws %>%
   fig_theme +
   theme(axis.title = element_markdown())
 
+mvEvA_seed_figP <- mvEvA_seed_fig %+%
+  mvEvASeedDrawsP
+
 evEvA_seed_fig <- mvEvA_seed_fig %+%
   evAEvASeedDraws +
   labs(y = "Adult *E. virginicus* seed yield")
@@ -523,7 +650,11 @@ mvEvS_seed_fig <- mvEvA_seed_fig %+%
   mvEvSSeedDraws +
   labs(x = "First-year *E. virginicus* density")
 
-evEvS_seed_fig <- mvEvS_seed_fig %+%
+mvEvS_seed_figP <- mvEvA_seed_fig %+%
+  mvEvSSeedDrawsP +
+  labs(x = "First-year *E. virginicus* density")
+
+evEvS_seed_fig <- mvEvS_seed_figP %+%
   evAEvSSeedDraws +
   labs(y = "Adult *E. virginicus* seed yield")
 
@@ -531,7 +662,11 @@ mvMv_seed_fig <- mvEvA_seed_fig %+%
   mvMvSeedDraws +
   labs(x = "*M. vimineum* density")
 
-evMv_seed_fig <- mvMv_seed_fig %+%
+mvMv_seed_figP <- mvEvA_seed_fig %+%
+  mvMvSeedDrawsP +
+  labs(x = "*M. vimineum* density")
+
+evMv_seed_fig <- mvMv_seed_figP %+%
   evAMvSeedDraws +
   labs(y = "Adult *E. virginicus* seed yield")
 
@@ -549,6 +684,19 @@ seed_fung_fig <- (mvMv_seed_fig + evMv_seed_fig +
 ggsave("output/seed_fungicide_figure_2019_density_exp.png",
        seed_fung_fig, width = 6, height = 8.2)
 
+seed_fung_figP <- (mvMv_seed_fig + mvMv_seed_figP +
+                    plot_layout(axis_titles = "collect")) /
+  (mvEvA_seed_fig + mvEvA_seed_figP +
+     plot_layout(axis_titles = "collect")) /
+  (mvEvS_seed_fig + mvEvS_seed_figP +
+     plot_layout(axis_titles = "collect")) /
+  plot_layout(guides = "collect")  + 
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom") 
+
+ggsave("output/seed_fungicide_figure_Stricker_priors_2019_density_exp.png",
+       seed_fung_figP, width = 6, height = 8.2)
+
 # alpha figures
 evEvA_alpha_fig <- ggplot(evAEvAAlphaDraws, aes(x = .value, y = trt)) +
   stat_slab(aes(fill = after_stat(level)), point_interval = mean_hdi, 
@@ -561,19 +709,28 @@ evEvA_alpha_fig <- ggplot(evAEvAAlphaDraws, aes(x = .value, y = trt)) +
   fig_theme +
   theme(axis.title.x = element_markdown())
 
-evEvS_alpha_fig <- evA_evA_alpha_fig %+% evAEvSAlphaDraws +
+evEvS_alpha_fig <- evEvA_alpha_fig %+% evAEvSAlphaDraws +
   labs(x = "*&alpha;~PS~*")
 
-evMv_alpha_fig <- evA_evA_alpha_fig %+% evAMvAlphaDraws +
+evMv_alpha_fig <- evEvA_alpha_fig %+% evAMvAlphaDraws +
   labs(x = "*&alpha;~PA~*")
 
-mvEvA_alpha_fig <- evA_evA_alpha_fig %+% mvEvAAlphaDraws +
+mvEvA_alpha_fig <- evEvA_alpha_fig %+% mvEvAAlphaDraws +
   labs(x = "*&alpha;~AP~*")
 
-mvEvS_alpha_fig <- evA_evA_alpha_fig %+% mvEvSAlphaDraws +
+mvEvS_alpha_fig <- evEvA_alpha_fig %+% mvEvSAlphaDraws +
   labs(x = "*&alpha;~AS~*")
 
-mvMv_alpha_fig <- evA_evA_alpha_fig %+% mvMvAlphaDraws +
+mvMv_alpha_fig <- evEvA_alpha_fig %+% mvMvAlphaDraws +
+  labs(x = "*&alpha;~AA~*")
+
+mvEvA_alpha_figP <- evEvA_alpha_fig %+% mvEvAAlphaDrawsP +
+  labs(x = "*&alpha;~AP~*")
+
+mvEvS_alpha_figP <- evEvA_alpha_fig %+% mvEvSAlphaDrawsP +
+  labs(x = "*&alpha;~AS~*")
+
+mvMv_alpha_figP <- evEvA_alpha_fig %+% mvMvAlphaDrawsP +
   labs(x = "*&alpha;~AA~*")
 
 # combine plots
@@ -589,6 +746,19 @@ alpha_fung_fig <- (mvMv_alpha_fig + evMv_alpha_fig +
 
 ggsave("output/alpha_fungicide_figure_2019_density_exp.png",
        alpha_fung_fig, width = 6, height = 8.2)
+
+alpha_fung_figP <- (mvMv_alpha_fig + mvMv_alpha_figP +
+                     plot_layout(axes = "collect_y")) /
+  (mvEvA_alpha_fig + mvEvA_alpha_figP +
+     plot_layout(axes = "collect_y")) /
+  (mvEvS_alpha_fig + mvEvS_alpha_figP +
+     plot_layout(axes = "collect_y")) /
+  plot_layout(guides = "collect")  + 
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom") 
+
+ggsave("output/alpha_fungicide_figure_Stricker_priors_2019_density_exp.png",
+       alpha_fung_figP, width = 6, height = 8.2)
 
 # seed ratio figure
 ratio_fung_fig <- ggplot(evSeedDraws, aes(x = ratio, y = trt)) +

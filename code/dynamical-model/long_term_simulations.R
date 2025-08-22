@@ -859,7 +859,7 @@ inv_ginf_sum <- inv_ginf %>%
 # summary figure
 coex_gfung_sum_fig <- ggplot(inv_gfung_sum, aes(x = disease_name, y = prop, 
                           fill = outcome)) +
-  geom_col(position = "dodge") +
+  geom_col(position = "dodge", show.legend = F) +
   scale_y_continuous(labels = scales::percent) +
   scale_fill_manual(values = col_pal4, name = "Invasion outcome") +
   labs(y = "Parameter draws", title = "A") +
