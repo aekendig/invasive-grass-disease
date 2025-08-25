@@ -126,21 +126,38 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
     # initial competition values (experienced by annual, perennial)
     inits_compA <- c(sim_base_AP$annual_competition[1],
                      sim_base_AP$perennial_competition[1])
-    inits_compP <- c(sim_base_PA$annual_competition[1],
-                     sim_base_PA$perennial_competition[1])
+    inits_compP <- c(sim_base_PA[[1]]$annual_competition[1],
+                     sim_base_PA[[1]]$perennial_competition[1])
     
     # inflate competition factors
     inits_LA2 <- inits_AP
     inits_LA2[2] <- inits_AP[2] * 1.01
     
-    inits_LP2 <- inits_PA
-    inits_LP2[2] <- inits_PA[2] * 1.01
-    
     inits_compA2 <- inits_compA
     inits_compA2[1] <- inits_compA[1] * 1.01
     
+    # inflate litter factors (if no litter, add 0.01 g)
+    inits_LP2 <- inits_PA
+    if(inits_PA[2] > 0){
+      
+      inits_LP2[2] <- inits_PA[2] * 1.01
+    
+    } else {
+      
+      inits_LP2[2] <- 0.01
+        
+      }
+    
     inits_compP2 <- inits_compP
-    inits_compP2[2] <- inits_compP[2] * 1.01
+    if(inits_compP[2] > 0){
+      
+      inits_compP2[2] <- inits_compP[2] * 1.01
+      
+    } else {
+      
+      inits_compP2[2] <- 0.01
+      
+    }
 
     # simulate one year with inflation for each species
     sim_LA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_LA2,
@@ -174,14 +191,15 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
   
   # combine values
   # indicate cases where population always goes to zero
-  out <- tibble(
-    .draw = parameters[["draws"]][iter, ]$.draw,
-    generation = gens,
-    coexist = sim_outcome$coexist,
-    resp_LA = resp_LA,
-    resp_LP = resp_LP,
-    resp_CA = resp_CA,
-    resp_CP = resp_CP)
+  out <- tibble(.draw = parameters[["draws"]][iter, ]$.draw,
+                generation = gens,
+                coexist = sim_outcome$coexist,
+                resp_LA = resp_LA,
+                resp_LP = resp_LP,
+                resp_CA = resp_CA,
+                resp_CP = resp_CP)
+  
+  return(out)
 }
 
 
@@ -1114,8 +1132,24 @@ coex_ginf_sum_fig <- coex_gfung_sum_fig %+%
 coex_infP_sum_fig <- coex_gfung_sum_fig %+%
   inv_infP_sum
 
+# change outcome labels for figure
+inv_gfung2 <- inv_gfung %>%
+  mutate(outcome = str_replace(outcome, "annual", "*M. vimineum*") %>%
+           str_replace("perennial", "*E. virginicus*") %>%
+           fct_relevel("coexist", "*M. vimineum* only"))
+
+inv_ginf2 <- inv_ginf %>%
+  mutate(outcome = str_replace(outcome, "annual", "*M. vimineum*") %>%
+           str_replace("perennial", "*E. virginicus*") %>%
+           fct_relevel("coexist", "*M. vimineum* only"))
+
+inv_infP2 <- inv_infP %>%
+  mutate(outcome = str_replace(outcome, "annual", "*M. vimineum*") %>%
+           str_replace("perennial", "*E. virginicus*") %>%
+           fct_relevel("coexist", "*M. vimineum* only"))
+
 # growth rate figures
-coex_gfung_grd_fig <- inv_gfung %>%
+coex_gfung_grd_fig <- inv_gfung2 %>%
   filter(disease == "d") %>%
   ggplot(aes(x = annual_gr, y = perennial_gr, color = outcome, 
              shape = outcome)) +
@@ -1131,25 +1165,26 @@ coex_gfung_grd_fig <- inv_gfung %>%
   theme(axis.title = element_markdown(),
         plot.title = element_text(hjust = 0),
         plot.title.position = "plot",
-        strip.placement = "inside") +
+        strip.placement = "inside",
+        legend.text = element_markdown()) +
   guides(color = guide_legend(override.aes = list(size = 3)))
 
 coex_gfung_grh_fig <- coex_gfung_grd_fig %+%
-  filter(inv_gfung, disease == "h") +
+  filter(inv_gfung2, disease == "h") +
   labs(title = "C")
 
 coex_ginf_grd_fig <- coex_gfung_grd_fig %+%
-  filter(inv_ginf, disease == "d")
+  filter(inv_ginf2, disease == "d")
 
 coex_ginf_grh_fig <- coex_ginf_grd_fig %+%
-  filter(inv_ginf, disease == "h") +
+  filter(inv_ginf2, disease == "h") +
   labs(title = "C")
 
 coex_infP_grd_fig <- coex_gfung_grd_fig %+%
-  filter(inv_infP, disease == "d")
+  filter(inv_infP2, disease == "d")
 
 coex_infP_grh_fig <- coex_infP_grd_fig %+%
-  filter(inv_infP, disease == "h") +
+  filter(inv_infP2, disease == "h") +
   labs(title = "C")
 
 # combine
@@ -1173,6 +1208,19 @@ ggsave("output/coexistence_outcomes_ginf_parms.png", coex_ginf_fig,
 ggsave("output/coexistence_outcomes_infP_parms.png", coex_infP_fig,
        width = 6.5, height = 6.5)
 
+# table
+inv_gfung_sum %>%
+  mutate(parameter_set = 1) %>%
+  full_join(inv_ginf_sum %>%
+              mutate(parameter_set = 2)) %>%
+  full_join(inv_infP_sum %>%
+              mutate(parameter_set = 3)) %>%
+  mutate(perc = janitor::round_half_up(prop * 100)) %>%
+  select(-c(n, prop)) %>%
+  pivot_wider(names_from = outcome, values_from = perc) %>%
+  arrange(disease_name, parameter_set) %>%
+  write_csv("output/coexistence_outcomes_all_parms.csv")
+
 
 #### responses ####
 
@@ -1190,23 +1238,23 @@ resp_infP_d <- list()
 for(i in 1:params_iters){
   
   # get draw from parameters
-  # draw_gfung_h <- params_gfung[["healthy"]][["draws"]]$.draw[i] 
-  # draw_gfung_d <- params_gfung[["disease"]][["draws"]]$.draw[i] 
-  # draw_ginf_h <- params_ginf[["healthy"]][["draws"]]$.draw[i] 
-  # draw_ginf_d <- params_ginf[["disease"]][["draws"]]$.draw[i] 
+  draw_gfung_h <- params_gfung[["healthy"]][["draws"]]$.draw[i]
+  draw_gfung_d <- params_gfung[["disease"]][["draws"]]$.draw[i]
+  draw_ginf_h <- params_ginf[["healthy"]][["draws"]]$.draw[i]
+  draw_ginf_d <- params_ginf[["disease"]][["draws"]]$.draw[i]
   draw_infP_h <- params_infP[["healthy"]][["draws"]]$.draw[i] 
   draw_infP_d <- params_infP[["disease"]][["draws"]]$.draw[i] 
   
   # select equilibrium values
-  # inv_gfung_draw_h <- inv_gfung_h %>% 
-  #   filter(.draw == draw_gfung_h)
-  # inv_gfung_draw_d <- inv_gfung_d %>% 
-  #   filter(.draw == draw_gfung_d)
-  # 
-  # inv_ginf_draw_h <- inv_ginf_h %>% 
-  #   filter(.draw == draw_ginf_h)
-  # inv_ginf_draw_d <- inv_ginf_d %>% 
-  #   filter(.draw == draw_ginf_d)
+  inv_gfung_draw_h <- inv_gfung_h %>%
+    filter(.draw == draw_gfung_h)
+  inv_gfung_draw_d <- inv_gfung_d %>%
+    filter(.draw == draw_gfung_d)
+
+  inv_ginf_draw_h <- inv_ginf_h %>%
+    filter(.draw == draw_ginf_h)
+  inv_ginf_draw_d <- inv_ginf_d %>%
+    filter(.draw == draw_ginf_d)
   
   inv_infP_draw_h <- inv_infP_h %>% 
     filter(.draw == draw_infP_h)
@@ -1214,15 +1262,15 @@ for(i in 1:params_iters){
     filter(.draw == draw_infP_d)
   
   # calculate responses for each parameter set and disease condition
-  # resp_gfung_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_gfung_draw_h, 
-  #                               parameters = params_gfung[["healthy"]])
-  # resp_gfung_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_gfung_draw_d, 
-  #                               parameters = params_gfung[["disease"]])
-  # 
-  # resp_ginf_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_ginf_draw_h, 
-  #                               parameters = params_ginf[["healthy"]])
-  # resp_ginf_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_ginf_draw_d, 
-  #                               parameters = params_ginf[["disease"]])
+  resp_gfung_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_gfung_draw_h,
+                                parameters = params_gfung[["healthy"]])
+  resp_gfung_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_gfung_draw_d,
+                                parameters = params_gfung[["disease"]])
+
+  resp_ginf_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_ginf_draw_h,
+                                parameters = params_ginf[["healthy"]])
+  resp_ginf_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_ginf_draw_d,
+                                parameters = params_ginf[["disease"]])
   
   resp_infP_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_infP_draw_h, 
                                parameters = params_infP[["healthy"]])
@@ -1232,13 +1280,13 @@ for(i in 1:params_iters){
 }
 
 # combine healthy and disease
-# resp_gfung <- sims_comb_fun(resp_gfung_h, resp_gfung_d)
-# resp_ginf <- sims_comb_fun(resp_ginf_h, resp_ginf_d)
+resp_gfung <- sims_comb_fun(resp_gfung_h, resp_gfung_d)
+resp_ginf <- sims_comb_fun(resp_ginf_h, resp_ginf_d)
 resp_infP <- sims_comb_fun(resp_infP_h, resp_infP_d)
 
 # save
-# save(resp_gfung, file = "output/responses_gfung_parms_20250719.rda")
-# save(resp_ginf, file = "output/responses_ginf_parms_20250719.rda")
+save(resp_gfung, file = "output/responses_gfung_parms_20250719.rda")
+save(resp_ginf, file = "output/responses_ginf_parms_20250719.rda")
 save(resp_infP, file = "output/responses_infP_parms_20250719.rda")
 
 # reload if needed
@@ -1447,3 +1495,56 @@ ggsave("output/litter_effects_responses_infP_parms.png", eff_resp_litter_fig3,
        width = 6.5, height = 6.5)
 ggsave("output/competition_effects_responses_infP_parms.png", eff_resp_comp_fig3,
        width = 6.5, height = 6.5)
+
+
+#### effects/responses values for text ####
+
+# effect on litter
+eq_infP_A %>%
+  group_by(disease_name) %>%
+  mean_hdci(litter)
+
+eq_gfung_P %>%
+  group_by(disease_name) %>%
+  mean_hdci(litter)
+
+# treatment difference in effect on litter
+eq_infP_A %>%
+  select(.draw, disease_name, litter) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = litter) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  mean_hdci(diff)
+
+eq_gfung_P %>%
+  select(.draw, disease_name, litter) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = litter) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  mean_hdci(diff)
+
+# response to litter
+resp_infP_long %>%
+  group_by(disease_name) %>%
+  mean_hdci(resp_LA)
+
+resp_infP_long %>%
+  group_by(disease_name) %>%
+  mean_hdci(resp_LP)
+
+#### start here 2 ####
+# resolved missing response values, re-run these for text
+
+resp_infP_long %>%
+  select(.draw, disease_name, resp_LA) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = resp_LA) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  mean_hdci(diff)
+
+resp_infP_long %>%
+  select(.draw, disease_name, resp_LP) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = resp_LP) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  mean_hdci(diff)
