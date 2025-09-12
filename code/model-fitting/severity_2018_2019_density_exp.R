@@ -26,7 +26,8 @@ library(patchwork)
 
 # import data
 sevD1Dat <- read_csv("intermediate-data/focal_leaf_scans_2018_density_exp.csv")
-sevD2Dat <- read_csv("intermediate-data/all_leaf_scans_2019_density_exp.csv")
+sevD2Dat <- read_csv("intermediate-data/all_leaf_scans_2019_density_exp.csv",
+                     guess_max = 3000)
 plots <- read_csv("data/plot_treatments_2018_2019_density_exp.csv")
 
 # model function
@@ -53,306 +54,517 @@ source("code/figure-prep/figure_settings.R")
 # severity
 sevD1Dat2 <- sevD1Dat %>%
   filter(focal == 1 & bp_example == 0) %>%
-  select(month, site, plot, treatment, sp, ID, age, leaves_tot, leaves_infec, leaf_area.pix, lesion_area.pix) %>%
+  select(month, site, plot, treatment, sp, ID, age, leaves_tot, leaves_infec, 
+         leaf_area.pix, lesion_area.pix) %>%
   left_join(plots, by = c("plot", "treatment"),
             relationship = "many-to-many") %>%
-  mutate(leaves_infec = case_when(leaves_infec == 0 & lesion_area.pix > 0 ~ 1, # add an infected leaf if scan found lesions
-                                  TRUE ~ leaves_infec),
+  mutate(leaves_infec = if_else(leaves_infec == 0 & lesion_area.pix > 0, 1, # add an infected leaf if scan found lesions
+                                leaves_infec),
          severity = (lesion_area.pix * leaves_infec) / (leaf_area.pix * leaves_tot),
-         severity = case_when(leaves_infec == 0 & is.na(severity) ~ 0, # make severity zero if no leaves infected and no severity info
-                              TRUE ~ severity),
-         year = "1",
-         year_month = paste0("year", year, "_", month),
+         severity = if_else(leaves_infec == 0 & is.na(severity), 0, # make severity zero if no leaves infected and no severity info
+                            severity),
          fungicide = ifelse(treatment == "fungicide", 1, 0),
-         background = if_else(background == "none", "Mv seedling", background)) %>%
-  filter(!is.na(severity))
+         month = as.factor(month),
+         plotID = paste(site, plot, fungicide, sep = "_"),
+         plantID = paste(plotID, sp, age, ID, sep = "_")) %>%
+  filter(!is.na(severity)) %>%
+  mutate(severity_t = transform01(severity),
+         log_severity_t = log(severity_t))
 
 sevD2Dat2 <- sevD2Dat %>%
   filter(focal == 1) %>%
-  select(month, site, plot, treatment, sp, ID, age, leaves_tot, leaves_infec, leaf_area.pix, lesion_area.pix) %>%
+  select(month, site, plot, treatment, sp, ID, age, leaves_tot, leaves_infec, 
+         leaf_area.pix, lesion_area.pix) %>%
   left_join(plots, by = c("plot", "treatment"),
             relationship = "many-to-many") %>%
   filter(!(month %in% c("may", "sep"))) %>% # too much data missing
-  mutate(leaves_infec = case_when(leaves_infec == 0 & lesion_area.pix > 0 ~ 1, # add an infected leaf if scan found lesions
-                                  TRUE ~ leaves_infec),
+  mutate(leaves_infec = if_else(leaves_infec == 0 & lesion_area.pix > 0, 1, # add an infected leaf if scan found lesions
+                                leaves_infec),
          severity = (lesion_area.pix * leaves_infec) / (leaf_area.pix * leaves_tot),
-         severity = case_when(leaves_infec == 0 & is.na(severity) ~ 0, # make severity zero if no leaves infected and no severity info
-                              TRUE ~ severity),
-         year = "2",
-         year_month = paste0("year", year, "_", month),
+         severity = if_else(leaves_infec == 0 & is.na(severity), 0, # make severity zero if no leaves infected and no severity info
+                            severity),
          fungicide = ifelse(treatment == "fungicide", 1, 0),
-         background = if_else(background == "none", "Mv seedling", background)) %>%
-  filter(!is.na(severity))
+         month = as.factor(month) %>% fct_relevel("jun", "jul"),
+         plotID = paste(site, plot, fungicide, sep = "_"),
+         plantID = paste(plotID, sp, age, ID, sep = "_")) %>%
+  filter(!is.na(severity)) %>%
+  mutate(severity_t = transform01(severity),
+         log_severity_t = log(severity_t))
 
-# combine by plant group
-evSSevDat <- filter(sevD1Dat2, sp == "Ev" & age == "seedling") %>%
-  full_join(filter(sevD2Dat2, sp == "Ev" & age == "seedling")) %>%
-  mutate(severity_t = transform01(severity))
+# sample sizes
+sampsD1 <- sevD1Dat2 %>% 
+  group_by(sp, age, background, month) %>% 
+  summarize(n = n_distinct(plotID))
 
-evASevDat <- filter(sevD1Dat2, sp == "Ev" & age == "adult") %>%
-  full_join(filter(sevD2Dat2, sp == "Ev" & age == "adult")) %>%
-  mutate(severity_t = transform01(severity))
+sampsD2 <- sevD2Dat2 %>% 
+  group_by(sp, age, background, month) %>% 
+  summarize(n = n_distinct(plotID))
 
-mvSevDat <- filter(sevD1Dat2, sp == "Mv") %>%
-  full_join(filter(sevD2Dat2, sp == "Mv")) %>%
-  mutate(severity_t = transform01(severity))
+# separate by focal and background
+evSEvSSevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Ev" & age == "seedling" & 
+           background %in% c("none", "Ev seedling"))
+evSEvASevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Ev" & age == "seedling" & 
+           background %in% c("none", "Ev adult"))
+evSMvSevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Ev" & age == "seedling" & 
+           background %in% c("none", "Mv seedling"))
+evAEvSSevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Ev" & age == "adult" & 
+           background %in% c("none", "Ev seedling"))
+evAEvASevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Ev" & age == "adult" & 
+           background %in% c("none", "Ev adult"))
+evAMvSevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Ev" & age == "adult" & 
+           background %in% c("none", "Mv seedling"))
+mvEvSSevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Mv" & background %in% c("none", "Ev seedling"))
+mvEvASevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Mv" & background %in% c("none", "Ev adult"))
+mvMvSevD1Dat <- sevD1Dat2 %>% 
+  filter(sp == "Mv" & background %in% c("none", "Mv seedling"))
+
+evSEvSSevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Ev" & age == "seedling" & 
+           background %in% c("none", "Ev seedling"))
+evSEvASevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Ev" & age == "seedling" & 
+           background %in% c("none", "Ev adult"))
+evSMvSevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Ev" & age == "seedling" & 
+           background %in% c("none", "Mv seedling"))
+evAEvSSevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Ev" & age == "adult" & 
+           background %in% c("none", "Ev seedling"))
+evAEvASevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Ev" & age == "adult" & 
+           background %in% c("none", "Ev adult"))
+evAMvSevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Ev" & age == "adult" & 
+           background %in% c("none", "Mv seedling"))
+mvEvSSevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Mv" & background %in% c("none", "Ev seedling"))
+mvEvASevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Mv" & background %in% c("none", "Ev adult"))
+mvMvSevD2Dat <- sevD2Dat2 %>% 
+  filter(sp == "Mv" & background %in% c("none", "Mv seedling"))
 
 
 #### fit models ####
 
+# tried to fit beta models with severity_t and there were a lot of issues
+# with Mv as the background
+
 # initial visualizations
-ggplot(evSSevDat, aes(x = background_density, y = severity, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_grid(year_month ~ treatment)
+ggplot(sevD1Dat2, aes(x = severity)) +
+  geom_density() +
+  facet_grid(sp + age ~ month, scales = "free")
 
-ggplot(evSSevDat, aes(x = severity_t)) +
-  geom_density()
+ggplot(sevD1Dat2, aes(x = log(severity))) +
+  geom_density() +
+  facet_grid(sp + age ~ month, scales = "free")
 
-ggplot(evASevDat, aes(x = background_density, y = severity, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_grid(year_month ~ treatment)
+(init_fig <- ggplot(evSEvSSevD1Dat, aes(x = background_density, 
+                                        y = severity, 
+                                        color = treatment)) +
+   geom_point() +
+   geom_smooth(method = "glm") +
+   facet_wrap(~ month))
+# late aug incomplete
 
-ggplot(evASevDat, aes(x = severity_t)) +
-  geom_density()
+init_fig %+% evSEvASevD1Dat # late aug incomplete
+init_fig %+% evSMvSevD1Dat # late aug and sep incomplete
+init_fig %+% evAEvSSevD1Dat
+init_fig %+% evAEvASevD1Dat
+init_fig %+% evAMvSevD1Dat # late aug and sep incomplete
+init_fig %+% mvEvSSevD1Dat # severity increases over months
+init_fig %+% mvEvASevD1Dat
+init_fig %+% mvMvSevD1Dat
 
-ggplot(mvSevDat, aes(x = background_density, y = severity, color = background)) +
-  geom_point() +
-  geom_smooth(method = "glm") +
-  facet_grid(year_month ~ treatment)
+init_fig %+% evSEvSSevD2Dat
+init_fig %+% evSEvASevD2Dat
+init_fig %+% evSMvSevD2Dat # all background highest late august
+init_fig %+% evAEvSSevD2Dat
+init_fig %+% evAEvASevD2Dat # late august incomplete
+init_fig %+% evAMvSevD2Dat # all background highest late august
+init_fig %+% mvEvSSevD2Dat
+init_fig %+% mvEvASevD2Dat
+init_fig %+% mvMvSevD2Dat # all background highest late august
 
-ggplot(mvSevDat, aes(x = severity_t)) +
-  geom_density()
+# intercepts
+sevD1Dat2 %>% 
+  filter(month == "jul" & background == "none" & fungicide == 0) %>%
+  group_by(sp, age) %>%
+  summarize(mean = mean(log_severity_t))
+
+sevD2Dat2 %>% 
+  filter(month == "jun" & background == "none" & fungicide == 0) %>%
+  group_by(sp, age) %>%
+  summarize(mean = mean(log_severity_t))
 
 # fit models
-# note that the year_month used for the intercept does not affect the other model coefficients (except year_month)
-evSSevMod <- brm(data = evSSevDat, family = "beta",
-                  severity_t ~ fungicide + background_density:background + background_density:background:fungicide + year_month + 
-                    (1|site/plot),
-                  prior <- c(prior(normal(0, 10), class = "Intercept"),
-                             prior(normal(0, 10), class = "b")), # use default for sigma
-                  iter = 6000, warmup = 1000, chains = 3, cores = 3, 
-                 control = list(adapt_delta = 0.9999))
-mod_check_fun(evSSevMod)
+# initially used site as a random effect, but it caused issues with
+# fitting models, especially for Mv. Site is captured in plotID.
 
-mvSevMod <- update(evSSevMod, newdata = mvSevDat,
-                   control = list(adapt_delta = 0.9999, max_treedepth = 15))
-mod_check_fun(mvSevMod)
-
-evASevMod <- brm(data = evASevDat, family = lognormal,
-                 severity_t ~ fungicide + background_density:background + background_density:background:fungicide + year_month + 
-                    (1|site),
-                  prior <- c(prior(normal(0, 10), class = "Intercept"),
+# year 1 EvS
+evSEvSSevD1Mod <- brm(data = evSEvSSevD1Dat, family = gaussian,
+                      log_severity_t ~ fungicide * background_density * month + 
+                        (1|plotID/plantID),
+                  prior <- c(prior(normal(-3.5, 10), class = "Intercept"),
                              prior(normal(0, 10), class = "b")), # use default for sigma
                   iter = 6000, warmup = 1000, chains = 3, cores = 3,
-                  control = list(adapt_delta = 0.999999))
-mod_check_fun(evASevMod)
+                  control = list(adapt_delta = 0.99))
+mod_check_fun(evSEvSSevD1Mod)
+save(evSEvSSevD1Mod, file = "output/evSEvS_severity_model_2018_density_exp.rda")
 
-# save models
-save(evSSevMod, file = "output/evS_severity_model_2018_2019_density_exp.rda")
-save(evASevMod, file = "output/evA_severity_model_2018_2019_density_exp.rda")
-save(mvSevMod, file = "output/mv_severity_model_2018_2019_density_exp.rda")
+evSEvASevD1Mod <- update(evSEvSSevD1Mod, newdata = evSEvASevD1Dat, cores = 3)
+mod_check_fun(evSEvASevD1Mod)
+save(evSEvASevD1Mod, file = "output/evSEvA_severity_model_2018_density_exp.rda")
 
-# save tables
-write_csv(tidy(evSSevMod, conf.method = "HPDinterval"), 
-          "output/evS_severity_model_2018_2019_density_exp.csv")
-write_csv(tidy(evASevMod, conf.method = "HPDinterval"), 
-          "output/evA_severity_model_2018_2019_density_exp.csv")
-write_csv(tidy(mvSevMod, conf.method = "HPDinterval"), 
-          "output/mv_severity_model_2018_2019_density_exp.csv")
+evSMvSevD1Mod <- update(evSEvSSevD1Mod, newdata = evSMvSevD1Dat, cores = 3)
+mod_check_fun(evSMvSevD1Mod)
+save(evSMvSevD1Mod, file = "output/evSMv_severity_model_2018_density_exp.rda")
+
+# year 1 EvA
+evAEvSSevD1Mod <- update(evSEvSSevD1Mod, newdata = evAEvSSevD1Dat, cores = 3,
+                         prior = c(prior(normal(-3, 10), class = "Intercept"),
+                                   prior(normal(0, 10), class = "b")))
+mod_check_fun(evAEvSSevD1Mod)
+save(evAEvSSevD1Mod, file = "output/evAEvS_severity_model_2018_density_exp.rda")
+
+evAEvASevD1Mod <- update(evAEvSSevD1Mod, newdata = evAEvASevD1Dat, cores = 3)
+mod_check_fun(evAEvASevD1Mod)
+save(evAEvASevD1Mod, file = "output/evAEvA_severity_model_2018_density_exp.rda")
+
+evAMvSevD1Mod <- update(evAEvSSevD1Mod, newdata = evAMvSevD1Dat, cores = 3)
+mod_check_fun(evAMvSevD1Mod)
+save(evAMvSevD1Mod, file = "output/evAMv_severity_model_2018_density_exp.rda")
+
+# year 1 Mv
+mvEvSSevD1Mod <- update(evSEvSSevD1Mod, newdata = mvEvSSevD1Dat, cores = 3,
+                        prior = c(prior(normal(-6.2, 10), class = "Intercept"),
+                                  prior(normal(0, 10), class = "b")))
+mod_check_fun(mvEvSSevD1Mod)
+save(mvEvSSevD1Mod, file = "output/mvEvS_severity_model_2018_density_exp.rda")
+
+mvEvASevD1Mod <- update(mvEvSSevD1Mod, newdata = mvEvASevD1Dat, cores = 3)
+mod_check_fun(mvEvASevD1Mod)
+save(mvEvASevD1Mod, file = "output/mvEvA_severity_model_2018_density_exp.rda")
+
+mvMvSevD1Mod <- update(mvEvSSevD1Mod, newdata = mvMvSevD1Dat, cores = 3)
+mod_check_fun(mvMvSevD1Mod)
+save(mvMvSevD1Mod, file = "output/mvMv_severity_model_2018_density_exp.rda")
+
+# year 2 EvS
+evSEvSSevD2Mod <- update(evSEvSSevD1Mod, newdata = evSEvSSevD2Dat, cores = 3,
+                        prior = c(prior(normal(-3.2, 10), class = "Intercept"),
+                                  prior(normal(0, 10), class = "b")))
+mod_check_fun(evSEvSSevD2Mod)
+save(evSEvSSevD2Mod, file = "output/evSEvS_severity_model_2019_density_exp.rda")
+
+evSEvASevD2Mod <- update(evSEvSSevD2Mod, newdata = evSEvASevD2Dat, cores = 3)
+mod_check_fun(evSEvASevD2Mod)
+save(evSEvASevD2Mod, file = "output/evSEvA_severity_model_2019_density_exp.rda")
+
+evSMvSevD2Mod <- update(evSEvSSevD2Mod, newdata = evSMvSevD2Dat, cores = 3)
+mod_check_fun(evSMvSevD2Mod)
+save(evSMvSevD2Mod, file = "output/evSMv_severity_model_2019_density_exp.rda")
+
+# year 2 EvA
+evAEvSSevD2Mod <- update(evSEvSSevD2Mod, newdata = evAEvSSevD2Dat, cores = 3,
+                        prior = c(prior(normal(-5.4, 10), class = "Intercept"),
+                                  prior(normal(0, 10), class = "b")))
+mod_check_fun(evAEvSSevD2Mod)
+save(evAEvSSevD2Mod, file = "output/evAEvS_severity_model_2019_density_exp.rda")
+
+evAEvASevD2Mod <- update(evAEvSSevD2Mod, newdata = evAEvASevD2Dat, cores = 3)
+mod_check_fun(evAEvASevD2Mod)
+save(evAEvASevD2Mod, file = "output/evAEvA_severity_model_2019_density_exp.rda")
+
+evAMvSevD2Mod <- update(evAEvSSevD2Mod, newdata = evAMvSevD2Dat, cores = 3)
+mod_check_fun(evAMvSevD2Mod)
+save(evAMvSevD2Mod, file = "output/evAMv_severity_model_2019_density_exp.rda")
+
+# year 2 Mv
+mvEvSSevD2Mod <- update(evSEvSSevD2Mod, newdata = mvEvSSevD2Dat, cores = 3,
+                        prior = c(prior(normal(-5.7, 10), class = "Intercept"),
+                                  prior(normal(0, 10), class = "b")))
+mod_check_fun(mvEvSSevD2Mod)
+save(mvEvSSevD2Mod, file = "output/mvEvS_severity_model_2019_density_exp.rda")
+
+mvEvASevD2Mod <- update(mvEvSSevD2Mod, newdata = mvEvASevD2Dat, cores = 3)
+mod_check_fun(mvEvASevD2Mod)
+save(mvEvASevD2Mod, file = "output/mvEvA_severity_model_2019_density_exp.rda")
+
+mvMvSevD2Mod <- update(mvEvSSevD2Mod, newdata = mvMvSevD2Dat, cores = 3)
+mod_check_fun(mvMvSevD2Mod)
+save(mvMvSevD2Mod, file = "output/mvMv_severity_model_2019_density_exp.rda")
+
+
+#### tables and figures ####
 
 # load
-load("output/evS_severity_model_2018_2019_density_exp.rda")
-load("output/evA_severity_model_2018_2019_density_exp.rda")
-load("output/mv_severity_model_2018_2019_density_exp.rda")
+load("output/evSEvS_severity_model_2018_density_exp.csv")
+load("output/evSEvA_severity_model_2018_density_exp.csv")
+load("output/evSMv_severity_model_2018_density_exp.csv")
 
+load("output/evAEvS_severity_model_2018_density_exp.csv")
+load("output/evAEvA_severity_model_2018_density_exp.csv")
+load("output/evAMv_severity_model_2018_density_exp.csv")
 
-#### disease severity over time ####
+load("output/mvEvS_severity_model_2018_density_exp.csv")
+load("output/mvEvA_severity_model_2018_density_exp.csv")
+load("output/mvMv_severity_model_2018_density_exp.csv")
+
+load("output/evSEvS_severity_model_2019_density_exp.csv")
+load("output/evSEvA_severity_model_2019_density_exp.csv")
+load("output/evSMv_severity_model_2019_density_exp.csv")
+
+load("output/evAEvS_severity_model_2019_density_exp.csv")
+load("output/evAEvA_severity_model_2019_density_exp.csv")
+load("output/evAMv_severity_model_2019_density_exp.csv")
+
+load("output/mvEvS_severity_model_2019_density_exp.csv")
+load("output/mvEvA_severity_model_2019_density_exp.csv")
+load("output/mvMv_severity_model_2019_density_exp.csv")
+
+# tables
+write_csv(tidy(evSEvSSevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evSEvS_severity_model_2018_density_exp.csv")
+write_csv(tidy(evSEvASevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evSEvA_severity_model_2018_density_exp.csv")
+write_csv(tidy(evSMvSevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evSMv_severity_model_2018_density_exp.csv")
+
+write_csv(tidy(evAEvSSevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evAEvS_severity_model_2018_density_exp.csv")
+write_csv(tidy(evAEvASevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evAEvA_severity_model_2018_density_exp.csv")
+write_csv(tidy(evAMvSevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evAMv_severity_model_2018_density_exp.csv")
+
+write_csv(tidy(mvEvSSevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mvEvS_severity_model_2018_density_exp.csv")
+write_csv(tidy(mvEvASevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mvEvA_severity_model_2018_density_exp.csv")
+write_csv(tidy(mvMvSevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mvMv_severity_model_2018_density_exp.csv")
+
+write_csv(tidy(evSEvSSevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evSEvS_severity_model_2019_density_exp.csv")
+write_csv(tidy(evSEvASevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evSEvA_severity_model_2019_density_exp.csv")
+write_csv(tidy(evSMvSevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evSMv_severity_model_2019_density_exp.csv")
+
+write_csv(tidy(evAEvSSevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evAEvS_severity_model_2019_density_exp.csv")
+write_csv(tidy(evAEvASevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evAEvA_severity_model_2019_density_exp.csv")
+write_csv(tidy(evAMvSevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/evAMv_severity_model_2019_density_exp.csv")
+
+write_csv(tidy(mvEvSSevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mvEvS_severity_model_2019_density_exp.csv")
+write_csv(tidy(mvEvASevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mvEvA_severity_model_2019_density_exp.csv")
+write_csv(tidy(mvMvSevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
+          "output/mvMv_severity_model_2019_density_exp.csv")
+
+# prediction data
+evSSevPredD1Dat <- sevD1Dat2 %>%
+  filter(background %in% c("none", "Ev seedling")) %>% 
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup()
+
+evASevPredD1Dat <- sevD1Dat2 %>%
+  filter(background %in% c("none", "Ev adult")) %>% 
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup()
+
+mvSevPredD1Dat <- sevD1Dat2 %>%
+  filter(background %in% c("none", "Mv seedling")) %>% 
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup()
+
+evSSevPredD2Dat <- sevD2Dat2 %>%
+  filter(background %in% c("none", "Ev seedling")) %>% 
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup()
+
+evASevPredD2Dat <- sevD2Dat2 %>%
+  filter(background %in% c("none", "Ev adult")) %>% 
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup()
+
+mvSevPredD2Dat <- sevD2Dat2 %>%
+  filter(background %in% c("none", "Mv seedling")) %>% 
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup()
 
 # posterior draws
-evSSevDraws <- as_draws_df(evSSevMod)
-mvSevDraws <- as_draws_df(mvSevMod)
-evASevDraws <- as_draws_df(evASevMod)
+evSEvSSevD1Draws <- evSSevPredD1Dat %>%
+  add_epred_draws(evSEvSSevD1Mod, re_formula = ~0) %>% 
+  ungroup()
+evAEvSSevD1Draws <- evSSevPredD1Dat %>%
+  add_epred_draws(evAEvSSevD1Mod, re_formula = ~0) %>% 
+  ungroup()
+mvEvSSevD1Draws <- evSSevPredD1Dat %>%
+  add_epred_draws(mvEvSSevD1Mod, re_formula = ~0) %>% 
+  ungroup()
 
-# select time values
-timeSevDraws <- evSSevDraws %>%
-  select(b_Intercept, starts_with("b_year")) %>%
-  mutate(sp_age = "first-year *E. virginicus*") %>%
-  full_join(evASevDraws %>%
-              select(b_Intercept, starts_with("b_year")) %>%
-              mutate(sp_age = "adult *E. virginicus*")) %>%
-  full_join(mvSevDraws %>%
-              select(b_Intercept, starts_with("b_year")) %>%
-              mutate(sp_age = "*M. vimineum*")) %>%
-  transmute(sp_age = sp_age,
-            n = rep(1:15000, 3),
-            year_1_Jul = b_Intercept,
-            year_1_late_Aug = b_Intercept + b_year_monthyear1_late_aug,
-            year_1_Sep = b_Intercept + b_year_monthyear1_sep,
-            year_2_early_Aug = b_Intercept + b_year_monthyear2_early_aug,
-            year_2_Jul = b_Intercept + b_year_monthyear2_jul,
-            year_2_Jun = b_Intercept + b_year_monthyear2_jun,
-            year_2_late_Aug = b_Intercept + b_year_monthyear2_late_aug) %>%
-  pivot_longer(cols = -c(sp_age, n),
-               names_to = "time",
-               values_to = "sev") %>%
-  mutate(sev_perc = 100 * plogis(sev),
-         month = str_replace_all(time, "_", " ") %>%
-           fct_relevel("year 2 Jul", after = 5) %>%
-           fct_relevel("year 2 early Aug", after = 5),
-         sp_age = fct_relevel(sp_age, "*M. vimineum*",
-                              "first-year *E. virginicus*"))
+evSEvASevD1Draws <- evASevPredD1Dat %>%
+  add_epred_draws(evSEvASevD1Mod, re_formula = ~0) %>% 
+  ungroup()
+evAEvASevD1Draws <- evASevPredD1Dat %>%
+  add_epred_draws(evAEvASevD1Mod, re_formula = ~0) %>% 
+  ungroup()
+mvEvASevD1Draws <- evASevPredD1Dat %>%
+  add_epred_draws(mvEvASevD1Mod, re_formula = ~0) %>% 
+  ungroup()
 
-sev_time_fig <- ggplot(timeSevDraws, aes(x = month, y = sev_perc, color = sp_age)) +
-  stat_pointinterval(fatten_point = 5,
-                     shape = 95,
-                     point_interval = mean_hdci,
-                     .width = 0.95,
-                     position = position_dodge(0.5)) +
-  scale_color_manual(values = col_pal, name = "Focal group") +
-  labs(x = "Month",
-       y = "Disease severity (%)") +
-  fig_theme +
-  theme(axis.text.x = element_text(angle = 20, hjust = 1),
-        legend.text = element_markdown())
+evSMvSevD1Draws <- mvSevPredD1Dat %>%
+  add_epred_draws(evSMvSevD1Mod, re_formula = ~0) %>% 
+  ungroup()
+evAMvSevD1Draws <- mvSevPredD1Dat %>%
+  add_epred_draws(evAMvSevD1Mod, re_formula = ~0) %>% 
+  ungroup()
+mvMvSevD1Draws <- mvSevPredD1Dat %>%
+  add_epred_draws(mvMvSevD1Mod, re_formula = ~0) %>% 
+  ungroup()
 
+evSEvSSevD2Draws <- evSSevPredD2Dat %>%
+  add_epred_draws(evSEvSSevD2Mod, re_formula = ~0) %>% 
+  ungroup()
+evAEvSSevD2Draws <- evSSevPredD2Dat %>%
+  add_epred_draws(evAEvSSevD2Mod, re_formula = ~0) %>% 
+  ungroup()
+mvEvSSevD2Draws <- evSSevPredD2Dat %>%
+  add_epred_draws(mvEvSSevD2Mod, re_formula = ~0) %>% 
+  ungroup()
 
-#### fungicide effect without comp. figure ####
+evSEvASevD2Draws <- evASevPredD2Dat %>%
+  add_epred_draws(evSEvASevD2Mod, re_formula = ~0) %>% 
+  ungroup()
+evAEvASevD2Draws <- evASevPredD2Dat %>%
+  add_epred_draws(evAEvASevD2Mod, re_formula = ~0) %>% 
+  ungroup()
+mvEvASevD2Draws <- evASevPredD2Dat %>%
+  add_epred_draws(mvEvASevD2Mod, re_formula = ~0) %>% 
+  ungroup()
 
-# combine for fungicide effect without competition
-SevDraws <- tibble(sp_age = "first-year *E. virginicus*",
-                    int = evSSevDraws$b_Intercept,
-                    beta = evSSevDraws$b_fungicide) %>%
-  full_join(tibble(sp_age = "*M. vimineum*",
-                   int = mvSevDraws$b_Intercept,
-                   beta = mvSevDraws$b_fungicide)) %>%
-  full_join(tibble(sp_age = "adult *E. virginicus*",
-                   int = evASevDraws$b_Intercept,
-                   beta = evASevDraws$b_fungicide)) %>%
-  mutate(sp_age = fct_relevel(sp_age, "*M. vimineum*",
-                              "first-year *E. virginicus*"),
-         resp_int = 100 * plogis(int),
-         resp_fung = 100 * plogis(int + beta),
-         resp_diff = resp_fung - resp_int)
+evSMvSevD2Draws <- mvSevPredD2Dat %>%
+  add_epred_draws(evSMvSevD2Mod, re_formula = ~0) %>% 
+  ungroup()
+evAMvSevD2Draws <- mvSevPredD2Dat %>%
+  add_epred_draws(evAMvSevD2Mod, re_formula = ~0) %>% 
+  ungroup()
+mvMvSevD2Draws <- mvSevPredD2Dat %>%
+  add_epred_draws(mvMvSevD2Mod, re_formula = ~0) %>% 
+  ungroup()
 
-# fungicide effect without competition
-sev_fung_fig <- ggplot(SevDraws, aes(x = sp_age, y = beta)) +
-  geom_hline(yintercept = 0) +
-  stat_pointinterval(fatten_point = 3,
-                     point_interval = mean_hdci,
-                     .width = c(0.95, 1)) +
-  scale_x_discrete(labels = c(~ atop(NA, atop(NA, textstyle(italic("M. vimineum")))),
-                              ~ atop(NA, atop(textstyle("first-year"), 
-                                              textstyle(italic("E. virginicus")))),
-                              ~ atop(NA, atop(textstyle("adult"), 
-                                              textstyle(italic("E. virginicus")))))) +
-  labs(x = "Focal group",
-       y = "Fungicide effect on disease\nseverity (log-odds)") +
-  fig_theme +
-  theme(axis.text.x = element_text(vjust = 2),
-        axis.title.x = element_text(vjust = 5))
+# combine
+sevD1Draws <- evSEvSSevD1Draws %>% 
+  mutate(focal = "first-year *E. virginicus*") %>% 
+  full_join(evAEvSSevD1Draws %>% 
+              mutate(focal = "adult *E. virginicus*")) %>%
+  full_join(mvEvSSevD1Draws %>%
+              mutate(focal = "*M. vimineum*")) %>%
+  mutate(background = "first-year *E. virginicus*") %>%
+  full_join(evSEvASevD1Draws %>% 
+              mutate(focal = "first-year *E. virginicus*") %>%
+              full_join(evAEvASevD1Draws %>% 
+                          mutate(focal = "adult *E. virginicus*")) %>%
+              full_join(mvEvASevD1Draws %>%
+                          mutate(focal = "*M. vimineum*")) %>%
+              mutate(background = "adult *E. virginicus*")) %>%
+  full_join(evSMvSevD1Draws %>%
+              mutate(focal = "first-year *E. virginicus*") %>%
+              full_join(evAMvSevD1Draws %>% 
+                          mutate(focal = "adult *E. virginicus*")) %>%
+              full_join(mvMvSevD1Draws %>%
+                          mutate(focal = "*M. vimineum*")) %>%
+              mutate(background = "*M. vimineum*")) %>% 
+  mutate(severity = exp(.epred),
+         trt = fct_recode(treatment, "ambient" = "water"))
 
-
-#### fungicide effect on competition ####
-
-# edit
-compSevDraws <- tibble(fung = mvSevDraws$`b_fungicide:background_density:backgroundEvadult`,
-                        ctrl = mvSevDraws$`b_background_density:backgroundEvadult`,
-                        background = "adult *E. virginicus*") %>%
-  full_join(tibble(fung = mvSevDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   ctrl = mvSevDraws$`b_background_density:backgroundEvseedling`,
-                   background = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = mvSevDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   ctrl = mvSevDraws$`b_background_density:backgroundMvseedling`,
-                   background = "*M. vimineum*")) %>%
-  mutate(sp_age = "*M. vimineum*") %>%
-  full_join(tibble(fung = evSSevDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   ctrl = evSSevDraws$`b_background_density:backgroundEvseedling`,
-                   background = "first-year *E. virginicus*",
-                   sp_age = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = evSSevDraws$`b_fungicide:background_density:backgroundEvadult`,
-                   ctrl = evSSevDraws$`b_background_density:backgroundEvadult`,
-                   background = "adult *E. virginicus*",
-                   sp_age = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = evSSevDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   ctrl = evSSevDraws$`b_background_density:backgroundMvseedling`,
-                   background = "*M. vimineum*",
-                   sp_age = "first-year *E. virginicus*")) %>%
-  full_join(tibble(fung = evASevDraws$`b_fungicide:background_density:backgroundEvadult`,
-                   ctrl = evASevDraws$`b_background_density:backgroundEvadult`,
-                   background = "adult *E. virginicus*",
-                   sp_age = "adult *E. virginicus*")) %>%
-  full_join(tibble(fung = evASevDraws$`b_fungicide:background_density:backgroundEvseedling`,
-                   ctrl = evASevDraws$`b_background_density:backgroundEvseedling`,
-                   background = "first-year *E. virginicus*",
-                   sp_age = "adult *E. virginicus*")) %>%
-  full_join(tibble(fung = evASevDraws$`b_fungicide:background_density:backgroundMvseedling`,
-                   ctrl = evASevDraws$`b_background_density:backgroundMvseedling`,
-                   background = "*M. vimineum*",
-                   sp_age = "adult *E. virginicus*")) %>%
-  mutate(background = fct_relevel(background, "*M. vimineum*",
-                                  "first-year *E. virginicus*"),
-         sp_age = fct_relevel(sp_age, "*M. vimineum*",
-                              "first-year *E. virginicus*"))
+sevD2Draws <- evSEvSSevD2Draws %>% 
+  mutate(focal = "first-year *E. virginicus*") %>% 
+  full_join(evAEvSSevD2Draws %>% 
+              mutate(focal = "adult *E. virginicus*")) %>%
+  full_join(mvEvSSevD2Draws %>%
+              mutate(focal = "*M. vimineum*")) %>%
+  mutate(background = "first-year *E. virginicus*") %>%
+  full_join(evSEvASevD2Draws %>% 
+              mutate(focal = "first-year *E. virginicus*") %>%
+              full_join(evAEvASevD2Draws %>% 
+                          mutate(focal = "adult *E. virginicus*")) %>%
+              full_join(mvEvASevD2Draws %>%
+                          mutate(focal = "*M. vimineum*")) %>%
+              mutate(background = "adult *E. virginicus*")) %>%
+  full_join(evSMvSevD2Draws %>%
+              mutate(focal = "first-year *E. virginicus*") %>%
+              full_join(evAMvSevD2Draws %>% 
+                          mutate(focal = "adult *E. virginicus*")) %>%
+              full_join(mvMvSevD2Draws %>%
+                          mutate(focal = "*M. vimineum*")) %>%
+              mutate(background = "*M. vimineum*")) %>% 
+  mutate(severity = exp(.epred),
+         trt = fct_recode(treatment, "ambient" = "water"))
 
 # figure
-sev_comp_fig <- ggplot(compSevDraws, aes(x = background, y = fung, color = sp_age)) +
-  geom_hline(yintercept = 0, color = "grey") +
-  stat_pointinterval(fatten_point = 5,
-                     shape = 95,
-                     point_interval = mean_hdci,
-                     .width = c(0.95, 1),
-                     position = position_dodge(0.5)) +
-  scale_color_manual(values = col_pal, name = "Focal group") +
-  scale_x_discrete(labels = c(~ atop(NA, atop(NA, textstyle(italic("M. vimineum")))),
-                              ~ atop(NA, atop(textstyle("first-year"), 
-                                              textstyle(italic("E. virginicus")))),
-                              ~ atop(NA, atop(textstyle("adult"), 
-                                              textstyle(italic("E. virginicus")))))) +
-  labs(x = "Background group",
-       y = "Fungicide effect on disease\nseverity response (log-odds)") +
+julSevD1Fig <- ggplot(filter(sevD1Draws, month == "jul"), 
+                      aes(x = background_density, y = severity)) +
+  stat_lineribbon(aes(fill = trt, color = trt), point_interval = median_hdci, 
+                  .width = 0.95, alpha = 0.5) +
+  facet_grid(focal ~ background, scales = "free") +
+  scale_fill_manual(values = c(coral_pal[2], grey_pal[2]), 
+                    name = "Disease treatment") +
+  scale_color_manual(values = c(coral_pal[3], grey_pal[3]),
+                     name = "Disease treatment") +
+  labs(x = "Background plant density", 
+       y = "Focal plant disease severity") +
   fig_theme +
-  theme(legend.text = element_markdown(),
-        axis.text.x = element_text(vjust = 2),
-        axis.title.x = element_text(vjust = 5))
+  theme(strip.text = element_markdown())
 
+lateAugSevD1Fig <- julSevD1Fig %+%
+  filter(sevD1Draws, month == "late_aug")
 
-#### combined figure ####
+sepSevD1Fig <- julSevD1Fig %+%
+  filter(sevD1Draws, month == "sep")
 
-sev_com_fig <- sev_time_fig / (sev_fung_fig + sev_comp_fig + theme(legend.position = "none")) +
-  plot_annotation(tag_levels = "A") &
-  theme(plot.tag = element_text(size = 9, face = "bold"),
-        plot.margin = margin(5.5, 5.5, -1, 5.5))
+junSevD2Fig <- julSevD1Fig %+%
+  filter(sevD2Draws, month == "jun")
 
-ggsave("output/combined_severity_figure_2018_2019_density_exp.png",
-       sev_com_fig,
-       width = 6, height = 7)
+julSevD2Fig <- julSevD1Fig %+%
+  filter(sevD2Draws, month == "jul")
 
+earlyAugSevD2Fig <- julSevD1Fig %+%
+  filter(sevD2Draws, month == "early_aug")
 
-#### values for text ####
+lateAugSevD2Fig <- julSevD1Fig %+%
+  filter(sevD2Draws, month == "late_aug")
 
-# fungicide effects without neighbors
-SevDraws %>%
-  group_by(sp_age) %>%
-  mean_hdci(resp_diff)
-
-compSevDraws %>%
-  group_by(sp_age, background) %>%
-  mean_hdci(ctrl)
-
-compSevDraws %>%
-  group_by(sp_age, background) %>%
-  mean_hdci(fung)
-
-evSSevDraws %>%
-  mutate(prob_none = 100 * plogis(b_Intercept + b_fungicide),
-         prob_EvS = 100 * plogis(b_Intercept + b_fungicide + 
-                                  `b_background_density:backgroundEvseedling` * 10 + 
-                                  `b_fungicide:background_density:backgroundEvseedling` * 10),
-         prob_EvA = 100 * plogis(b_Intercept + b_fungicide + 
-                                   `b_background_density:backgroundEvadult` * 10 + 
-                                   `b_fungicide:background_density:backgroundEvadult` * 10)) %>%
-  transmute(EvSeffect = prob_EvS - prob_none,
-            EvAeffect = prob_EvA - prob_none) %>%
-  mean_hdci()
+# save
+ggsave("output/severity_jul_figure_2018_density_exp.png",
+       julSevD1Fig, width = 6.5, height = 6.5)
+ggsave("output/severity_late_aug_figure_2018_density_exp.png",
+       lateAugSevD1Fig, width = 6.5, height = 6.5)
+ggsave("output/severity_sep_figure_2018_density_exp.png",
+       sepSevD1Fig, width = 6.5, height = 6.5)
+ggsave("output/severity_jun_figure_2019_density_exp.png",
+       junSevD2Fig, width = 6.5, height = 6.5)
+ggsave("output/severity_jul_figure_2019_density_exp.png",
+       julSevD2Fig, width = 6.5, height = 6.5)
+ggsave("output/severity_early_aug_figure_2019_density_exp.png",
+       earlyAugSevD2Fig, width = 6.5, height = 6.5)
+ggsave("output/severity_late_aug_figure_2019_density_exp.png",
+       lateAugSevD2Fig, width = 6.5, height = 6.5)
