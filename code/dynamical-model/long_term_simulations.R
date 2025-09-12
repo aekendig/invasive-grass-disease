@@ -1502,11 +1502,11 @@ ggsave("output/competition_effects_responses_infP_parms.png", eff_resp_comp_fig3
 # effect on litter
 eq_infP_A %>%
   group_by(disease_name) %>%
-  mean_hdci(litter)
+  median_hdci(litter)
 
 eq_gfung_P %>%
   group_by(disease_name) %>%
-  mean_hdci(litter)
+  median_hdci(litter)
 
 # treatment difference in effect on litter
 eq_infP_A %>%
@@ -1514,37 +1514,81 @@ eq_infP_A %>%
   pivot_wider(names_from = disease_name,
               values_from = litter) %>%
   mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
-  mean_hdci(diff)
+  median_hdci(diff)
 
 eq_gfung_P %>%
   select(.draw, disease_name, litter) %>%
   pivot_wider(names_from = disease_name,
               values_from = litter) %>%
   mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
-  mean_hdci(diff)
+  median_hdci(diff)
 
 # response to litter
 resp_infP_long %>%
   group_by(disease_name) %>%
-  mean_hdci(resp_LA)
+  median_hdci(resp_LA)
 
 resp_infP_long %>%
   group_by(disease_name) %>%
-  mean_hdci(resp_LP)
-
-#### start here 2 ####
-# resolved missing response values, re-run these for text
+  median_hdci(resp_LP)
 
 resp_infP_long %>%
   select(.draw, disease_name, resp_LA) %>%
   pivot_wider(names_from = disease_name,
               values_from = resp_LA) %>%
   mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
-  mean_hdci(diff)
+  median_hdci(diff)
 
 resp_infP_long %>%
   select(.draw, disease_name, resp_LP) %>%
   pivot_wider(names_from = disease_name,
               values_from = resp_LP) %>%
   mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
-  mean_hdci(diff)
+  median_hdci(diff)
+
+# effect on competition
+eq_infP_A %>%
+  group_by(disease_name) %>%
+  median_hdci(comp_eff)
+
+eq_gfung_P %>%
+  group_by(disease_name) %>%
+  median_hdci(comp_eff)
+
+# treatment difference in effect on competition
+eq_infP_A %>%
+  select(.draw, disease_name, comp_eff) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = comp_eff) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  median_hdci(diff)
+
+eq_gfung_P %>%
+  select(.draw, disease_name, comp_eff) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = comp_eff) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  median_hdci(diff)
+
+# response to competition
+resp_infP_long %>%
+  group_by(disease_name) %>%
+  median_hdci(resp_CA)
+
+resp_infP_long %>%
+  group_by(disease_name) %>%
+  median_hdci(resp_CP)
+
+resp_infP_long %>%
+  select(.draw, disease_name, resp_CA) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = resp_CA) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  median_hdci(diff)
+
+resp_infP_long %>%
+  select(.draw, disease_name, resp_CP) %>%
+  pivot_wider(names_from = disease_name,
+              values_from = resp_CP) %>%
+  mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
+  median_hdci(diff)
