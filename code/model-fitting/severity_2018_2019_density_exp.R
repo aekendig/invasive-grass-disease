@@ -91,6 +91,20 @@ sevD2Dat2 <- sevD2Dat %>%
   mutate(severity_t = transform01(severity),
          log_severity_t = log(severity_t))
 
+# transformations
+ggplot(sevD1Dat2, aes(x = severity, y = severity_t)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_point()
+
+ggplot(sevD2Dat2, aes(x = severity, y = severity_t)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_point()
+
+sevD1Dat2 %>% 
+  mutate(diff = severity_t - severity)  %>%
+  ggplot(aes(x = severity, y = diff)) +
+  geom_point()
+
 # sample sizes
 sampsD1 <- sevD1Dat2 %>% 
   group_by(sp, age, background, month) %>% 
@@ -306,29 +320,29 @@ save(mvMvSevD2Mod, file = "output/mvMv_severity_model_2019_density_exp.rda")
 #### tables and figures ####
 
 # load
-load("output/evSEvS_severity_model_2018_density_exp.csv")
-load("output/evSEvA_severity_model_2018_density_exp.csv")
-load("output/evSMv_severity_model_2018_density_exp.csv")
+load("output/evSEvS_severity_model_2018_density_exp.rda")
+load("output/evSEvA_severity_model_2018_density_exp.rda")
+load("output/evSMv_severity_model_2018_density_exp.rda")
 
-load("output/evAEvS_severity_model_2018_density_exp.csv")
-load("output/evAEvA_severity_model_2018_density_exp.csv")
-load("output/evAMv_severity_model_2018_density_exp.csv")
+load("output/evAEvS_severity_model_2018_density_exp.rda")
+load("output/evAEvA_severity_model_2018_density_exp.rda")
+load("output/evAMv_severity_model_2018_density_exp.rda")
 
-load("output/mvEvS_severity_model_2018_density_exp.csv")
-load("output/mvEvA_severity_model_2018_density_exp.csv")
-load("output/mvMv_severity_model_2018_density_exp.csv")
+load("output/mvEvS_severity_model_2018_density_exp.rda")
+load("output/mvEvA_severity_model_2018_density_exp.rda")
+load("output/mvMv_severity_model_2018_density_exp.rda")
 
-load("output/evSEvS_severity_model_2019_density_exp.csv")
-load("output/evSEvA_severity_model_2019_density_exp.csv")
-load("output/evSMv_severity_model_2019_density_exp.csv")
+load("output/evSEvS_severity_model_2019_density_exp.rda")
+load("output/evSEvA_severity_model_2019_density_exp.rda")
+load("output/evSMv_severity_model_2019_density_exp.rda")
 
-load("output/evAEvS_severity_model_2019_density_exp.csv")
-load("output/evAEvA_severity_model_2019_density_exp.csv")
-load("output/evAMv_severity_model_2019_density_exp.csv")
+load("output/evAEvS_severity_model_2019_density_exp.rda")
+load("output/evAEvA_severity_model_2019_density_exp.rda")
+load("output/evAMv_severity_model_2019_density_exp.rda")
 
-load("output/mvEvS_severity_model_2019_density_exp.csv")
-load("output/mvEvA_severity_model_2019_density_exp.csv")
-load("output/mvMv_severity_model_2019_density_exp.csv")
+load("output/mvEvS_severity_model_2019_density_exp.rda")
+load("output/mvEvA_severity_model_2019_density_exp.rda")
+load("output/mvMv_severity_model_2019_density_exp.rda")
 
 # tables
 write_csv(tidy(evSEvSSevD1Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
@@ -373,101 +387,118 @@ write_csv(tidy(mvEvASevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T),
 write_csv(tidy(mvMvSevD2Mod, conf.method = "HPDinterval", rhat = T, ess = T), 
           "output/mvMv_severity_model_2019_density_exp.csv")
 
-# prediction data
-evSSevPredD1Dat <- sevD1Dat2 %>%
-  filter(background %in% c("none", "Ev seedling")) %>% 
-  group_by(month, fungicide, treatment) %>%
-  expand(background_density = full_seq(background_density, period = 1)) %>% 
-  ungroup()
-
-evASevPredD1Dat <- sevD1Dat2 %>%
-  filter(background %in% c("none", "Ev adult")) %>% 
-  group_by(month, fungicide, treatment) %>%
-  expand(background_density = full_seq(background_density, period = 1)) %>% 
-  ungroup()
-
-mvSevPredD1Dat <- sevD1Dat2 %>%
-  filter(background %in% c("none", "Mv seedling")) %>% 
-  group_by(month, fungicide, treatment) %>%
-  expand(background_density = full_seq(background_density, period = 1)) %>% 
-  ungroup()
-
-evSSevPredD2Dat <- sevD2Dat2 %>%
-  filter(background %in% c("none", "Ev seedling")) %>% 
-  group_by(month, fungicide, treatment) %>%
-  expand(background_density = full_seq(background_density, period = 1)) %>% 
-  ungroup()
-
-evASevPredD2Dat <- sevD2Dat2 %>%
-  filter(background %in% c("none", "Ev adult")) %>% 
-  group_by(month, fungicide, treatment) %>%
-  expand(background_density = full_seq(background_density, period = 1)) %>% 
-  ungroup()
-
-mvSevPredD2Dat <- sevD2Dat2 %>%
-  filter(background %in% c("none", "Mv seedling")) %>% 
-  group_by(month, fungicide, treatment) %>%
-  expand(background_density = full_seq(background_density, period = 1)) %>% 
-  ungroup()
-
 # posterior draws
-evSEvSSevD1Draws <- evSSevPredD1Dat %>%
+evSEvSSevD1Draws <- evSEvSSevD1Dat %>% 
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evSEvSSevD1Mod, re_formula = ~0) %>% 
   ungroup()
-evAEvSSevD1Draws <- evSSevPredD1Dat %>%
+evAEvSSevD1Draws <- evAEvSSevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evAEvSSevD1Mod, re_formula = ~0) %>% 
   ungroup()
-mvEvSSevD1Draws <- evSSevPredD1Dat %>%
+mvEvSSevD1Draws <- mvEvSSevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(mvEvSSevD1Mod, re_formula = ~0) %>% 
   ungroup()
 
-evSEvASevD1Draws <- evASevPredD1Dat %>%
+evSEvASevD1Draws <- evSEvASevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evSEvASevD1Mod, re_formula = ~0) %>% 
   ungroup()
-evAEvASevD1Draws <- evASevPredD1Dat %>%
+evAEvASevD1Draws <- evAEvASevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evAEvASevD1Mod, re_formula = ~0) %>% 
   ungroup()
-mvEvASevD1Draws <- evASevPredD1Dat %>%
+mvEvASevD1Draws <- mvEvASevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(mvEvASevD1Mod, re_formula = ~0) %>% 
   ungroup()
 
-evSMvSevD1Draws <- mvSevPredD1Dat %>%
+evSMvSevD1Draws <- evSMvSevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evSMvSevD1Mod, re_formula = ~0) %>% 
   ungroup()
-evAMvSevD1Draws <- mvSevPredD1Dat %>%
+evAMvSevD1Draws <- evAMvSevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evAMvSevD1Mod, re_formula = ~0) %>% 
   ungroup()
-mvMvSevD1Draws <- mvSevPredD1Dat %>%
+mvMvSevD1Draws <- mvMvSevD1Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(mvMvSevD1Mod, re_formula = ~0) %>% 
   ungroup()
 
-evSEvSSevD2Draws <- evSSevPredD2Dat %>%
+evSEvSSevD2Draws <- evSEvSSevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evSEvSSevD2Mod, re_formula = ~0) %>% 
   ungroup()
-evAEvSSevD2Draws <- evSSevPredD2Dat %>%
+evAEvSSevD2Draws <- evAEvSSevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evAEvSSevD2Mod, re_formula = ~0) %>% 
   ungroup()
-mvEvSSevD2Draws <- evSSevPredD2Dat %>%
+mvEvSSevD2Draws <- mvEvSSevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(mvEvSSevD2Mod, re_formula = ~0) %>% 
   ungroup()
 
-evSEvASevD2Draws <- evASevPredD2Dat %>%
+evSEvASevD2Draws <- evSEvASevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evSEvASevD2Mod, re_formula = ~0) %>% 
   ungroup()
-evAEvASevD2Draws <- evASevPredD2Dat %>%
+evAEvASevD2Draws <- evAEvASevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evAEvASevD2Mod, re_formula = ~0) %>% 
   ungroup()
-mvEvASevD2Draws <- evASevPredD2Dat %>%
+mvEvASevD2Draws <- mvEvASevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(mvEvASevD2Mod, re_formula = ~0) %>% 
   ungroup()
 
-evSMvSevD2Draws <- mvSevPredD2Dat %>%
+evSMvSevD2Draws <- evSMvSevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evSMvSevD2Mod, re_formula = ~0) %>% 
   ungroup()
-evAMvSevD2Draws <- mvSevPredD2Dat %>%
+evAMvSevD2Draws <- evAMvSevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(evAMvSevD2Mod, re_formula = ~0) %>% 
   ungroup()
-mvMvSevD2Draws <- mvSevPredD2Dat %>%
+mvMvSevD2Draws <- mvMvSevD2Dat %>%
+  group_by(month, fungicide, treatment) %>%
+  expand(background_density = full_seq(background_density, period = 1)) %>% 
+  ungroup() %>%
   add_epred_draws(mvMvSevD2Mod, re_formula = ~0) %>% 
   ungroup()
 
@@ -568,3 +599,7 @@ ggsave("output/severity_early_aug_figure_2019_density_exp.png",
        earlyAugSevD2Fig, width = 6.5, height = 6.5)
 ggsave("output/severity_late_aug_figure_2019_density_exp.png",
        lateAugSevD2Fig, width = 6.5, height = 6.5)
+
+
+#### values for text ####
+
