@@ -1,7 +1,9 @@
-disease_name,parameter_set,coexist,annual only,perennial only,priority effect
-Ambient disease,1,3,90,5,2
-Ambient disease,2,4,86,7,3
-Ambient disease,3,6,86,6,2
-Disease suppressed,1,5,93,2,0
-Disease suppressed,2,5,93,2,0
-Disease suppressed,3,5,93,2,0
+disease_name,outcome,1,2,3
+Ambient disease,coexist,3,4,6
+Ambient disease,annual only,90,86,86
+Ambient disease,perennial only,5,7,6
+Ambient disease,priority effect,2,3,2
+Disease suppressed,coexist,5,5,5
+Disease suppressed,annual only,93,93,93
+Disease suppressed,perennial only,2,2,2
+Disease suppressed,priority effect,0,0,0

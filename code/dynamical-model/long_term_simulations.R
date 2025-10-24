@@ -7,6 +7,7 @@ rm(list = ls())
 library(tidybayes)
 library(ggtext)
 library(patchwork)
+library(janitor)
 # scales packaged used within plotting functions below
 
 # import parameters (loads tidyverse)
@@ -129,14 +130,14 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
     inits_compP <- c(sim_base_PA[[1]]$annual_competition[1],
                      sim_base_PA[[1]]$perennial_competition[1])
     
-    # inflate competition factors
+    # inflate litter and competition factors for annual
     inits_LA2 <- inits_AP
     inits_LA2[2] <- inits_AP[2] * 1.01
     
     inits_compA2 <- inits_compA
     inits_compA2[1] <- inits_compA[1] * 1.01
     
-    # inflate litter factors (if no litter, add 0.01 g)
+    # inflate factors for perennial (if no annual, add 0.01)
     inits_LP2 <- inits_PA
     if(inits_PA[2] > 0){
       
@@ -445,7 +446,7 @@ mv_litter_eff_dist <- ggplot(eq_gfung_A, aes(x = litter)) +
   scale_fill_manual(values = c(grey_pal[2], coral_pal[2])) +
   scale_color_manual(values = c(grey_pal[2], coral_pal[2])) +
   scale_x_continuous(labels = scales::comma) +
-  labs(x = "*M. vimineum* effect on litter", title = "A") +
+  labs(x = "*M. vimineum* effect on litter-mediated competition", title = "A") +
   fig_theme +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_blank(),
@@ -463,12 +464,12 @@ mv_litter_eff_dist3 <- mv_litter_eff_dist %+%
 ev_litter_eff_dist <- mv_litter_eff_dist %+%
   eq_gfung_P +
   coord_cartesian(xlim = c(0, 15000)) +
-  labs(x = "*E. virginicus* effect on litter", title = "B")
+  labs(x = "*E. virginicus* effect on litter-mediated competition", title = "B")
 
 mv_comp_eff_dist <- mv_litter_eff_dist %+%
   aes(x = comp_eff) +
   coord_cartesian(xlim = range(eq_gfung_A$comp_eff)) +
-  labs(x = "*M. vimineum* effect on competition")
+  labs(x = "*M. vimineum* effect on density-mediated competition")
 
 mv_comp_eff_dist2 <- mv_comp_eff_dist %+%
   eq_ginf_A +
@@ -481,7 +482,7 @@ mv_comp_eff_dist3 <- mv_comp_eff_dist %+%
 ev_comp_eff_dist <- ev_litter_eff_dist %+%
   aes(x = comp_eff) +
   coord_cartesian(xlim = c(0, 600)) +
-  labs(x = "*E. virginicus* effect on competition")
+  labs(x = "*E. virginicus* effect on density-mediated competition")
 
 mv_litter_eff_pt <- ggplot(eq_gfung_A, aes(x = disease_name, y = litter)) +
   stat_pointinterval(aes(color = disease_name), point_size = 2,
@@ -1217,8 +1218,8 @@ inv_gfung_sum %>%
               mutate(parameter_set = 3)) %>%
   mutate(perc = janitor::round_half_up(prop * 100)) %>%
   select(-c(n, prop)) %>%
-  pivot_wider(names_from = outcome, values_from = perc) %>%
-  arrange(disease_name, parameter_set) %>%
+  pivot_wider(names_from = parameter_set, values_from = perc) %>%
+  arrange(disease_name, outcome) %>%
   write_csv("output/coexistence_outcomes_all_parms.csv")
 
 
@@ -1319,7 +1320,8 @@ mv_litter_resp_dist <- ggplot(resp_gfung_long, aes(x = resp_LA)) +
   scale_fill_manual(values = c(grey_pal[2], coral_pal[2])) +
   scale_color_manual(values = c(grey_pal[2], coral_pal[2])) +
   scale_x_continuous(labels = scales::comma) +
-  labs(x = "*M. vimineum* response to litter", title = "C") +
+  labs(x = "*M. vimineum* response to litter-mediated competition", 
+       title = "C") +
   fig_theme +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_blank(),
@@ -1329,15 +1331,17 @@ mv_litter_resp_dist <- ggplot(resp_gfung_long, aes(x = resp_LA)) +
 
 ev_litter_resp_dist <- mv_litter_resp_dist %+%
   aes(x = resp_LP) +
-  labs(x = "*E. virginicus* response to litter", title = "D")
+  labs(x = "*E. virginicus* response to litter-mediated competition", 
+       title = "D")
 
 mv_comp_resp_dist <- mv_litter_resp_dist %+%
   aes(x = resp_CA) +
-  labs(x = "*M. vimineum* response to competition")
+  labs(x = "*M. vimineum* response to density-mediated competition") +
+  theme(axis.title.x = element_markdown(hjust = 0.75))
 
 ev_comp_resp_dist <- ev_litter_resp_dist %+%
   aes(x = resp_CP) +
-  labs(x = "*E. virginicus* response to competition")
+  labs(x = "*E. virginicus* response to density-mediated competition")
 
 mv_litter_resp_dist2 <- mv_litter_resp_dist %+%
   resp_ginf_long
@@ -1451,7 +1455,7 @@ ev_comp_resp_fig3 <- ev_comp_resp_dist3 +
   inset_element(ev_comp_resp_pt3, resp_inset_coord[1], resp_inset_coord[2],
                 resp_inset_coord[3], resp_inset_coord[4])
 
-#### combine litter figures, combine response figures ####
+#### combine litter and density figures ####
 
 eff_resp_litter_fig <- mv_litter_eff_fig + ev_litter_eff_fig + mv_litter_resp_fig + 
   ev_litter_resp_fig +
@@ -1532,6 +1536,7 @@ resp_infP_long %>%
   group_by(disease_name) %>%
   median_hdci(resp_LP)
 
+# treatment difference in response to litter
 resp_infP_long %>%
   select(.draw, disease_name, resp_LA) %>%
   pivot_wider(names_from = disease_name,
@@ -1579,6 +1584,7 @@ resp_infP_long %>%
   group_by(disease_name) %>%
   median_hdci(resp_CP)
 
+# treatment difference in response to competition
 resp_infP_long %>%
   select(.draw, disease_name, resp_CA) %>%
   pivot_wider(names_from = disease_name,
@@ -1592,3 +1598,140 @@ resp_infP_long %>%
               values_from = resp_CP) %>%
   mutate(diff = `Disease suppressed` - `Ambient disease`) %>%
   median_hdci(diff)
+
+
+#### effect/response table ####
+
+# effect on litter
+litter_eff_tab <- eq_gfung_A %>%
+  group_by(disease_name) %>%
+  median_hdci(litter) %>% 
+  mutate(parameter_set = 1) %>% 
+  full_join(eq_ginf_A %>%
+              group_by(disease_name) %>%
+              median_hdci(litter) %>% 
+              mutate(parameter_set = 2)) %>% 
+  full_join(eq_infP_A %>%
+              group_by(disease_name) %>%
+              median_hdci(litter) %>% 
+              mutate(parameter_set = 3)) %>% 
+  mutate(species = "M. vimineum") %>% 
+  full_join(eq_gfung_P %>%
+              group_by(disease_name) %>%
+              median_hdci(litter) %>% 
+              cross_join(tibble(parameter_set = c(1, 2, 3))) %>% 
+              mutate(species = "E. virginicus")) %>% 
+  select(disease_name, species, litter, .lower, .upper, parameter_set) %>% 
+  rename(var = litter) %>% 
+  mutate(type = "effect",
+         competition = "litter")
+
+# response to litter
+litter_resp_tab <- resp_gfung_long %>%
+  group_by(disease_name) %>%
+  median_hdci(resp_LA) %>% 
+  mutate(parameter_set = 1) %>% 
+  full_join(resp_ginf_long %>%
+              group_by(disease_name) %>%
+              median_hdci(resp_LA)  %>% 
+              mutate(parameter_set = 2)) %>% 
+  full_join(resp_infP_long %>%
+              group_by(disease_name) %>%
+              median_hdci(resp_LA)  %>% 
+              mutate(parameter_set = 3)) %>% 
+  mutate(species = "M. vimineum") %>% 
+  rename(var = resp_LA) %>% 
+  full_join(resp_gfung_long %>%
+              group_by(disease_name) %>%
+              median_hdci(resp_LP) %>% 
+              mutate(parameter_set = 1) %>% 
+              full_join(resp_ginf_long %>%
+                          group_by(disease_name) %>%
+                          median_hdci(resp_LP)  %>% 
+                          mutate(parameter_set = 2)) %>% 
+              full_join(resp_infP_long %>%
+                          group_by(disease_name) %>%
+                          median_hdci(resp_LP)  %>% 
+                          mutate(parameter_set = 3)) %>% 
+              mutate(species = "E. virginicus") %>% 
+              rename(var = resp_LP)) %>% 
+  select(disease_name, species, var, .lower, .upper, parameter_set) %>% 
+  mutate(type = "response",
+         competition = "litter")
+
+# effect on density
+density_eff_tab <- eq_gfung_A %>%
+  group_by(disease_name) %>%
+  median_hdci(comp_eff) %>% 
+  mutate(parameter_set = 1) %>% 
+  full_join(eq_ginf_A %>%
+              group_by(disease_name) %>%
+              median_hdci(comp_eff) %>% 
+              mutate(parameter_set = 2)) %>% 
+  full_join(eq_infP_A %>%
+              group_by(disease_name) %>%
+              median_hdci(comp_eff) %>% 
+              mutate(parameter_set = 3)) %>% 
+  mutate(species = "M. vimineum") %>% 
+  full_join(eq_gfung_P %>%
+              group_by(disease_name) %>%
+              median_hdci(comp_eff) %>% 
+              cross_join(tibble(parameter_set = c(1, 2, 3))) %>% 
+              mutate(species = "E. virginicus")) %>% 
+  select(disease_name, species, comp_eff, .lower, .upper, parameter_set) %>% 
+  rename(var = comp_eff) %>% 
+  mutate(type = "effect",
+         competition = "density")
+
+# response to density
+density_resp_tab <- resp_gfung_long %>%
+  group_by(disease_name) %>%
+  median_hdci(resp_CA) %>% 
+  mutate(parameter_set = 1) %>% 
+  full_join(resp_ginf_long %>%
+              group_by(disease_name) %>%
+              median_hdci(resp_CA)  %>% 
+              mutate(parameter_set = 2)) %>% 
+  full_join(resp_infP_long %>%
+              group_by(disease_name) %>%
+              median_hdci(resp_CA)  %>% 
+              mutate(parameter_set = 3)) %>% 
+  mutate(species = "M. vimineum") %>% 
+  rename(var = resp_CA) %>% 
+  full_join(resp_gfung_long %>%
+              group_by(disease_name) %>%
+              median_hdci(resp_CP) %>% 
+              mutate(parameter_set = 1) %>% 
+              full_join(resp_ginf_long %>%
+                          group_by(disease_name) %>%
+                          median_hdci(resp_CP)  %>% 
+                          mutate(parameter_set = 2)) %>% 
+              full_join(resp_infP_long %>%
+                          group_by(disease_name) %>%
+                          median_hdci(resp_CP)  %>% 
+                          mutate(parameter_set = 3)) %>% 
+              mutate(species = "E. virginicus") %>% 
+              rename(var = resp_CP)) %>% 
+  select(disease_name, species, var, .lower, .upper, parameter_set) %>% 
+  mutate(type = "response",
+         competition = "density")
+
+# combine
+eff_resp_tab <- litter_eff_tab %>% 
+  full_join(litter_resp_tab) %>% 
+  full_join(density_eff_tab) %>% 
+  full_join(density_resp_tab) %>% 
+  relocate(competition, type, species, .before = 1) %>% 
+  mutate(across(.cols = c(var, .lower, .upper),
+                .fns = ~case_when(abs(.x) > 1 ~ as.character(round_half_up(.x, 0)),
+                                  abs(round_half_up(.x, 2)) >= 0.01 ~ 
+                                    as.character(round_half_up(.x, 2)),
+                                  .x == 0 ~ "0",
+                                  TRUE ~
+                                    format(.x, scientific = T, digits = 2)))) %>% 
+  mutate(var_all = paste0(var, "\n(", .lower, " to ", .upper, ")")) %>% 
+  select(-c(var, .lower, .upper)) %>% 
+  pivot_wider(names_from = parameter_set,
+              values_from = var_all)
+  
+write_csv(eff_resp_tab, "output/effects_responses_all_parms.csv")
