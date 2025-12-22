@@ -14,7 +14,7 @@ library(janitor)
 source("code/dynamical-model/parameters.R")
 
 # import simulation function
-source("code/dynamical-model/APL_Sim_Tree.R")
+source("code/dynamical-model/APL_SIm_Tree.R")
 
 # figure settings
 source("code/figure-prep/figure_settings.R")
