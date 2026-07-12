@@ -1,3 +1,21 @@
+#### status ####
+
+# the code for all the effects in the baseline gfung parameter set has been updated
+# copy and paste for the other parameter sets
+# update the competition figure to have more panels
+
+# revised the response function
+# tried it with gfung h and looks okay
+# revise all the parameter sets and disease conditions in the response section
+# make figures
+
+# perhaps we put the effects and responses in one figure with the points and errors and forget the distributions?
+# their tails are very long, so it's hard to see the majority of the distribution
+
+# make a new figure with how the growth rates and outcomes of competition relate to effects and responses
+# I think Nick was working on this at the end of the pdf and we may have to do something to the 
+# competition-related factors for this figure/analysis, but okay to draft
+
 #### set-up ####
 
 # clear environment
@@ -14,7 +32,7 @@ library(janitor)
 source("code/dynamical-model/parameters.R")
 
 # import simulation function
-source("code/dynamical-model/APL_SIm_Tree.R")
+source("code/dynamical-model/kortessis_etal_2022_revised_model.R")
 
 # figure settings
 source("code/figure-prep/figure_settings.R")
@@ -43,158 +61,91 @@ sims_comb_fun <- function(sims_h, sims_d, widen = T){
 
 }
 
+# # growth rate function
+# gr_fun <- function(iter, sim_init, parameters, gens, return_M = F){
+#   
+#   # initial conditions
+#   inits <- c(sim_init$annual_seeds,
+#              sim_init$litter,
+#              sim_init$perennial_seeds,
+#              sim_init$perennial_adults)
+#   
+#   # initial competition values (experienced by annual, perennial)
+#   inits_comp <- c(sim_init$annual_competition,
+#                   sim_init$perennial_competition)
+#   
+#   # simulate one year under baseline conditions
+#   sim <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
+#                      parameters = parameters, init_C = inits_comp,
+#                      return_M = return_M)
+#   
+#   # output
+#   return(sim)
+#   
+# }
+
 # calculate responses
 resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
   
-  # when species coexist
-  if(sim_outcome$coexist == "yes"){
-    
-    # initial conditions (annual seeds, litter, perennial seeds, perennial adults)
-    inits <- c(sim_outcome$annual_seeds,
-               sim_outcome$litter,
-               sim_outcome$perennial_seeds,
-               sim_outcome$perennial_adults)
-    
-    # initial competition values (experienced by annual, perennial)
-    inits_comp <- c(sim_outcome$annual_competition,
-                    sim_outcome$perennial_competition)
-    
-    # simulate one year under baseline conditions
-    sim_base <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
-                            parameters = parameters,
-                            return_M = T)
-    
-    # inflate competition factors
-    inits_L2 <- inits
-    inits_L2[2] <- inits[2] * 1.01
-    
-    inits_compA2 <- inits_comp
-    inits_compA2[1] <- inits_comp[1] * 1.01 # new: revise CA/CP in model to scale by intraspp alphas
-    
-    inits_compP2 <- inits_comp
-    inits_compP2[2] <- inits_comp[2] * 1.01
-    
-    # simulate one year with inflation for each species
-    sim_L <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_L2,
-                         parameters = parameters, init_C = inits_comp,
-                         return_M = T)
-    sim_compA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
-                             parameters = parameters, init_C = inits_compA2)
-    sim_compP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
-                             parameters = parameters, init_C = inits_compP2,
-                             return_M = T)
-    
-    # output dataframe
-    out_base <- sim_base[[1]]
-    out_L <- sim_L[[1]]
-
-    # calculate growth rates r = (ln[N(t+1)] -  ln[N(t)])/delta_t
-    gr_baseA <- log(out_base$annual_seeds[2] / out_base$annual_seeds[1])
-    gr_LA <- log(out_L$annual_seeds[2] / out_L$annual_seeds[1])
-    gr_CA <- log(sim_compA$annual_seeds[2] / sim_compA$annual_seeds[1])
-    
-    # calculate growth rates dominant eigenvalue
-    gr_baseP <- log(eigen(sim_base[[2]], only.values = T)$values[1])
-    gr_LP <- log(eigen(sim_L[[2]], only.values = T)$values[1])
-    gr_CP <- log(eigen(sim_compP[[2]], only.values = T)$values[1])
-    
-    # calculate responses
-    resp_LA <- (gr_LA - gr_baseA) / (inits_L2[2] - inits[2])
-    resp_LP <- (gr_LP - gr_baseP) / (inits_L2[2] - inits[2])
-    resp_CA <- (gr_CA - gr_baseA) / (inits_compA2[1] - inits_comp[1])
-    resp_CP <- (gr_CP - gr_baseP) / (inits_compP2[2] - inits_comp[2])
-    
-  } else {
-    
-    # first letter is invader, second is resident
-    # initial conditions (annual seeds, litter, perennial seeds, perennial adults)
-    inits_AP <- c(1,
-                  sim_outcome$litter_P,
-                  sim_outcome$perennial_seeds_P,
-                  sim_outcome$perennial_adults_P)
-    
-    inits_PA <- c(sim_outcome$annual_seeds_A,
-                  sim_outcome$litter_A,
-                  0,
-                  1)
-    
-    # simulate one year under baseline conditions
-    sim_base_AP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_AP,
-                               parameters = parameters)
-    sim_base_PA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_PA,
-                               parameters = parameters, return_M = T)
-    
-    # initial competition values (experienced by annual, perennial)
-    inits_compA <- c(sim_base_AP$annual_competition[1],
-                     sim_base_AP$perennial_competition[1])
-    inits_compP <- c(sim_base_PA[[1]]$annual_competition[1],
-                     sim_base_PA[[1]]$perennial_competition[1])
-    
-    # inflate litter and competition factors for annual
-    inits_LA2 <- inits_AP
-    inits_LA2[2] <- inits_AP[2] * 1.01
-    
-    inits_compA2 <- inits_compA
-    inits_compA2[1] <- inits_compA[1] * 1.01
-    
-    # inflate factors for perennial (if no annual, add 0.01)
-    inits_LP2 <- inits_PA
-    if(inits_PA[2] > 0){
-      
-      inits_LP2[2] <- inits_PA[2] * 1.01
-    
-    } else {
-      
-      inits_LP2[2] <- 0.01
-        
-      }
-    
-    inits_compP2 <- inits_compP
-    if(inits_compP[2] > 0){
-      
-      inits_compP2[2] <- inits_compP[2] * 1.01
-      
-    } else {
-      
-      inits_compP2[2] <- 0.01
-      
-    }
-
-    # simulate one year with inflation for each species
-    sim_LA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_LA2,
-                          parameters = parameters, init_C = inits_compA)
-    sim_LP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_LP2,
-                          parameters = parameters, init_C = inits_compP,
+  # initial conditions (annual seeds, litter, perennial seeds, perennial adults)
+  inits <- c(sim_outcome$annual_seeds,
+             sim_outcome$litter_star,
+             sim_outcome$perennial_seeds,
+             sim_outcome$perennial_adults)
+  
+  # initial competition values (experienced by annual, perennial)
+  inits_comp <- c(sim_outcome$C_A_star,
+                  sim_outcome$C_P_star)
+  
+  # simulate one year under baseline conditions
+  sim_base <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
+                          parameters = parameters, init_C = inits_comp,
                           return_M = T)
-    sim_compA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_AP,
-                             parameters = parameters, init_C = inits_compA2)
-    sim_compP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_PA,
-                             parameters = parameters, init_C = inits_compP2,
-                             return_M = T)
-    
-    # calculate growth rates r = lnN(t+1) -  lnN(t)
-    gr_baseA <- log(sim_base_AP$annual_seeds[2] / sim_base_AP$annual_seeds[1])
-    gr_LA <- log(sim_LA$annual_seeds[2] / sim_LA$annual_seeds[1])
-    gr_CA <- log(sim_compA$annual_seeds[2] / sim_compA$annual_seeds[1])
-    
-    # calculate growth rates dominant eigenvalue
-    gr_baseP <- log(eigen(sim_base_PA[[2]], only.values = T)$values[1])
-    gr_LP <- log(eigen(sim_LP[[2]], only.values = T)$values[1])
-    gr_CP <- log(eigen(sim_compP[[2]], only.values = T)$values[1])
-    
-    # calculate responses
-    resp_LA <- (gr_LA - gr_baseA) / (inits_LA2[2] - inits_AP[2])
-    resp_LP <- (gr_LP - gr_baseP) / (inits_LP2[2] - inits_PA[2])
-    resp_CA <- (gr_CA - gr_baseA) / (inits_compA2[1] - inits_compA[1])
-    resp_CP <- (gr_CP - gr_baseP) / (inits_compP2[2] - inits_compP[2])
-    
-  }
+  
+  # inflate competition factors
+  inits_L2 <- inits
+  inits_L2[2] <- inits[2] * 1.001
+  
+  inits_compA2 <- inits_comp
+  inits_compA2[1] <- inits_comp[1] * 1.001 # new: revise CA/CP in model to scale by intraspp alphas
+  
+  inits_compP2 <- inits_comp
+  inits_compP2[2] <- inits_comp[2] * 1.001
+  
+  # simulate one year with inflation for each species
+  sim_L <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_L2,
+                       parameters = parameters, init_C = inits_comp,
+                       return_M = T)
+  sim_compA <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
+                           parameters = parameters, init_C = inits_compA2)
+  sim_compP <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
+                           parameters = parameters, init_C = inits_compP2,
+                           return_M = T)
+  
+  # output dataframe
+  out_base <- sim_base[[1]]
+  out_L <- sim_L[[1]]
+  
+  # calculate growth rates r = (ln[N(t+1)] -  ln[N(t)])/delta_t
+  gr_baseA <- log(out_base$annual_seeds[2] / out_base$annual_seeds[1])
+  gr_LA <- log(out_L$annual_seeds[2] / out_L$annual_seeds[1])
+  gr_CA <- log(sim_compA$annual_seeds[2] / sim_compA$annual_seeds[1])
+  
+  # calculate growth rates dominant eigenvalue
+  gr_baseP <- log(eigen(sim_base[[2]], only.values = T)$values[1])
+  gr_LP <- log(eigen(sim_L[[2]], only.values = T)$values[1])
+  gr_CP <- log(eigen(sim_compP[[2]], only.values = T)$values[1])
+  
+  # calculate responses
+  resp_LA <- -1 * (gr_LA - gr_baseA) / (inits_L2[2] - inits[2])
+  resp_LP <- -1 * (gr_LP - gr_baseP) / (inits_L2[2] - inits[2])
+  resp_CA <- -1 * (gr_CA - gr_baseA) / (inits_compA2[1] - inits_comp[1])
+  resp_CP <- -1 * (gr_CP - gr_baseP) / (inits_compP2[2] - inits_comp[2])
   
   # combine values
-  # indicate cases where population always goes to zero
   out <- tibble(.draw = parameters[["draws"]][iter, ]$.draw,
-                generation = gens,
-                coexist = sim_outcome$coexist,
+                gr_baseA = gr_baseA, # check that these are zero
+                gr_baseP = gr_baseP,
                 resp_LA = resp_LA,
                 resp_LP = resp_LP,
                 resp_CA = resp_CA,
@@ -402,13 +353,14 @@ ggsave("output/time_series_infP_parms_single_species.png",
        sims_infP_single_fig, width = 6, height = 4.5)
 
 
-#### single-species equilibrium and effects ####
+#### single species equilibria ####
 
 # save last time point
 # make sure order matches parameters
 eq_gfung_A <- sims_gfung_A[["long"]] %>%
   filter(generation == gens) %>%
-  mutate(comp_eff = perennial_competition - 1,
+  mutate(C_AA = annual_competition,
+         C_PA = perennial_competition,
          disease_name = fct_recode(disease,
                                    "Ambient disease" = "d",
                                    "Disease suppressed" = "h") %>%
@@ -416,7 +368,8 @@ eq_gfung_A <- sims_gfung_A[["long"]] %>%
 
 eq_ginf_A <- sims_ginf_A[["long"]] %>%
   filter(generation == gens) %>%
-  mutate(comp_eff = perennial_competition - 1,
+  mutate(C_AA = annual_competition,
+         C_PA = perennial_competition,
          disease_name = fct_recode(disease,
                                    "Ambient disease" = "d",
                                    "Disease suppressed" = "h") %>%
@@ -424,27 +377,82 @@ eq_ginf_A <- sims_ginf_A[["long"]] %>%
 
 eq_infP_A <- sims_infP_A[["long"]] %>%
   filter(generation == gens) %>%
-  mutate(comp_eff = perennial_competition - 1,
+  mutate(C_AA = annual_competition,
+         C_PA = perennial_competition,
          disease_name = fct_recode(disease,
                                    "Ambient disease" = "d",
                                    "Disease suppressed" = "h") %>%
            fct_relevel("Ambient disease"))
 
 eq_gfung_P <- sims_gfung_P[["long"]] %>%
-  filter(generation == gens)%>%
-  mutate(comp_eff = annual_competition - 1,
+  filter(generation == gens) %>%
+  mutate(C_AP = annual_competition,
+         C_PP = perennial_competition,
          disease_name = fct_recode(disease,
                                    "Ambient disease" = "d",
                                    "Disease suppressed" = "h") %>%
            fct_relevel("Ambient disease"))
 
+# collapse parameters into tables
+params_gfung2 <- params_gfung %>% 
+  imap_dfr(~ bind_cols(.x) %>%
+             mutate(disease = str_sub(.y, 1, 1)))
+
+params_ginf2 <- params_ginf %>% 
+  imap_dfr(~ bind_cols(.x) %>%
+             mutate(disease = str_sub(.y, 1, 1)))
+
+params_infP2 <- params_infP %>% 
+  imap_dfr(~ bind_cols(.x) %>%
+             mutate(disease = str_sub(.y, 1, 1)))
+
+# reference equilibria
+eq_gfung <- eq_gfung_A %>% 
+  select(.draw, disease, disease_name, litter_A = litter, C_AA, C_PA,
+         annual_seeds) %>% 
+  full_join(eq_gfung_P %>% 
+              select(.draw, disease, disease_name, litter_P = litter,
+                     C_AP, C_PP, perennial_seeds, perennial_adults)) %>% 
+  mutate(litter_star = (litter_A + litter_P) / 2) %>% 
+  left_join(params_gfung2) %>% 
+  mutate(C_A_star = ((gA * eA * yA) / (1 - sA * (1 - gA))) * (1 / (1 + betaA * litter_star)),
+         C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))),
+         R0_A = C_A_star * (1 + betaA * litter_star),
+         R0_P = C_P_star * (1 + betaP * litter_star),
+         litter_A_effect = litter_A - litter_star,
+         litter_P_effect = litter_P - litter_star,
+         C_AA_effect = C_AA - C_A_star,
+         C_AP_effect = C_AP - C_A_star,
+         C_PA_effect = C_PA - C_P_star,
+         C_PP_effect = C_PP - C_P_star)
+
+eq_ginf <- eq_ginf_A %>% 
+  select(.draw, disease, disease_name, litter_A = litter) %>% 
+  full_join(eq_gfung_P %>% 
+              select(.draw, disease, disease_name, litter_P = litter)) %>% 
+  mutate(litter_star = (litter_A + litter_P) / 2) %>% 
+  left_join(params_ginf2) %>% 
+  mutate(C_A_star = ((gA * eA * yA) / (1 - sA * (1 - gA))) * (1 / (1 + betaA * litter_star)),
+         C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))))
+
+eq_infP <- eq_infP_A %>% 
+  select(.draw, disease, disease_name, litter_A = litter) %>% 
+  full_join(eq_gfung_P %>% 
+              select(.draw, disease, disease_name, litter_P = litter)) %>% 
+  mutate(litter_star = (litter_A + litter_P) / 2) %>% 
+  left_join(params_infP2) %>% 
+  mutate(C_A_star = ((gA * eA * yA) / (1 - sA * (1 - gA))) * (1 / (1 + betaA * litter_star)),
+         C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))))
+
+
+#### effect figures ####
+
 # figure
 # patchwork bug requires letters built into main figures instead of added later
-mv_litter_eff_dist <- ggplot(eq_gfung_A, aes(x = litter)) +
+mv_litter_eff_dist <- ggplot(eq_gfung, aes(x = litter_A_effect)) +
   stat_slab(aes(color = disease_name, fill = disease_name), alpha = 0.5) +
-  coord_cartesian(xlim = c(0, 15000)) +
-  scale_fill_manual(values = c(grey_pal[2], coral_pal[2])) +
-  scale_color_manual(values = c(grey_pal[2], coral_pal[2])) +
+  scale_fill_manual(values = c(grey_pal[1], green_pal[2])) +
+  scale_color_manual(values = c(grey_pal[2], green_pal[3])) +
   scale_x_continuous(labels = scales::comma) +
   labs(x = "*M. vimineum* effect on litter-mediated competition", title = "A") +
   fig_theme +
@@ -461,15 +469,17 @@ mv_litter_eff_dist3 <- mv_litter_eff_dist %+%
   eq_infP_A +
   coord_cartesian(xlim = range(eq_infP_A$litter))
 
-ev_litter_eff_dist <- mv_litter_eff_dist %+%
-  eq_gfung_P +
-  coord_cartesian(xlim = c(0, 15000)) +
+ev_litter_eff_dist <- mv_litter_eff_dist +
+  aes(x = litter_P_effect) +
   labs(x = "*E. virginicus* effect on litter-mediated competition", title = "B")
 
-mv_comp_eff_dist <- mv_litter_eff_dist %+%
-  aes(x = comp_eff) +
-  coord_cartesian(xlim = range(eq_gfung_A$comp_eff)) +
-  labs(x = "*M. vimineum* effect on density-mediated competition")
+mv_mv_comp_eff_dist <- mv_litter_eff_dist +
+  aes(x = C_AA_effect) +
+  labs(x = "*M. vimineum* effect on density-mediated intraspecific competition")
+
+ev_mv_comp_eff_dist <- mv_litter_eff_dist +
+  aes(x = C_PA_effect) +
+  labs(x = "*M. vimineum* effect on density-mediated interspecific competition")
 
 mv_comp_eff_dist2 <- mv_comp_eff_dist %+%
   eq_ginf_A +
@@ -479,15 +489,19 @@ mv_comp_eff_dist3 <- mv_comp_eff_dist %+%
   eq_infP_A +
   coord_cartesian(xlim = range(eq_infP_A$comp_eff))
 
-ev_comp_eff_dist <- ev_litter_eff_dist %+%
-  aes(x = comp_eff) +
-  coord_cartesian(xlim = c(0, 600)) +
-  labs(x = "*E. virginicus* effect on density-mediated competition")
+ev_ev_comp_eff_dist <- ev_litter_eff_dist +
+  aes(x = C_PP_effect) +
+  labs(x = "*E. virginicus* effect on density-mediated intraspecific competition")
 
-mv_litter_eff_pt <- ggplot(eq_gfung_A, aes(x = disease_name, y = litter)) +
+mv_ev_comp_eff_dist <- ev_litter_eff_dist +
+  aes(x = C_AP_effect) +
+  labs(x = "*E. virginicus* effect on density-mediated interspecific competition")
+
+mv_litter_eff_pt <- ggplot(eq_gfung, 
+                           aes(x = disease_name, y = litter_A_effect)) +
   stat_pointinterval(aes(color = disease_name), point_size = 2,
                      point_interval = median_hdci, .width = c(.66, .95)) +
-  scale_color_manual(values = c(grey_pal[2], coral_pal[2]), guide = "none") +
+  scale_color_manual(values = c(grey_pal[2], green_pal[2]), guide = "none") +
   scale_y_continuous(labels = scales::comma, n.breaks = 3) +
   fig_theme +
   theme(axis.title = element_blank(),
@@ -500,11 +514,14 @@ mv_litter_eff_pt2 <- mv_litter_eff_pt %+%
 mv_litter_eff_pt3 <- mv_litter_eff_pt %+%
   eq_infP_A
 
-ev_litter_eff_pt <- mv_litter_eff_pt %+%
-  eq_gfung_P
+ev_litter_eff_pt <- mv_litter_eff_pt +
+  aes(y = litter_P_effect)
 
-mv_comp_eff_pt <- mv_litter_eff_pt %+%
-  aes(y = comp_eff)
+mv_mv_comp_eff_pt <- mv_litter_eff_pt +
+  aes(y = C_AA_effect)
+
+ev_mv_comp_eff_pt <- mv_litter_eff_pt +
+  aes(y = C_PA_effect)
 
 mv_comp_eff_pt2 <- mv_litter_eff_pt2 %+%
   aes(y = comp_eff)
@@ -512,8 +529,11 @@ mv_comp_eff_pt2 <- mv_litter_eff_pt2 %+%
 mv_comp_eff_pt3 <- mv_litter_eff_pt3 %+%
   aes(y = comp_eff)
 
-ev_comp_eff_pt <- ev_litter_eff_pt %+%
-  aes(y = comp_eff)
+ev_ev_comp_eff_pt <- ev_litter_eff_pt +
+  aes(y = C_PP_effect)
+
+mv_ev_comp_eff_pt <- ev_litter_eff_pt +
+  aes(y = C_AP_effect)
 
 # combine
 eff_inset_coord <- c(0.25, 0.5, 0.75, 0.99)
@@ -1247,8 +1267,8 @@ for(i in 1:params_iters){
   draw_infP_d <- params_infP[["disease"]][["draws"]]$.draw[i] 
   
   # select equilibrium values
-  inv_gfung_draw_h <- inv_gfung_h %>%
-    filter(.draw == draw_gfung_h)
+  eq_gfung_draw_h <- eq_gfung %>%
+    filter(.draw == draw_gfung_h & disease == "h")
   inv_gfung_draw_d <- inv_gfung_d %>%
     filter(.draw == draw_gfung_d)
 
@@ -1263,7 +1283,7 @@ for(i in 1:params_iters){
     filter(.draw == draw_infP_d)
   
   # calculate responses for each parameter set and disease condition
-  resp_gfung_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_gfung_draw_h,
+  resp_gfung_h[[i]] <- resp_fun(iter = i, sim_outcome = eq_gfung_draw_h,
                                 parameters = params_gfung[["healthy"]])
   resp_gfung_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_gfung_draw_d,
                                 parameters = params_gfung[["disease"]])

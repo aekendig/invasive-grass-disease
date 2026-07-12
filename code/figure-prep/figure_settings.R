@@ -31,6 +31,8 @@ grey_pal <- brewer.pal(n = 9, "Greys")[6:8]
 
 coral_pal <- c("coral", "coral3", "coral4")
 
+green_pal <- c("palegreen2", "palegreen3", "palegreen4")
+
 col_pal4 <- c("black", coral_pal[2], "goldenrod", grey_pal[1])
 
 # shapes
