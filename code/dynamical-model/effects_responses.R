@@ -1,16 +1,5 @@
 #### status ####
 
-# revised the response function
-# tried it with gfung h and looks okay
-# revise all the parameter sets and disease conditions in the response section
-# make figures
-
-# perhaps we put the effects and responses in one figure with the points and errors and forget the distributions?
-# their tails are very long, so it's hard to see the majority of the distribution
-
-# make a new figure with how the growth rates and outcomes of competition relate to effects and responses
-# I think Nick was working on this at the end of the pdf and we may have to do something to the 
-# competition-related factors for this figure/analysis, but okay to draft
 
 #### set-up ####
 
@@ -1573,239 +1562,201 @@ ev_comp_resp_fig3 <- ev_comp_resp_dist3 +
 
 # remove non-establishment parameter combinations
 # make long by species
-eq_gfung2 <- eq_gfung %>% 
+eff_gfung <- eq_gfung %>% 
   anti_join(non_gfung_A) %>% 
   anti_join(non_gfung_P) %>% 
   select(.draw, disease, ends_with("effect")) %>% 
   pivot_longer(cols = ends_with("effect"),
                names_to = "effect") %>% 
-  mutate(competition = case_when(
+  mutate(comp_eff = case_when(
     str_detect(effect, "litter") ~ "litter",
-    str_detect(effect, "AA|PP") ~ "intrasp_density",
-    str_detect(effect, "AP|PA") ~ "intersp_density"),
-    species = case_when(
+    str_detect(effect, "AA|PP") ~ "intraspecific",
+    str_detect(effect, "AP|PA") ~ "interspecific"),
+    competition = if_else(comp_eff == "litter", "litter", "density"),
+    species_resp = case_when(
+      str_detect(effect, "litter_A|C_AA|C_AP") ~ "M. vimineum",
+      str_detect(effect, "litter_P|C_PP|C_PA") ~ "E. virginicus") %>% 
+      fct_relevel("M. vimineum"),
+    species_eff = case_when(
       str_detect(effect, "litter_A|C_AA|C_PA") ~ "M. vimineum",
-      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus")) %>% 
+      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus") %>% 
+      fct_relevel("M. vimineum")) %>% 
   select(-effect) %>% 
-  group_by(disease, species, competition) %>% 
+  group_by(disease, species_resp, species_eff, competition, comp_eff) %>% 
   summarize(median = median(value),
             L95 = median_hdci(value)$ymin,
             U95 = median_hdci(value)$ymax,
-            min = min(value),
-            max = max(value),
-            .groups = "drop") %>% 
-  pivot_wider(names_from = competition, 
-              values_from = c(median, L95, U95, min, max),
-              names_glue = "{competition}_{.value}")
+            .groups = "drop")
 
-eq_ginf2 <- eq_ginf %>% 
+eff_ginf <- eq_ginf %>% 
   anti_join(non_ginf_A) %>% 
   anti_join(non_gfung_P) %>% 
   select(.draw, disease, ends_with("effect")) %>% 
   pivot_longer(cols = ends_with("effect"),
                names_to = "effect") %>% 
-  mutate(competition = case_when(
+  mutate(comp_eff = case_when(
     str_detect(effect, "litter") ~ "litter",
-    str_detect(effect, "AA|PP") ~ "intrasp_density",
-    str_detect(effect, "AP|PA") ~ "intersp_density"),
-    species = case_when(
+    str_detect(effect, "AA|PP") ~ "intraspecific",
+    str_detect(effect, "AP|PA") ~ "interspecific"),
+    competition = if_else(comp_eff == "litter", "litter", "density"),
+    species_resp = case_when(
+      str_detect(effect, "litter_A|C_AA|C_AP") ~ "M. vimineum",
+      str_detect(effect, "litter_P|C_PP|C_PA") ~ "E. virginicus") %>% 
+      fct_relevel("M. vimineum"),
+    species_eff = case_when(
       str_detect(effect, "litter_A|C_AA|C_PA") ~ "M. vimineum",
-      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus")) %>% 
+      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus") %>% 
+      fct_relevel("M. vimineum")) %>% 
   select(-effect) %>% 
-  group_by(disease, species, competition) %>% 
+  group_by(disease, species_resp, species_eff, competition, comp_eff) %>% 
   summarize(median = median(value),
             L95 = median_hdci(value)$ymin,
             U95 = median_hdci(value)$ymax,
-            min = min(value),
-            max = max(value),
-            .groups = "drop") %>% 
-  pivot_wider(names_from = competition, 
-              values_from = c(median, L95, U95, min, max),
-              names_glue = "{competition}_{.value}")
+            .groups = "drop")
 
-eq_infP2 <- eq_infP %>% 
+eff_infP <- eq_infP %>% 
   anti_join(non_infP_A) %>% 
   anti_join(non_gfung_P) %>% 
   select(.draw, disease, ends_with("effect")) %>% 
   pivot_longer(cols = ends_with("effect"),
                names_to = "effect") %>% 
-  mutate(competition = case_when(
+  mutate(comp_eff = case_when(
     str_detect(effect, "litter") ~ "litter",
-    str_detect(effect, "AA|PP") ~ "intrasp_density",
-    str_detect(effect, "AP|PA") ~ "intersp_density"),
-    species = case_when(
+    str_detect(effect, "AA|PP") ~ "intraspecific",
+    str_detect(effect, "AP|PA") ~ "interspecific"),
+    competition = if_else(comp_eff == "litter", "litter", "density"),
+    species_resp = case_when(
+      str_detect(effect, "litter_A|C_AA|C_AP") ~ "M. vimineum",
+      str_detect(effect, "litter_P|C_PP|C_PA") ~ "E. virginicus") %>% 
+      fct_relevel("M. vimineum"),
+    species_eff = case_when(
       str_detect(effect, "litter_A|C_AA|C_PA") ~ "M. vimineum",
-      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus")) %>% 
+      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus") %>% 
+      fct_relevel("M. vimineum")) %>% 
   select(-effect) %>% 
-  group_by(disease, species, competition) %>% 
+  group_by(disease, species_resp, species_eff, competition, comp_eff) %>% 
   summarize(median = median(value),
             L95 = median_hdci(value)$ymin,
             U95 = median_hdci(value)$ymax,
-            min = min(value),
-            max = max(value),
-            .groups = "drop") %>% 
-  pivot_wider(names_from = competition, 
-              values_from = c(median, L95, U95, min, max),
-              names_glue = "{competition}_{.value}")
+            .groups = "drop")
+
+# split by competition for figures
+eff_dens_gfung <- eff_gfung %>% 
+  filter(competition == "density")
+eff_dens_ginf <- eff_ginf %>% 
+  filter(competition == "density")
+eff_dens_infP <- eff_infP %>% 
+  filter(competition == "density")
+
+eff_lit_gfung <- eff_gfung %>% 
+  filter(competition == "litter")
+eff_lit_ginf <- eff_ginf %>% 
+  filter(competition == "litter")
+eff_lit_infP <- eff_infP %>% 
+  filter(competition == "litter")
 
 # gfung figures
-eff_gfung_hle_fig <- eq_gfung2 %>% 
+eff_gfung_h_dens_fig <- eff_dens_gfung %>% 
   filter(disease == "h") %>% 
-  ggplot(aes(x = litter_median, y = intersp_density_median, color = species)) +
-  geom_errorbar(aes(xmin = litter_L95, xmax = litter_U95), 
-                linewidth = 0.3, width = 0) +
-  geom_errorbar(aes(ymin = intersp_density_L95, ymax = intersp_density_U95),
-                linewidth = 0.3, width = 0) +
-  geom_point(aes(shape = species), size = 2) +
+  ggplot(aes(x = comp_eff, y = median, color = species_eff)) +
+  geom_errorbar(aes(ymin = L95, ymax = U95),
+                linewidth = 0.3, width = 0,
+                position = position_dodge(dodge_width)) +
+  geom_point(aes(shape = species_eff), size = 2,
+             position = position_dodge(dodge_width)) +
+  scale_y_continuous(limits = c(min(eff_dens_gfung$L95),
+                                max(eff_dens_gfung$U95))) +
   scale_color_manual(values = spp_pal) +
   scale_shape_manual(values = spp_shape_pal) +
-  scale_x_continuous(limits = c(min(eq_gfung2$litter_L95),
-                                max(eq_gfung2$litter_U95))) +
-  scale_y_continuous(limits = c(min(eq_gfung2$intersp_density_L95),
-                                max(eq_gfung2$intersp_density_U95))) +
-  labs(x = "Litter-mediated competition", 
-       y = "Interspecific density-mediated\ncompetition",
+  labs(y = "Effect on\ndensity-mediated competition",
+       x = "Competition type",
        title = "Disease suppressed") +
   fig_theme +
   theme(legend.title = element_blank(),
         legend.text = element_text(face = "italic"))
 
-eff_gfung_dle_fig <- eff_gfung_hle_fig +
-  filter(eq_gfung2, disease == "d") +
+eff_gfung_d_dens_fig <- eff_gfung_h_dens_fig +
+  filter(eff_dens_gfung, disease == "d") +
   labs(title = "Ambient disease")
 
-eff_gfung_hea_fig <- eq_gfung2 %>% 
-  filter(disease == "h") %>% 
-  ggplot(aes(x = intersp_density_median, y = intrasp_density_median, color = species)) +
-  geom_errorbar(aes(xmin = intersp_density_L95, xmax = intersp_density_U95),
-                linewidth = 0.3, width = 0) +
-  geom_errorbar(aes(ymin = intrasp_density_L95, ymax = intrasp_density_U95),
-                linewidth = 0.3, width = 0) +
-  geom_point(aes(shape = species), size = 2) +
-  scale_color_manual(values = spp_pal) +
-  scale_shape_manual(values = spp_shape_pal) +
-  scale_x_continuous(limits = c(min(eq_gfung2$intersp_density_L95),
-                                max(eq_gfung2$intersp_density_U95))) +
-  scale_y_continuous(limits = c(min(eq_gfung2$intrasp_density_L95),
-                                max(eq_gfung2$intrasp_density_U95))) +
-  labs(x = "Interspecific density-mediated competition",
-       y = "Intraspecific density-mediated\ncompetition") +
-  fig_theme +
-  theme(legend.title = element_blank(),
-        legend.text = element_text(face = "italic"))
+eff_gfung_h_lit_fig <- eff_gfung_h_dens_fig +
+  filter(eff_lit_gfung, disease == "h") +
+  scale_y_continuous(limits = c(min(eff_lit_gfung$L95),
+                                max(eff_lit_gfung$U95))) +
+  labs(y = "Effect on\nlitter-mediated competition") +
+  theme(plot.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 
-eff_gfung_dea_fig <- eff_gfung_hea_fig +
-  filter(eq_gfung2, disease == "d")
+eff_gfung_d_lit_fig <- eff_gfung_h_lit_fig +
+  filter(eff_lit_gfung, disease == "d") +
+  labs(title = "Ambient disease")
 
-eff_gfung_hal_fig <- eq_gfung2 %>% 
-  filter(disease == "h") %>% 
-  ggplot(aes(x = intrasp_density_median, y = litter_median, color = species)) +
-  geom_errorbar(aes(xmin = intrasp_density_L95, xmax = intrasp_density_U95),
-                linewidth = 0.3, width = 0) +
-  geom_errorbar(aes(ymin = litter_L95, ymax = litter_U95), 
-                linewidth = 0.3, width = 0) +
-  geom_point(aes(shape = species), size = 2) +
-  scale_color_manual(values = spp_pal) +
-  scale_shape_manual(values = spp_shape_pal) +
-  scale_x_continuous(limits = c(min(eq_gfung2$intrasp_density_L95),
-                                max(eq_gfung2$intrasp_density_U95))) +
-  scale_y_continuous(limits = c(min(eq_gfung2$litter_L95),
-                                max(eq_gfung2$litter_U95))) +
-  labs(x = "Intraspecific density-mediated competition",
-       y = "Litter-mediated competition") +
-  fig_theme +
-  theme(legend.title = element_blank(),
-        legend.text = element_text(face = "italic"))
-
-eff_gfung_dal_fig <- eff_gfung_hal_fig +
-  filter(eq_gfung2, disease == "d")
-
-eff_gfung_fig <- eff_gfung_hle_fig + eff_gfung_dle_fig + 
-  eff_gfung_hea_fig + eff_gfung_dea_fig + 
-  eff_gfung_hal_fig + eff_gfung_dal_fig + 
-  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+eff_gfung_fig <- eff_gfung_h_dens_fig + eff_gfung_d_dens_fig + 
+  eff_gfung_h_lit_fig + eff_gfung_d_lit_fig + 
+  plot_layout(nrow = 2, guides = "collect", axes = "collect") +
   plot_annotation(tag_levels = "A")  &
   theme(plot.tag = element_text(size = 9, face = "bold"),
         legend.position = "bottom",
         legend.direction = "horizontal") 
 
 # ginf figures
-eff_ginf_hle_fig <- eff_gfung_hle_fig +
-  filter(eq_ginf2, disease == "h") +
-  scale_x_continuous(limits = c(min(eq_ginf2$litter_L95),
-                                max(eq_ginf2$litter_U95))) +
-  scale_y_continuous(limits = c(min(eq_ginf2$intersp_density_L95),
-                                max(eq_ginf2$intersp_density_U95)))
+eff_ginf_h_dens_fig <- eff_gfung_h_dens_fig + 
+  filter(eff_dens_ginf, disease == "h") +
+  scale_y_continuous(limits = c(min(eff_dens_ginf$L95),
+                                max(eff_dens_ginf$U95)))
 
-eff_ginf_dle_fig <- eff_ginf_hle_fig +
-  filter(eq_ginf2, disease == "d") +
+eff_ginf_d_dens_fig <- eff_ginf_h_dens_fig +
+  filter(eff_dens_ginf, disease == "d") +
   labs(title = "Ambient disease")
 
-eff_ginf_hea_fig <- eff_gfung_hea_fig +
-  filter(eq_ginf2, disease == "h") + 
-  scale_x_continuous(limits = c(min(eq_ginf2$intersp_density_L95),
-                                max(eq_ginf2$intersp_density_U95))) +
-  scale_y_continuous(limits = c(min(eq_ginf2$intrasp_density_L95),
-                                max(eq_ginf2$intrasp_density_U95)))
+eff_ginf_h_lit_fig <- eff_ginf_h_dens_fig +
+  filter(eff_lit_ginf, disease == "h") +
+  scale_y_continuous(limits = c(min(eff_lit_ginf$L95),
+                                max(eff_lit_ginf$U95))) +
+  labs(y = "Effect on\nlitter-mediated competition") +
+  theme(plot.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 
-eff_ginf_dea_fig <- eff_ginf_hea_fig +
-  filter(eq_ginf2, disease == "d")
+eff_ginf_d_lit_fig <- eff_ginf_h_lit_fig +
+  filter(eff_lit_ginf, disease == "d") +
+  labs(title = "Ambient disease")
 
-eff_ginf_hal_fig <- eff_gfung_hal_fig +
-  filter(eq_ginf2, disease == "h") +
-  scale_x_continuous(limits = c(min(eq_ginf2$intrasp_density_L95),
-                                max(eq_ginf2$intrasp_density_U95))) +
-  scale_y_continuous(limits = c(min(eq_ginf2$litter_L95),
-                                max(eq_ginf2$litter_U95)))
-
-eff_ginf_dal_fig <- eff_ginf_hal_fig +
-  filter(eq_ginf2, disease == "d")
-
-eff_ginf_fig <- eff_ginf_hle_fig + eff_ginf_dle_fig + 
-  eff_ginf_hea_fig + eff_ginf_dea_fig + 
-  eff_ginf_hal_fig + eff_ginf_dal_fig + 
-  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+eff_ginf_fig <- eff_ginf_h_dens_fig + eff_ginf_d_dens_fig + 
+  eff_ginf_h_lit_fig + eff_ginf_d_lit_fig + 
+  plot_layout(nrow = 2, guides = "collect", axes = "collect") +
   plot_annotation(tag_levels = "A")  &
   theme(plot.tag = element_text(size = 9, face = "bold"),
         legend.position = "bottom",
         legend.direction = "horizontal") 
 
 # infP figures
-eff_infP_hle_fig <- eff_gfung_hle_fig +
-  filter(eq_infP2, disease == "h") +
-  scale_x_continuous(limits = c(min(eq_infP2$litter_L95),
-                                max(eq_infP2$litter_U95))) +
-  scale_y_continuous(limits = c(min(eq_infP2$intersp_density_L95),
-                                max(eq_infP2$intersp_density_U95)))
+eff_infP_h_dens_fig <- eff_gfung_h_dens_fig + 
+  filter(eff_dens_infP, disease == "h") +
+  scale_y_continuous(limits = c(min(eff_dens_infP$L95),
+                                max(eff_dens_infP$U95)))
 
-eff_infP_dle_fig <- eff_infP_hle_fig +
-  filter(eq_infP2, disease == "d") +
+eff_infP_d_dens_fig <- eff_infP_h_dens_fig +
+  filter(eff_dens_infP, disease == "d") +
   labs(title = "Ambient disease")
 
-eff_infP_hea_fig <- eff_gfung_hea_fig +
-  filter(eq_infP2, disease == "h") + 
-  scale_x_continuous(limits = c(min(eq_infP2$intersp_density_L95),
-                                max(eq_infP2$intersp_density_U95))) +
-  scale_y_continuous(limits = c(min(eq_infP2$intrasp_density_L95),
-                                max(eq_infP2$intrasp_density_U95)))
+eff_infP_h_lit_fig <- eff_infP_h_dens_fig +
+  filter(eff_lit_infP, disease == "h") +
+  scale_y_continuous(limits = c(min(eff_lit_infP$L95),
+                                max(eff_lit_infP$U95))) +
+  labs(y = "Effect on\nlitter-mediated competition") +
+  theme(plot.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
 
-eff_infP_dea_fig <- eff_infP_hea_fig +
-  filter(eq_infP2, disease == "d")
+eff_infP_d_lit_fig <- eff_infP_h_lit_fig +
+  filter(eff_lit_infP, disease == "d") +
+  labs(title = "Ambient disease")
 
-eff_infP_hal_fig <- eff_gfung_hal_fig +
-  filter(eq_infP2, disease == "h") +
-  scale_x_continuous(limits = c(min(eq_infP2$intrasp_density_L95),
-                                max(eq_infP2$intrasp_density_U95))) +
-  scale_y_continuous(limits = c(min(eq_infP2$litter_L95),
-                                max(eq_infP2$litter_U95)))
-
-eff_infP_dal_fig <- eff_infP_hal_fig +
-  filter(eq_infP2, disease == "d")
-
-eff_infP_fig <- eff_infP_hle_fig + eff_infP_dle_fig + 
-  eff_infP_hea_fig + eff_infP_dea_fig + 
-  eff_infP_hal_fig + eff_infP_dal_fig + 
-  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+eff_infP_fig <- eff_infP_h_dens_fig + eff_infP_d_dens_fig + 
+  eff_infP_h_lit_fig + eff_infP_d_lit_fig + 
+  plot_layout(nrow = 2, guides = "collect", axes = "collect") +
   plot_annotation(tag_levels = "A")  &
   theme(plot.tag = element_text(size = 9, face = "bold"),
         legend.position = "bottom",
@@ -1813,11 +1764,11 @@ eff_infP_fig <- eff_infP_hle_fig + eff_infP_dle_fig +
 
 # save
 ggsave("output/effects_gfung_parms.png", eff_gfung_fig,
-       width = 6, height = 8)
+       width = 6, height = 4.8)
 ggsave("output/effects_ginf_parms.png", eff_ginf_fig,
-       width = 6, height = 8)
+       width = 6, height = 4.8)
 ggsave("output/effects_infP_parms.png", eff_infP_fig,
-       width = 6, height = 8)
+       width = 6, height = 4.8)
 
 
 ##### litter effect distributions - delete or appendix ######
@@ -1959,7 +1910,7 @@ mv_ev_comp_eff_pt3 <- mv_ev_comp_eff_pt +
   eq_infP
 
 
-#### combine litter and density figuresn - delete or appendix ####
+#### combine litter and density figures - delete or appendix ####
 
 eff_resp_litter_fig <- mv_litter_eff_fig + ev_litter_eff_fig + mv_litter_resp_fig + 
   ev_litter_resp_fig +
@@ -2005,16 +1956,106 @@ ggsave("output/competition_effects_responses_infP_parms.png", eff_resp_comp_fig3
        width = 6.5, height = 6.5)
 
 
-#### effects/responses values for text ####
+#### response and effect figures ####
 
-# effect on litter
-eq_infP_A %>%
-  group_by(disease_name) %>%
-  median_hdci(litter)
+# combine response and effects
+resp_eff_gfung <- resp_gfung2 %>% 
+  rename(resp_med = median,
+         resp_L95 = L95,
+         resp_U95 = U95) %>% 
+  full_join(eff_gfung %>% 
+              rename(eff_med = median,
+                     eff_L95 = L95,
+                     eff_U95 = U95,
+                     species = species_eff))
 
-eq_gfung_P %>%
-  group_by(disease_name) %>%
-  median_hdci(litter)
+# split by competition for figures
+resp_eff_inter_gfung <- resp_eff_gfung %>% 
+  filter(comp_eff == "interspecific") %>% 
+  mutate(label = if_else(disease == "h", 
+                         "Interspecific density-mediated competition",
+                         ""))
+resp_eff_intra_gfung <- resp_eff_gfung %>% 
+  filter(comp_eff == "intraspecific") %>% 
+  mutate(label = if_else(disease == "h",
+                         "Intraspecific density-mediated competition",
+                         ""))
+resp_eff_lit_gfung <- resp_eff_gfung %>% 
+  filter(comp_eff == "litter") %>% 
+  mutate(label = if_else(disease == "h",
+                         "Litter-mediated competition",
+                         ""))
+
+# gfung figures
+resp_eff_gfung_h_inter_fig <- resp_eff_inter_gfung %>% 
+  filter(disease == "h") %>% 
+  ggplot(aes(x = eff_med, y = resp_med)) +
+  geom_errorbar(aes(ymin = resp_L95, ymax = resp_U95, color = species),
+                linewidth = 0.3, width = 0,
+                position = position_dodge(dodge_width)) +
+  geom_errorbar(aes(xmin = eff_L95, xmax = eff_U95, color = species),
+                linewidth = 0.3, width = 0,
+                position = position_dodge(dodge_width)) +
+  geom_point(aes(shape = species, color = species), size = 2,
+             position = position_dodge(dodge_width)) +
+  geom_text(aes(label = label), check_overlap = T,
+           x = -Inf, y = Inf, hjust = -0.02, vjust = 1.5,
+           size = text_size) +
+  scale_y_log10(limits = c(min(resp_eff_inter_gfung$resp_L95),
+                                max(resp_eff_inter_gfung$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_inter_gfung$eff_L95),
+                                max(resp_eff_inter_gfung$eff_U95))) +
+  scale_color_manual(values = spp_pal) +
+  scale_shape_manual(values = spp_shape_pal) +
+  labs(y = expression("Response ("*log[10]*")"),
+       x = "Effect",
+       title = "Disease suppressed") +
+  fig_theme +
+  theme(legend.text = element_text(face = "italic"),
+        legend.title = element_blank())
+
+resp_eff_gfung_d_inter_fig <- resp_eff_gfung_h_inter_fig +
+  filter(resp_eff_inter_gfung, disease == "d") +
+  labs(title = "Ambient disease")
+
+resp_eff_gfung_h_intra_fig <- resp_eff_gfung_h_inter_fig +
+  filter(resp_eff_intra_gfung, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_intra_gfung$resp_L95),
+                           max(resp_eff_intra_gfung$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_intra_gfung$eff_L95),
+                                max(resp_eff_intra_gfung$eff_U95)))
+
+resp_eff_gfung_d_intra_fig <- resp_eff_gfung_h_intra_fig +
+  filter(resp_eff_intra_gfung, disease == "d") +
+  labs(title = "Ambient disease")
+
+resp_eff_gfung_h_lit_fig <- resp_eff_gfung_h_inter_fig +
+  filter(resp_eff_lit_gfung, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_lit_gfung$resp_L95),
+                           max(resp_eff_lit_gfung$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_lit_gfung$eff_L95),
+                                max(resp_eff_lit_gfung$eff_U95)))
+
+resp_eff_gfung_d_lit_fig <- resp_eff_gfung_h_lit_fig +
+  filter(resp_eff_lit_gfung, disease == "d") +
+  labs(title = "Ambient disease")
+
+resp_eff_gfung_fig <- resp_eff_gfung_h_inter_fig + resp_eff_gfung_d_inter_fig + 
+  resp_eff_gfung_h_intra_fig + resp_eff_gfung_d_intra_fig + 
+  resp_eff_gfung_h_lit_fig + resp_eff_gfung_d_lit_fig + 
+  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal") 
+
+#### start here ####
+# make above for two other parameter sets
+# save
+# write text: looks like litter is stabilizing but density isn't
+
+
+#### text values - old ####
 
 # treatment difference in effect on litter
 eq_infP_A %>%

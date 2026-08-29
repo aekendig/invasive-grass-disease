@@ -50,3 +50,6 @@ spp_shape_pal <- shape_pal[c(2, 3)]
 
 # dodge size
 dodge_width <- 0.5
+
+# text size
+text_size <- 3.5
