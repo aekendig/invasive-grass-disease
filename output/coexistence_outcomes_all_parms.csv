@@ -1,9 +1,11 @@
 disease_name,outcome,1,2,3
-Ambient disease,coexist,3,4,6
-Ambient disease,annual only,90,86,86
-Ambient disease,perennial only,5,7,6
-Ambient disease,priority effect,2,3,2
-Disease suppressed,coexist,5,5,5
-Disease suppressed,annual only,93,93,93
-Disease suppressed,perennial only,2,2,2
-Disease suppressed,priority effect,0,0,0
+Ambient disease,coexist,3.4,4.3,6
+Ambient disease,M. vimineum only,89.8,86,86.2
+Ambient disease,E. virginicus only,4.2,6.3,5.6
+Ambient disease,priority effect,2.2,2.9,1.8
+Ambient disease,non-establishment,0.4,0.4,0.4
+Disease suppressed,coexist,4.5,4.6,5.3
+Disease suppressed,M. vimineum only,93.1,93,92.7
+Disease suppressed,E. virginicus only,1.7,1.7,1.5
+Disease suppressed,priority effect,0.3,0.3,0.1
+Disease suppressed,non-establishment,0.4,0.4,0.4

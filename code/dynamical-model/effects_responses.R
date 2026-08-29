@@ -1,9 +1,5 @@
 #### status ####
 
-# the code for all the effects in the baseline gfung parameter set has been updated
-# copy and paste for the other parameter sets
-# update the competition figure to have more panels
-
 # revised the response function
 # tried it with gfung h and looks okay
 # revise all the parameter sets and disease conditions in the response section
@@ -28,8 +24,40 @@ library(patchwork)
 library(janitor)
 # scales packaged used within plotting functions below
 
+
+#### parameters ####
+
 # import parameters (loads tidyverse)
 source("code/dynamical-model/parameters.R")
+
+# parameter combinations
+params_iters <- 15000
+
+# parameters with fungicide effect on germination
+params_gfung <- params_fun(iters = params_iters, gA_type = "fungicide")
+
+# parameters with infection effect on germination
+params_ginf <- params_fun(iters = params_iters, gA_type = "infection",
+                          draws = params_gfung[["healthy"]]$draws)
+
+# parameters with infection effect and priors
+params_infP <- params_fun(iters = params_iters, gA_type = "infection",
+                          draws = params_gfung[["healthy"]]$draws,
+                          priors = "Stricker")
+
+# remove raw parameter objects
+rm(list = setdiff(ls(), c("params_iters", "params_gfung", "params_ginf",
+                         "params_infP")))
+gc()
+
+# generations
+gens <- 1000
+
+# threshold for population present
+pres_thresh <- 1e-2
+
+
+#### load other scripts ####
 
 # import simulation function
 source("code/dynamical-model/kortessis_etal_2022_revised_model.R")
@@ -61,31 +89,9 @@ sims_comb_fun <- function(sims_h, sims_d, widen = T){
 
 }
 
-# # growth rate function
-# gr_fun <- function(iter, sim_init, parameters, gens, return_M = F){
-#   
-#   # initial conditions
-#   inits <- c(sim_init$annual_seeds,
-#              sim_init$litter,
-#              sim_init$perennial_seeds,
-#              sim_init$perennial_adults)
-#   
-#   # initial competition values (experienced by annual, perennial)
-#   inits_comp <- c(sim_init$annual_competition,
-#                   sim_init$perennial_competition)
-#   
-#   # simulate one year under baseline conditions
-#   sim <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits,
-#                      parameters = parameters, init_C = inits_comp,
-#                      return_M = return_M)
-#   
-#   # output
-#   return(sim)
-#   
-# }
-
 # calculate responses
-resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
+resp_fun <- function(iter, sim_outcome, parameters, gens = 2,
+                     L_add, CA_add, CP_add){
   
   # initial conditions (annual seeds, litter, perennial seeds, perennial adults)
   inits <- c(sim_outcome$annual_seeds,
@@ -102,15 +108,15 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
                           parameters = parameters, init_C = inits_comp,
                           return_M = T)
   
-  # inflate competition factors
+  # re-save competition factors
   inits_L2 <- inits
-  inits_L2[2] <- inits[2] * 1.001
-  
   inits_compA2 <- inits_comp
-  inits_compA2[1] <- inits_comp[1] * 1.001 # new: revise CA/CP in model to scale by intraspp alphas
-  
   inits_compP2 <- inits_comp
-  inits_compP2[2] <- inits_comp[2] * 1.001
+  
+  # inflate competition factors
+  inits_L2[2] <- inits[2] + L_add
+  inits_compA2[1] <- inits_comp[1] + CA_add
+  inits_compP2[2] <- inits_comp[2] + CP_add
   
   # simulate one year with inflation for each species
   sim_L <- dyn_mod_fun(iter = iter, gen = gens, init_cond = inits_L2,
@@ -126,26 +132,64 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
   out_base <- sim_base[[1]]
   out_L <- sim_L[[1]]
   
-  # calculate growth rates r = (ln[N(t+1)] -  ln[N(t)])/delta_t
-  gr_baseA <- log(out_base$annual_seeds[2] / out_base$annual_seeds[1])
-  gr_LA <- log(out_L$annual_seeds[2] / out_L$annual_seeds[1])
-  gr_CA <- log(sim_compA$annual_seeds[2] / sim_compA$annual_seeds[1])
+  # competition factors
+  L_base <- inits[2]
+  L_adj <- inits_L2[2]
+  CA_base <- inits_comp[1]
+  CA_adj <- inits_compA2[1]
+  CP_base <- inits_comp[2]
+  CP_adj <- inits_compP2[2]
   
-  # calculate growth rates dominant eigenvalue
-  gr_baseP <- log(eigen(sim_base[[2]], only.values = T)$values[1])
-  gr_LP <- log(eigen(sim_L[[2]], only.values = T)$values[1])
-  gr_CP <- log(eigen(sim_compP[[2]], only.values = T)$values[1])
+  # check for presence of annual
+  if(inits[1] >= pres_thresh){
+    
+    # calculate growth rates r = (ln[N(t+1)] -  ln[N(t)])/delta_t
+    gr_baseA <- log(out_base$annual_seeds[2] / out_base$annual_seeds[1])
+    gr_LA <- log(out_L$annual_seeds[2] / out_L$annual_seeds[1])
+    gr_CA <- log(sim_compA$annual_seeds[2] / sim_compA$annual_seeds[1])
+    
+    # calculate responses
+    resp_LA <- -1 * (gr_LA - gr_baseA) / (L_adj - L_base)
+    resp_CA <- -1 * (gr_CA - gr_baseA) / (CA_adj - CA_base)
+    
+  } else {
+    
+    gr_baseA <- gr_LA <- gr_CA <- resp_LA <- resp_CA <- NA
+    
+  }
   
-  # calculate responses
-  resp_LA <- -1 * (gr_LA - gr_baseA) / (inits_L2[2] - inits[2])
-  resp_LP <- -1 * (gr_LP - gr_baseP) / (inits_L2[2] - inits[2])
-  resp_CA <- -1 * (gr_CA - gr_baseA) / (inits_compA2[1] - inits_comp[1])
-  resp_CP <- -1 * (gr_CP - gr_baseP) / (inits_compP2[2] - inits_comp[2])
+  # check for presence of perennial
+  if(inits[3] >= pres_thresh & inits[4] >= pres_thresh){
+    
+    # calculate growth rates dominant eigenvalue
+    gr_baseP <- log(eigen(sim_base[[2]], only.values = T)$values[1])
+    gr_LP <- log(eigen(sim_L[[2]], only.values = T)$values[1])
+    gr_CP <- log(eigen(sim_compP[[2]], only.values = T)$values[1])
+    
+    # calculate responses
+    resp_LP <- -1 * (gr_LP - gr_baseP) / (L_adj - L_base)
+    resp_CP <- -1 * (gr_CP - gr_baseP) / (CP_adj - CP_base)
+    
+  } else {
+    
+    gr_baseP <- gr_LP <- gr_CP <- resp_LP <- resp_CP <- NA
+    
+  }
   
   # combine values
   out <- tibble(.draw = parameters[["draws"]][iter, ]$.draw,
                 gr_baseA = gr_baseA, # check that these are zero
                 gr_baseP = gr_baseP,
+                gr_LA = gr_LA,
+                gr_LP = gr_LP,
+                gr_CA = gr_CA,
+                gr_CP = gr_CP,
+                L_base = L_base,
+                L_adj = L_adj,
+                CA_base = CA_base,
+                CA_adj = CA_adj,
+                CP_base = CP_base,
+                CP_adj = CP_adj,
                 resp_LA = resp_LA,
                 resp_LP = resp_LP,
                 resp_CA = resp_CA,
@@ -153,27 +197,6 @@ resp_fun <- function(iter, sim_outcome, parameters, gens = 2){
   
   return(out)
 }
-
-
-#### parameters ####
-
-# parameter combinations
-params_iters <- 15000
-
-# parameters with fungicide effect on germination
-params_gfung <- params_fun(iters = params_iters, gA_type = "fungicide")
-
-# parameters with infection effect on germination
-params_ginf <- params_fun(iters = params_iters, gA_type = "infection",
-                          draws = params_gfung[["healthy"]]$draws)
-
-# parameters with infection effect and priors
-params_infP <- params_fun(iters = params_iters, gA_type = "infection",
-                          draws = params_gfung[["healthy"]]$draws,
-                          priors = "Stricker")
-
-# generations
-gens <- 1000
 
 
 #### single species simulations ####
@@ -393,6 +416,27 @@ eq_gfung_P <- sims_gfung_P[["long"]] %>%
                                    "Disease suppressed" = "h") %>%
            fct_relevel("Ambient disease"))
 
+# remove raw simulations
+rm(sims_gfung_A, sims_gfung_P, sims_ginf_A, sims_infP_A)
+gc()
+
+# identify cases where species couldn't establish
+non_gfung_A <- eq_gfung_A %>% 
+  filter(annual_seeds < pres_thresh) %>% 
+  select(.draw, disease)
+
+non_ginf_A <- eq_ginf_A %>% 
+  filter(annual_seeds < pres_thresh) %>% 
+  select(.draw, disease)
+
+non_infP_A <- eq_infP_A %>% 
+  filter(annual_seeds < pres_thresh) %>% 
+  select(.draw, disease)
+
+non_gfung_P <- eq_gfung_P %>% 
+  filter(perennial_seeds < pres_thresh | perennial_adults < pres_thresh) %>% 
+  select(.draw, disease)
+
 # collapse parameters into tables
 params_gfung2 <- params_gfung %>% 
   imap_dfr(~ bind_cols(.x) %>%
@@ -417,8 +461,6 @@ eq_gfung <- eq_gfung_A %>%
   left_join(params_gfung2) %>% 
   mutate(C_A_star = ((gA * eA * yA) / (1 - sA * (1 - gA))) * (1 / (1 + betaA * litter_star)),
          C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))),
-         R0_A = C_A_star * (1 + betaA * litter_star),
-         R0_P = C_P_star * (1 + betaP * litter_star),
          litter_A_effect = litter_A - litter_star,
          litter_P_effect = litter_P - litter_star,
          C_AA_effect = C_AA - C_A_star,
@@ -427,141 +469,38 @@ eq_gfung <- eq_gfung_A %>%
          C_PP_effect = C_PP - C_P_star)
 
 eq_ginf <- eq_ginf_A %>% 
-  select(.draw, disease, disease_name, litter_A = litter) %>% 
+  select(.draw, disease, disease_name, litter_A = litter, C_AA, C_PA,
+         annual_seeds) %>% 
   full_join(eq_gfung_P %>% 
-              select(.draw, disease, disease_name, litter_P = litter)) %>% 
+              select(.draw, disease, disease_name, litter_P = litter,
+                     C_AP, C_PP, perennial_seeds, perennial_adults)) %>% 
   mutate(litter_star = (litter_A + litter_P) / 2) %>% 
   left_join(params_ginf2) %>% 
   mutate(C_A_star = ((gA * eA * yA) / (1 - sA * (1 - gA))) * (1 / (1 + betaA * litter_star)),
-         C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))))
+         C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))),
+         litter_A_effect = litter_A - litter_star,
+         litter_P_effect = litter_P - litter_star,
+         C_AA_effect = C_AA - C_A_star,
+         C_AP_effect = C_AP - C_A_star,
+         C_PA_effect = C_PA - C_P_star,
+         C_PP_effect = C_PP - C_P_star)
 
 eq_infP <- eq_infP_A %>% 
-  select(.draw, disease, disease_name, litter_A = litter) %>% 
+  select(.draw, disease, disease_name, litter_A = litter, C_AA, C_PA,
+         annual_seeds) %>% 
   full_join(eq_gfung_P %>% 
-              select(.draw, disease, disease_name, litter_P = litter)) %>% 
+              select(.draw, disease, disease_name, litter_P = litter,
+                     C_AP, C_PP, perennial_seeds, perennial_adults)) %>% 
   mutate(litter_star = (litter_A + litter_P) / 2) %>% 
   left_join(params_infP2) %>% 
   mutate(C_A_star = ((gA * eA * yA) / (1 - sA * (1 - gA))) * (1 / (1 + betaA * litter_star)),
-         C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))))
-
-
-#### effect figures ####
-
-# figure
-# patchwork bug requires letters built into main figures instead of added later
-mv_litter_eff_dist <- ggplot(eq_gfung, aes(x = litter_A_effect)) +
-  stat_slab(aes(color = disease_name, fill = disease_name), alpha = 0.5) +
-  scale_fill_manual(values = c(grey_pal[1], green_pal[2])) +
-  scale_color_manual(values = c(grey_pal[2], green_pal[3])) +
-  scale_x_continuous(labels = scales::comma) +
-  labs(x = "*M. vimineum* effect on litter-mediated competition", title = "A") +
-  fig_theme +
-  theme(axis.title.x = element_markdown(),
-        axis.title.y = element_blank(),
-        legend.title = element_blank(),
-        plot.title = element_text(hjust = 0),
-        plot.title.position = "plot")
-
-mv_litter_eff_dist2 <- mv_litter_eff_dist %+%
-  eq_ginf_A
-
-mv_litter_eff_dist3 <- mv_litter_eff_dist %+%
-  eq_infP_A +
-  coord_cartesian(xlim = range(eq_infP_A$litter))
-
-ev_litter_eff_dist <- mv_litter_eff_dist +
-  aes(x = litter_P_effect) +
-  labs(x = "*E. virginicus* effect on litter-mediated competition", title = "B")
-
-mv_mv_comp_eff_dist <- mv_litter_eff_dist +
-  aes(x = C_AA_effect) +
-  labs(x = "*M. vimineum* effect on density-mediated intraspecific competition")
-
-ev_mv_comp_eff_dist <- mv_litter_eff_dist +
-  aes(x = C_PA_effect) +
-  labs(x = "*M. vimineum* effect on density-mediated interspecific competition")
-
-mv_comp_eff_dist2 <- mv_comp_eff_dist %+%
-  eq_ginf_A +
-  coord_cartesian(xlim = range(eq_ginf_A$comp_eff))
-
-mv_comp_eff_dist3 <- mv_comp_eff_dist %+%
-  eq_infP_A +
-  coord_cartesian(xlim = range(eq_infP_A$comp_eff))
-
-ev_ev_comp_eff_dist <- ev_litter_eff_dist +
-  aes(x = C_PP_effect) +
-  labs(x = "*E. virginicus* effect on density-mediated intraspecific competition")
-
-mv_ev_comp_eff_dist <- ev_litter_eff_dist +
-  aes(x = C_AP_effect) +
-  labs(x = "*E. virginicus* effect on density-mediated interspecific competition")
-
-mv_litter_eff_pt <- ggplot(eq_gfung, 
-                           aes(x = disease_name, y = litter_A_effect)) +
-  stat_pointinterval(aes(color = disease_name), point_size = 2,
-                     point_interval = median_hdci, .width = c(.66, .95)) +
-  scale_color_manual(values = c(grey_pal[2], green_pal[2]), guide = "none") +
-  scale_y_continuous(labels = scales::comma, n.breaks = 3) +
-  fig_theme +
-  theme(axis.title = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
-
-mv_litter_eff_pt2 <- mv_litter_eff_pt %+%
-  eq_ginf_A
-
-mv_litter_eff_pt3 <- mv_litter_eff_pt %+%
-  eq_infP_A
-
-ev_litter_eff_pt <- mv_litter_eff_pt +
-  aes(y = litter_P_effect)
-
-mv_mv_comp_eff_pt <- mv_litter_eff_pt +
-  aes(y = C_AA_effect)
-
-ev_mv_comp_eff_pt <- mv_litter_eff_pt +
-  aes(y = C_PA_effect)
-
-mv_comp_eff_pt2 <- mv_litter_eff_pt2 %+%
-  aes(y = comp_eff)
-
-mv_comp_eff_pt3 <- mv_litter_eff_pt3 %+%
-  aes(y = comp_eff)
-
-ev_ev_comp_eff_pt <- ev_litter_eff_pt +
-  aes(y = C_PP_effect)
-
-mv_ev_comp_eff_pt <- ev_litter_eff_pt +
-  aes(y = C_AP_effect)
-
-# combine
-eff_inset_coord <- c(0.25, 0.5, 0.75, 0.99)
-
-mv_litter_eff_fig <- mv_litter_eff_dist + 
-  inset_element(mv_litter_eff_pt, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
-mv_litter_eff_fig2 <- mv_litter_eff_dist2 + 
-  inset_element(mv_litter_eff_pt2, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
-mv_litter_eff_fig3 <- mv_litter_eff_dist3 + 
-  inset_element(mv_litter_eff_pt3, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
-ev_litter_eff_fig <- ev_litter_eff_dist + 
-  inset_element(ev_litter_eff_pt, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
-mv_comp_eff_fig <- mv_comp_eff_dist + 
-  inset_element(mv_comp_eff_pt, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
-mv_comp_eff_fig2 <- mv_comp_eff_dist2 + 
-  inset_element(mv_comp_eff_pt2, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
-mv_comp_eff_fig3 <- mv_comp_eff_dist3 + 
-  inset_element(mv_comp_eff_pt3, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
-ev_comp_eff_fig <- ev_comp_eff_dist + 
-  inset_element(ev_comp_eff_pt, eff_inset_coord[1], eff_inset_coord[2],
-                eff_inset_coord[3], eff_inset_coord[4])
+         C_P_star = ((gP * eP * yP) / (1 - sP * (1 - gP))) * (1 / (1 + betaP * litter_star)) * (f + (pS / (1 - pP))),
+         litter_A_effect = litter_A - litter_star,
+         litter_P_effect = litter_P - litter_star,
+         C_AA_effect = C_AA - C_A_star,
+         C_AP_effect = C_AP - C_A_star,
+         C_PA_effect = C_PA - C_P_star,
+         C_PP_effect = C_PP - C_P_star)
 
 
 #### invasion simulations ####
@@ -976,7 +915,7 @@ inv_gfung_PA <- grwr_gfung_PA %>%
 inv_ginf_AP <- sims_ginf_AP_long %>%
   filter(generation == 2) %>%
   mutate(annual_gr = log(annual_seeds),
-         annual_invasion = if_else(annual_gr > 0, "yes", "no"))
+         annual_invasion = if_else(annual_gr > 0, "yes", "no")) 
 
 inv_ginf_PA <- grwr_ginf_PA %>%
   mutate(perennial_gr = log(grwr),
@@ -991,7 +930,7 @@ inv_infP_AP <- sims_infP_AP_long %>%
 inv_infP_PA <- grwr_infP_PA %>%
   mutate(perennial_gr = log(grwr),
          perennial_invasion = if_else(perennial_gr > 0, 
-                                      "yes", "no"))
+                                      "yes", "no")) 
 
 # combine invasion outcomes
 # add final values from annual invasion
@@ -1000,79 +939,93 @@ inv_gfung <- inv_gfung_AP %>%
   select(.draw, disease, annual_invasion, annual_gr) %>%
   full_join(inv_gfung_PA %>%
               select(.draw, disease, perennial_invasion, perennial_gr)) %>%
+  left_join(non_gfung_A %>% mutate(annual_est = "no")) %>% 
+  left_join(non_gfung_P %>% mutate(perennial_est = "no")) %>% 
   mutate(coexist = if_else(annual_invasion == "yes" & 
                              perennial_invasion == "yes",
                            "yes", "no"),
-         outcome = case_when(coexist == "yes" ~ "coexist",
+         annual_est = replace_na(annual_est, "yes"),
+         perennial_est = replace_na(perennial_est, "yes"),
+         outcome = case_when(annual_est == "no" | perennial_est == "no" ~
+                               "non-establishment",
+                             coexist == "yes" ~ "coexist",
                              annual_invasion == "yes" & 
-                               perennial_invasion == "no" ~ "annual only",
+                               perennial_invasion == "no" ~ "*M. vimineum* only",
                              perennial_invasion == "yes" &
-                               annual_invasion == "no" ~ "perennial only",
+                               annual_invasion == "no" ~ "*E. virginicus* only",
                              TRUE ~ "priority effect") %>%
-           fct_relevel("coexist")) %>%
+           fct_relevel("coexist", "*M. vimineum* only")) %>%
   left_join(sims_gfung_AP_long %>%
               filter(generation == gens) %>%
               select(-c(generation, iteration))) %>%
-  left_join(eq_gfung_P %>%
-              select(-c(generation, iteration)) %>%
-              rename_with(.fn = ~paste0(.x, "_P"),
-                          .cols = -c(.draw, disease, disease_name))) %>%
-  left_join(eq_gfung_A %>%
-              select(-c(generation, iteration)) %>%
-              rename_with(.fn = ~paste0(.x, "_A"),
-                          .cols = -c(.draw, disease, disease_name)))
+  left_join(eq_gfung %>%
+              select(.draw, disease, disease_name, 
+                     annual_seeds_A = annual_seeds, 
+                     perennial_seeds_P = perennial_seeds, 
+                     perennial_adults_P = perennial_adults))
 
 inv_ginf <- inv_ginf_AP %>%
   select(.draw, disease, annual_invasion, annual_gr) %>%
   full_join(inv_ginf_PA %>%
               select(.draw, disease, perennial_invasion, perennial_gr)) %>%
+  left_join(non_ginf_A %>% mutate(annual_est = "no")) %>% 
+  left_join(non_gfung_P %>% mutate(perennial_est = "no")) %>% 
   mutate(coexist = if_else(annual_invasion == "yes" & 
                              perennial_invasion == "yes",
                            "yes", "no"),
-         outcome = case_when(coexist == "yes" ~ "coexist",
+         annual_est = replace_na(annual_est, "yes"),
+         perennial_est = replace_na(perennial_est, "yes"),
+         outcome = case_when(annual_est == "no" | perennial_est == "no" ~
+                               "non-establishment",
+                             coexist == "yes" ~ "coexist",
                              annual_invasion == "yes" & 
-                               perennial_invasion == "no" ~ "annual only",
+                               perennial_invasion == "no" ~ "*M. vimineum* only",
                              perennial_invasion == "yes" &
-                               annual_invasion == "no" ~ "perennial only",
+                               annual_invasion == "no" ~ "*E. virginicus* only",
                              TRUE ~ "priority effect") %>%
-           fct_relevel("coexist")) %>%
+           fct_relevel("coexist", "*M. vimineum* only")) %>%
   left_join(sims_ginf_AP_long %>%
               filter(generation == gens) %>%
               select(-c(generation, iteration))) %>%
-  left_join(eq_gfung_P %>% # don't need ginf parameters for P alone
-              select(-c(generation, iteration)) %>%
-              rename_with(.fn = ~paste0(.x, "_P"),
-                          .cols = -c(.draw, disease, disease_name))) %>%
-  left_join(eq_ginf_A %>%
-              select(-c(generation, iteration)) %>%
-              rename_with(.fn = ~paste0(.x, "_A"),
-                          .cols = -c(.draw, disease, disease_name)))
+  left_join(eq_ginf %>%
+              select(.draw, disease, disease_name, 
+                     annual_seeds_A = annual_seeds, 
+                     perennial_seeds_P = perennial_seeds, 
+                     perennial_adults_P = perennial_adults))
 
 inv_infP <- inv_infP_AP %>%
   select(.draw, disease, annual_invasion, annual_gr) %>%
   full_join(inv_infP_PA %>%
               select(.draw, disease, perennial_invasion, perennial_gr)) %>%
+  left_join(non_infP_A %>% mutate(annual_est = "no")) %>% 
+  left_join(non_gfung_P %>% mutate(perennial_est = "no")) %>% 
   mutate(coexist = if_else(annual_invasion == "yes" & 
                              perennial_invasion == "yes",
                            "yes", "no"),
-         outcome = case_when(coexist == "yes" ~ "coexist",
+         annual_est = replace_na(annual_est, "yes"),
+         perennial_est = replace_na(perennial_est, "yes"),
+         outcome = case_when(annual_est == "no" | perennial_est == "no" ~
+                               "non-establishment",
+                             coexist == "yes" ~ "coexist",
                              annual_invasion == "yes" & 
-                               perennial_invasion == "no" ~ "annual only",
+                               perennial_invasion == "no" ~ "*M. vimineum* only",
                              perennial_invasion == "yes" &
-                               annual_invasion == "no" ~ "perennial only",
+                               annual_invasion == "no" ~ "*E. virginicus* only",
                              TRUE ~ "priority effect") %>%
-           fct_relevel("coexist")) %>%
+           fct_relevel("coexist", "*M. vimineum* only")) %>%
   left_join(sims_infP_AP_long %>%
               filter(generation == gens) %>%
               select(-c(generation, iteration))) %>%
-  left_join(eq_gfung_P %>% # don't need infP parameters for P alone
-              select(-c(generation, iteration)) %>%
-              rename_with(.fn = ~paste0(.x, "_P"),
-                          .cols = -c(.draw, disease, disease_name))) %>%
-  left_join(eq_infP_A %>%
-              select(-c(generation, iteration)) %>%
-              rename_with(.fn = ~paste0(.x, "_A"),
-                          .cols = -c(.draw, disease, disease_name)))
+  left_join(eq_infP %>%
+              select(.draw, disease, disease_name, 
+                     annual_seeds_A = annual_seeds, 
+                     perennial_seeds_P = perennial_seeds, 
+                     perennial_adults_P = perennial_adults))
+
+# remove sims
+rm(sims_gfung_AP_long, sims_gfung_PA_long, sims_ginf_AP_long, 
+   sims_ginf_PA_long, sims_infP_AP_long, sims_infP_PA_long)
+gc()
 
 # priority effect simulations
 inv_gfung %>%
@@ -1099,134 +1052,101 @@ inv_infP %>%
   filter(annual_seeds_A < 1 | perennial_P < 1)
 # both can establish
 
-# split by disease (for response simulations)
-inv_gfung_h <- inv_gfung %>%
-  filter(disease == "h")
-inv_gfung_d <- inv_gfung %>%
-  filter(disease == "d")
-
-inv_ginf_h <- inv_ginf %>%
-  filter(disease == "h")
-inv_ginf_d <- inv_ginf %>%
-  filter(disease == "d")
-
-inv_infP_h <- inv_infP %>%
-  filter(disease == "h")
-inv_infP_d <- inv_infP %>%
-  filter(disease == "d")
-
 # summarize for figure
 inv_gfung_sum <- inv_gfung %>%
   count(disease_name, outcome) %>%
   group_by(disease_name) %>%
   mutate(prop = n / (sum(n))) %>%
-  ungroup()
+  ungroup() %>% 
+  mutate(outcome = str_replace(outcome, " only", "<br>only") %>% 
+           str_replace(" effect", "<br>effect") %>% 
+           fct_relevel("coexist", "*M. vimineum*<br>only"))
 
 inv_ginf_sum <- inv_ginf %>%
   count(disease_name, outcome) %>%
   group_by(disease_name) %>%
   mutate(prop = n / (sum(n))) %>%
-  ungroup()
+  ungroup() %>% 
+  mutate(outcome = str_replace(outcome, " only", "<br>only") %>% 
+           str_replace(" effect", "<br>effect") %>% 
+           fct_relevel("coexist", "*M. vimineum*<br>only"))
 
 inv_infP_sum <- inv_infP %>%
   count(disease_name, outcome) %>%
   group_by(disease_name) %>%
   mutate(prop = n / (sum(n))) %>%
-  ungroup()
+  ungroup() %>% 
+  mutate(outcome = str_replace(outcome, " only", "<br>only") %>% 
+           str_replace(" effect", "<br>effect") %>% 
+           fct_relevel("coexist", "*M. vimineum*<br>only"))
+
+
+#### invasion outcome figures ####
 
 # summary figure
-coex_gfung_sum_fig <- ggplot(inv_gfung_sum, aes(x = disease_name, y = prop, 
-                          fill = outcome)) +
-  geom_col(position = "dodge", show.legend = F) +
+coex_gfung_sum_fig <- inv_gfung_sum %>% 
+  filter(outcome != "non-establishment") %>% 
+  ggplot(aes(x = outcome, y = prop, 
+             fill = disease_name, color = disease_name)) +
+  geom_col(position = "dodge", alpha = 0.7) +
   scale_y_continuous(labels = scales::percent) +
-  scale_fill_manual(values = col_pal4, name = "Invasion outcome") +
-  labs(y = "Parameter draws", title = "A") +
+  scale_fill_manual(values = dis_pal) +
+  scale_color_manual(values = dis_pal) +
+  labs(y = "Set 1 draws") +
   fig_theme +
   theme(axis.title.x = element_blank(),
-        axis.text.x = element_text(size = 9),
-        plot.title = element_text(hjust = 0),
-        plot.title.position = "plot")
+        axis.text.x = element_markdown(size = 8),
+        legend.title = element_blank(),
+        legend.position = "inside",
+        legend.direction = "vertical",
+        legend.position.inside = c(0.76, 0.75))
 
-coex_ginf_sum_fig <- coex_gfung_sum_fig %+%
-  inv_ginf_sum
+coex_ginf_sum_fig <- coex_gfung_sum_fig +
+  filter(inv_ginf_sum, outcome != "non-establishment") +
+  labs(y = "Set 2 draws") +
+  theme(legend.position = "none")
 
-coex_infP_sum_fig <- coex_gfung_sum_fig %+%
-  inv_infP_sum
-
-# change outcome labels for figure
-inv_gfung2 <- inv_gfung %>%
-  mutate(outcome = str_replace(outcome, "annual", "*M. vimineum*") %>%
-           str_replace("perennial", "*E. virginicus*") %>%
-           fct_relevel("coexist", "*M. vimineum* only"))
-
-inv_ginf2 <- inv_ginf %>%
-  mutate(outcome = str_replace(outcome, "annual", "*M. vimineum*") %>%
-           str_replace("perennial", "*E. virginicus*") %>%
-           fct_relevel("coexist", "*M. vimineum* only"))
-
-inv_infP2 <- inv_infP %>%
-  mutate(outcome = str_replace(outcome, "annual", "*M. vimineum*") %>%
-           str_replace("perennial", "*E. virginicus*") %>%
-           fct_relevel("coexist", "*M. vimineum* only"))
+coex_infP_sum_fig <- coex_gfung_sum_fig +
+  filter(inv_infP_sum, outcome != "non-establishment") +
+  labs(y = "Set 3 draws") +
+  theme(legend.position = "none")
 
 # growth rate figures
-coex_gfung_grd_fig <- inv_gfung2 %>%
-  filter(disease == "d") %>%
-  ggplot(aes(x = annual_gr, y = perennial_gr, color = outcome, 
+coex_infP_grd_fig <- inv_infP %>%
+  filter(disease == "d" & outcome != "non-establishment") %>%
+  ggplot(aes(y = annual_gr, x = perennial_gr, color = outcome, 
              shape = outcome)) +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 0) +
   geom_point(size = 0.5) +
-  facet_wrap(~disease_name) +
-  scale_color_manual(values = col_pal4, name = "Invasion outcome") +
-  scale_shape_manual(values = shape_pal4, name = "Invasion outcome") +
-  labs(y = "*E. virginicus* GRWR", x = "*M. vimineum* GRWR",
-       title = "B") +
+  scale_color_manual(values = col_pal4) +
+  scale_shape_manual(values = shape_pal4) +
+  labs(x = "*E. virginicus* GRWR", y = "*M. vimineum* GRWR",
+       title = "Parameter Set 3: Ambient Disease") +
   fig_theme +
-  theme(axis.title = element_markdown(),
-        plot.title = element_text(hjust = 0),
-        plot.title.position = "plot",
-        strip.placement = "inside",
-        legend.text = element_markdown()) +
+  theme(axis.title.x = element_markdown(size = 9, color = "black"),
+        axis.title.y = element_markdown(size = 9, color = "black"),
+        plot.title = element_text(size = 9, face = "plain"),
+        legend.text = element_markdown(),
+        legend.title = element_blank(),
+        legend.direction = "vertical",
+        legend.position = "inside",
+        legend.position.inside = c(0.73, 0.85)) +
   guides(color = guide_legend(override.aes = list(size = 3)))
 
-coex_gfung_grh_fig <- coex_gfung_grd_fig %+%
-  filter(inv_gfung2, disease == "h") +
-  labs(title = "C")
-
-coex_ginf_grd_fig <- coex_gfung_grd_fig %+%
-  filter(inv_ginf2, disease == "d")
-
-coex_ginf_grh_fig <- coex_ginf_grd_fig %+%
-  filter(inv_ginf2, disease == "h") +
-  labs(title = "C")
-
-coex_infP_grd_fig <- coex_gfung_grd_fig %+%
-  filter(inv_infP2, disease == "d")
-
-coex_infP_grh_fig <- coex_infP_grd_fig %+%
-  filter(inv_infP2, disease == "h") +
-  labs(title = "C")
-
 # combine
-coex_gfung_fig <- coex_gfung_sum_fig / (coex_gfung_grd_fig + coex_gfung_grh_fig) +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
+comb_sum_fig <- coex_gfung_sum_fig + coex_ginf_sum_fig + coex_infP_sum_fig +
+  plot_layout(ncol = 1, axes = "collect_x") &
+  theme(plot.tag = element_text(size = 9, face = "bold"))
 
-coex_ginf_fig <- coex_ginf_sum_fig / (coex_ginf_grd_fig + coex_ginf_grh_fig) +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
-
-coex_infP_fig <- coex_infP_sum_fig / (coex_infP_grd_fig + coex_infP_grh_fig) +
-  plot_layout(guides = "collect") &
-  theme(legend.position = "bottom")
+coex_fig <- coex_infP_grd_fig +
+  theme(plot.tag = element_text(size = 9, face = "bold")) + 
+  comb_sum_fig +
+  plot_layout(nrow = 1, widths = c(0.8, 1)) +
+  plot_annotation(tag_levels = "A")
 
 # save
-ggsave("output/coexistence_outcomes_gfung_parms.png", coex_gfung_fig,
-       width = 6.5, height = 6.5)
-ggsave("output/coexistence_outcomes_ginf_parms.png", coex_ginf_fig,
-       width = 6.5, height = 6.5)
-ggsave("output/coexistence_outcomes_infP_parms.png", coex_infP_fig,
+ggsave("output/coexistence_outcomes.png", coex_fig,
        width = 6.5, height = 6.5)
 
 # table
@@ -1236,7 +1156,11 @@ inv_gfung_sum %>%
               mutate(parameter_set = 2)) %>%
   full_join(inv_infP_sum %>%
               mutate(parameter_set = 3)) %>%
-  mutate(perc = janitor::round_half_up(prop * 100)) %>%
+  mutate(perc = janitor::round_half_up(prop * 100, 1),
+         outcome = str_replace(outcome, "<br>", " ") %>% 
+           str_remove_all("\\*") %>% 
+           fct_relevel("coexist", "M. vimineum only", "E. virginicus only",
+                       "priority effect", "non-establishment")) %>%
   select(-c(n, prop)) %>%
   pivot_wider(names_from = parameter_set, values_from = perc) %>%
   arrange(disease_name, outcome) %>%
@@ -1255,7 +1179,19 @@ resp_ginf_d <- list()
 resp_infP_h <- list()
 resp_infP_d <- list()
 
-# cycle through parameters
+# calculate inflation amounts
+L_add_gfung <- 0.001 * mean(eq_gfung$litter_star)
+L_add_ginf <- 0.001 * mean(eq_ginf$litter_star)
+L_add_infP <- 0.001 * mean(eq_infP$litter_star)
+
+CA_add_gfung <- 0.001 * mean(eq_gfung$C_A_star)
+CA_add_ginf <- 0.001 * mean(eq_ginf$C_A_star)
+CA_add_infP <- 0.001 * mean(eq_infP$C_A_star)
+
+CP_add_gfung <- 0.001 * mean(eq_gfung$C_P_star)
+CP_add_ginf <- 0.001 * mean(eq_ginf$C_P_star)
+CP_add_infP <- 0.001 * mean(eq_infP$C_P_star)
+
 for(i in 1:params_iters){
   
   # get draw from parameters
@@ -1269,131 +1205,288 @@ for(i in 1:params_iters){
   # select equilibrium values
   eq_gfung_draw_h <- eq_gfung %>%
     filter(.draw == draw_gfung_h & disease == "h")
-  inv_gfung_draw_d <- inv_gfung_d %>%
-    filter(.draw == draw_gfung_d)
+  eq_gfung_draw_d <- eq_gfung %>%
+    filter(.draw == draw_gfung_d & disease == "d")
 
-  inv_ginf_draw_h <- inv_ginf_h %>%
-    filter(.draw == draw_ginf_h)
-  inv_ginf_draw_d <- inv_ginf_d %>%
-    filter(.draw == draw_ginf_d)
+  eq_ginf_draw_h <- eq_ginf %>%
+    filter(.draw == draw_ginf_h & disease == "h")
+  eq_ginf_draw_d <- eq_ginf %>%
+    filter(.draw == draw_ginf_d & disease == "d")
   
-  inv_infP_draw_h <- inv_infP_h %>% 
-    filter(.draw == draw_infP_h)
-  inv_infP_draw_d <- inv_infP_d %>% 
-    filter(.draw == draw_infP_d)
+  eq_infP_draw_h <- eq_infP %>% 
+    filter(.draw == draw_infP_h & disease == "h")
+  eq_infP_draw_d <- eq_infP %>% 
+    filter(.draw == draw_infP_d & disease == "d")
   
   # calculate responses for each parameter set and disease condition
   resp_gfung_h[[i]] <- resp_fun(iter = i, sim_outcome = eq_gfung_draw_h,
-                                parameters = params_gfung[["healthy"]])
-  resp_gfung_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_gfung_draw_d,
-                                parameters = params_gfung[["disease"]])
+                                parameters = params_gfung[["healthy"]],
+                                L_add = L_add_gfung, CA_add = CA_add_gfung,
+                                CP_add = CP_add_gfung)
+  resp_gfung_d[[i]] <- resp_fun(iter = i, sim_outcome = eq_gfung_draw_d,
+                                parameters = params_gfung[["disease"]],
+                                L_add = L_add_gfung, CA_add = CA_add_gfung,
+                                CP_add = CP_add_gfung)
 
-  resp_ginf_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_ginf_draw_h,
-                                parameters = params_ginf[["healthy"]])
-  resp_ginf_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_ginf_draw_d,
-                                parameters = params_ginf[["disease"]])
+  resp_ginf_h[[i]] <- resp_fun(iter = i, sim_outcome = eq_ginf_draw_h,
+                                parameters = params_ginf[["healthy"]],
+                               L_add = L_add_ginf, CA_add = CA_add_ginf,
+                               CP_add = CP_add_ginf)
+  resp_ginf_d[[i]] <- resp_fun(iter = i, sim_outcome = eq_ginf_draw_d,
+                                parameters = params_ginf[["disease"]],
+                               L_add = L_add_ginf, CA_add = CA_add_ginf,
+                               CP_add = CP_add_ginf)
   
-  resp_infP_h[[i]] <- resp_fun(iter = i, sim_outcome = inv_infP_draw_h, 
-                               parameters = params_infP[["healthy"]])
-  resp_infP_d[[i]] <- resp_fun(iter = i, sim_outcome = inv_infP_draw_d, 
-                               parameters = params_infP[["disease"]])
+  resp_infP_h[[i]] <- resp_fun(iter = i, sim_outcome = eq_infP_draw_h, 
+                               parameters = params_infP[["healthy"]],
+                               L_add = L_add_infP, CA_add = CA_add_infP,
+                               CP_add = CP_add_infP)
+  resp_infP_d[[i]] <- resp_fun(iter = i, sim_outcome = eq_infP_draw_d, 
+                               parameters = params_infP[["disease"]],
+                               L_add = L_add_infP, CA_add = CA_add_infP,
+                               CP_add = CP_add_infP)
   
 }
 
 # combine healthy and disease
-resp_gfung <- sims_comb_fun(resp_gfung_h, resp_gfung_d)
-resp_ginf <- sims_comb_fun(resp_ginf_h, resp_ginf_d)
-resp_infP <- sims_comb_fun(resp_infP_h, resp_infP_d)
+resp_gfung <- resp_gfung_h %>% 
+  bind_rows() %>% 
+  mutate(disease = "h") %>% 
+  rbind(bind_rows(resp_gfung_d) %>% 
+          mutate(disease = "d")) %>%
+  mutate(disease_name = fct_recode(disease,
+                                   "Ambient disease" = "d",
+                                   "Disease suppressed" = "h") %>%
+           fct_relevel("Ambient disease"))
+
+resp_ginf <- resp_ginf_h %>% 
+  bind_rows() %>% 
+  mutate(disease = "h") %>% 
+  rbind(bind_rows(resp_ginf_d) %>% 
+          mutate(disease = "d")) %>%
+  mutate(disease_name = fct_recode(disease,
+                                   "Ambient disease" = "d",
+                                   "Disease suppressed" = "h") %>%
+           fct_relevel("Ambient disease"))
+
+resp_infP <- resp_infP_h %>% 
+  bind_rows() %>% 
+  mutate(disease = "h") %>% 
+  rbind(bind_rows(resp_infP_d) %>% 
+          mutate(disease = "d")) %>%
+  mutate(disease_name = fct_recode(disease,
+                                   "Ambient disease" = "d",
+                                   "Disease suppressed" = "h") %>%
+           fct_relevel("Ambient disease"))
 
 # save
-save(resp_gfung, file = "output/responses_gfung_parms_20250719.rda")
-save(resp_ginf, file = "output/responses_ginf_parms_20250719.rda")
-save(resp_infP, file = "output/responses_infP_parms_20250719.rda")
+save(resp_gfung, file = "output/responses_gfung_parms_20260722.rda")
+save(resp_ginf, file = "output/responses_ginf_parms_20260722.rda")
+save(resp_infP, file = "output/responses_infP_parms_20260722.rda")
+
+
+#### response figures ####
 
 # reload if needed
-load("output/responses_gfung_parms_20250719.rda")
-load("output/responses_ginf_parms_20250719.rda")
-load("output/responses_infP_parms_20250719.rda")
+load("output/responses_gfung_parms_20260722.rda")
+load("output/responses_ginf_parms_20260722.rda")
+load("output/responses_infP_parms_20260722.rda")
 
-# format for figures
-resp_gfung_long <- resp_gfung[[1]] %>%
-  mutate(disease_name = fct_recode(disease,
-                                   "Ambient disease" = "d",
-                                   "Disease suppressed" = "h") %>%
-           fct_relevel("Ambient disease"))
+# remove non-establishment parameter combinations
+# make long by species
+resp_gfung2 <- resp_gfung %>% 
+  anti_join(non_gfung_A) %>% 
+  anti_join(non_gfung_P) %>% 
+  select(.draw, disease, starts_with("resp")) %>% 
+  pivot_longer(cols = starts_with("resp"),
+               names_to = c("competition", "species"),
+               names_pattern = "resp_(.)(.)") %>% 
+  mutate(competition = fct_recode(competition,
+                                  "litter" = "L",
+                                  "density" = "C"),
+         species = fct_recode(species,
+                              "M. vimineum" = "A",
+                              "E. virginicus" = "P")) %>% 
+  group_by(disease, competition, species) %>% 
+  summarize(median = median(value),
+            L95 = median_hdci(value)$ymin,
+            U95 = median_hdci(value)$ymax,
+            .groups = "drop")
 
-resp_ginf_long <- resp_ginf[[1]] %>%
-  mutate(disease_name = fct_recode(disease,
-                                   "Ambient disease" = "d",
-                                   "Disease suppressed" = "h") %>%
-           fct_relevel("Ambient disease"))
+resp_ginf2 <- resp_ginf %>% 
+  anti_join(non_ginf_A) %>% 
+  anti_join(non_gfung_P) %>% 
+  select(.draw, disease, starts_with("resp")) %>% 
+  pivot_longer(cols = starts_with("resp"),
+               names_to = c("competition", "species"),
+               names_pattern = "resp_(.)(.)") %>% 
+  mutate(competition = fct_recode(competition,
+                                  "litter" = "L",
+                                  "density" = "C"),
+         species = fct_recode(species,
+                              "M. vimineum" = "A",
+                              "E. virginicus" = "P")) %>% 
+  group_by(disease, competition, species) %>% 
+  summarize(median = median(value),
+            L95 = median_hdci(value)$ymin,
+            U95 = median_hdci(value)$ymax,
+            .groups = "drop")
 
-resp_infP_long <- resp_infP[[1]] %>%
-  mutate(disease_name = fct_recode(disease,
-                                   "Ambient disease" = "d",
-                                   "Disease suppressed" = "h") %>%
-           fct_relevel("Ambient disease"))
-  
-# distribution figures
-mv_litter_resp_dist <- ggplot(resp_gfung_long, aes(x = resp_LA)) +
+resp_infP2 <- resp_infP %>% 
+  anti_join(non_infP_A) %>% 
+  anti_join(non_gfung_P) %>% 
+  select(.draw, disease, starts_with("resp")) %>% 
+  pivot_longer(cols = starts_with("resp"),
+               names_to = c("competition", "species"),
+               names_pattern = "resp_(.)(.)") %>% 
+  mutate(competition = fct_recode(competition,
+                                  "litter" = "L",
+                                  "density" = "C"),
+         species = fct_recode(species,
+                              "M. vimineum" = "A",
+                              "E. virginicus" = "P")) %>% 
+  group_by(disease, competition, species) %>% 
+  summarize(median = median(value),
+            L95 = median_hdci(value)$ymin,
+            U95 = median_hdci(value)$ymax,
+            .groups = "drop")
+
+# gfung figures
+resp_gfung_h_fig <- resp_gfung2 %>% 
+  filter(disease == "h") %>% 
+  ggplot(aes(x = competition, y = median, color = species)) +
+  geom_errorbar(aes(ymin = L95, ymax = U95),
+                linewidth = 0.3, width = 0,
+                position = position_dodge(dodge_width)) +
+  geom_point(aes(shape = species), size = 2,
+             position = position_dodge(dodge_width)) +
+  scale_y_log10(limits = c(min(resp_gfung2$L95),
+                           max(resp_gfung2$U95))) +
+  scale_color_manual(values = spp_pal) +
+  scale_shape_manual(values = spp_shape_pal) +
+  labs(x = "Competition type", 
+       y = expression("Response ("*log[10]*")"),
+       title = "Disease suppressed") +
+  fig_theme +
+  theme(legend.title = element_blank(),
+        legend.text = element_text(face = "italic"))
+
+resp_gfung_d_fig <- resp_gfung_h_fig +
+  filter(resp_gfung2, disease == "d") +
+  labs(title = "Ambient disease")
+
+resp_gfung_fig <- resp_gfung_h_fig + resp_gfung_d_fig + 
+  plot_layout(nrow = 1, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal") 
+
+# ginf figures
+resp_ginf_h_fig <- resp_gfung_h_fig +
+  filter(resp_ginf2, disease == "h") +
+  scale_y_log10(limits = c(min(resp_ginf2$L95),
+                           max(resp_ginf2$U95)))
+
+resp_ginf_d_fig <- resp_gfung_d_fig +
+  filter(resp_ginf2, disease == "d") +
+  scale_y_log10(limits = c(min(resp_ginf2$L95),
+                           max(resp_ginf2$U95)))
+
+resp_ginf_fig <- resp_ginf_h_fig + resp_ginf_d_fig + 
+  plot_layout(nrow = 1, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal") 
+
+# infP figures
+resp_infP_h_fig <- resp_gfung_h_fig +
+  filter(resp_infP2, disease == "h") +
+  scale_y_log10(limits = c(min(resp_infP2$L95),
+                           max(resp_infP2$U95)))
+
+resp_infP_d_fig <- resp_gfung_d_fig +
+  filter(resp_infP2, disease == "d") +
+  scale_y_log10(limits = c(min(resp_infP2$L95),
+                           max(resp_infP2$U95)))
+
+resp_infP_fig <- resp_infP_h_fig + resp_infP_d_fig + 
+  plot_layout(nrow = 1, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal") 
+
+# save
+ggsave("output/responses_gfung_parms.png", resp_gfung_fig,
+       width = 6, height = 2.7)
+ggsave("output/responses_ginf_parms.png", resp_ginf_fig,
+       width = 6, height = 2.7)
+ggsave("output/responses_infP_parms.png", resp_infP_fig,
+       width = 6, height = 2.7)
+
+
+##### litter response distributions - delete or appendix #####
+
+mv_litter_resp_dist <- ggplot(resp_gfung2, aes(x = resp_LA)) +
   stat_slab(aes(color = disease_name, fill = disease_name), alpha = 0.5) +
-  scale_fill_manual(values = c(grey_pal[2], coral_pal[2])) +
-  scale_color_manual(values = c(grey_pal[2], coral_pal[2])) +
+  scale_fill_manual(values = c("goldenrod", "#7C9B5B")) +
+  scale_color_manual(values = c("goldenrod", "#7C9B5B")) +
   scale_x_continuous(labels = scales::comma) +
-  labs(x = "*M. vimineum* response to litter-mediated competition", 
-       title = "C") +
+  labs(x = "*M. vimineum* response to litter-mediated competition") +
   fig_theme +
   theme(axis.title.x = element_markdown(),
         axis.title.y = element_blank(),
-        legend.title = element_blank(),
-        plot.title = element_text(hjust = 0),
-        plot.title.position = "plot")
+        legend.title = element_blank())
 
-ev_litter_resp_dist <- mv_litter_resp_dist %+%
+ev_litter_resp_dist <- mv_litter_resp_dist +
   aes(x = resp_LP) +
-  labs(x = "*E. virginicus* response to litter-mediated competition", 
-       title = "D")
+  labs(x = "*E. virginicus* response to litter-mediated competition")
 
-mv_comp_resp_dist <- mv_litter_resp_dist %+%
+mv_litter_resp_dist2 <- mv_litter_resp_dist +
+  resp_ginf2
+
+ev_litter_resp_dist2 <- ev_litter_resp_dist +
+  resp_ginf2
+
+mv_litter_resp_dist3 <- mv_litter_resp_dist +
+  resp_infP2
+
+ev_litter_resp_dist3 <- ev_litter_resp_dist +
+  resp_infP2
+
+
+##### competition response distributions - delete or appendix #####
+
+mv_comp_resp_dist <- mv_litter_resp_dist +
   aes(x = resp_CA) +
-  labs(x = "*M. vimineum* response to density-mediated competition") +
-  theme(axis.title.x = element_markdown(hjust = 0.75))
+  labs(x = "*M. vimineum* response to density-mediated competition")
 
-ev_comp_resp_dist <- ev_litter_resp_dist %+%
+ev_comp_resp_dist <- ev_litter_resp_dist +
   aes(x = resp_CP) +
   labs(x = "*E. virginicus* response to density-mediated competition")
 
-mv_litter_resp_dist2 <- mv_litter_resp_dist %+%
-  resp_ginf_long
+mv_comp_resp_dist2 <- mv_comp_resp_dist +
+  resp_ginf2
 
-ev_litter_resp_dist2 <- ev_litter_resp_dist %+%
-  resp_ginf_long
+ev_comp_resp_dist2 <- ev_comp_resp_dist +
+  resp_ginf2
 
-mv_comp_resp_dist2 <- mv_comp_resp_dist %+%
-  resp_ginf_long
+mv_comp_resp_dist3 <- mv_comp_resp_dist +
+  resp_infP2
 
-ev_comp_resp_dist2 <- ev_comp_resp_dist %+%
-  resp_ginf_long
+ev_comp_resp_dist3 <- ev_comp_resp_dist +
+  resp_infP2
 
-mv_litter_resp_dist3 <- mv_litter_resp_dist %+%
-  resp_infP_long
 
-ev_litter_resp_dist3 <- ev_litter_resp_dist %+%
-  resp_infP_long
-
-mv_comp_resp_dist3 <- mv_comp_resp_dist %+%
-  resp_infP_long
-
-ev_comp_resp_dist3 <- ev_comp_resp_dist %+%
-  resp_infP_long
-
-# point figures
-mv_litter_resp_pt <- ggplot(resp_gfung_long, 
+##### litter response points - not updated, delete or appendix #####
+mv_litter_resp_pt <- ggplot(resp_gfung2, 
                             aes(x = disease_name, y = resp_LA)) +
   stat_pointinterval(aes(color = disease_name), point_size = 2,
                      point_interval = median_hdci, .width = c(.66, .95)) +
-  scale_color_manual(values = c(grey_pal[2], coral_pal[2]), guide = "none") +
-  scale_y_continuous(n.breaks = 3) +
+  scale_color_manual(values = c("goldenrod", "#7C9B5B"), guide = "none") +
+  # scale_y_continuous(n.breaks = 3) +
   fig_theme +
   theme(axis.title = element_blank(),
         axis.text.x = element_blank(),
@@ -1475,7 +1568,398 @@ ev_comp_resp_fig3 <- ev_comp_resp_dist3 +
   inset_element(ev_comp_resp_pt3, resp_inset_coord[1], resp_inset_coord[2],
                 resp_inset_coord[3], resp_inset_coord[4])
 
-#### combine litter and density figures ####
+
+#### effect figures ####
+
+# remove non-establishment parameter combinations
+# make long by species
+eq_gfung2 <- eq_gfung %>% 
+  anti_join(non_gfung_A) %>% 
+  anti_join(non_gfung_P) %>% 
+  select(.draw, disease, ends_with("effect")) %>% 
+  pivot_longer(cols = ends_with("effect"),
+               names_to = "effect") %>% 
+  mutate(competition = case_when(
+    str_detect(effect, "litter") ~ "litter",
+    str_detect(effect, "AA|PP") ~ "intrasp_density",
+    str_detect(effect, "AP|PA") ~ "intersp_density"),
+    species = case_when(
+      str_detect(effect, "litter_A|C_AA|C_PA") ~ "M. vimineum",
+      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus")) %>% 
+  select(-effect) %>% 
+  group_by(disease, species, competition) %>% 
+  summarize(median = median(value),
+            L95 = median_hdci(value)$ymin,
+            U95 = median_hdci(value)$ymax,
+            min = min(value),
+            max = max(value),
+            .groups = "drop") %>% 
+  pivot_wider(names_from = competition, 
+              values_from = c(median, L95, U95, min, max),
+              names_glue = "{competition}_{.value}")
+
+eq_ginf2 <- eq_ginf %>% 
+  anti_join(non_ginf_A) %>% 
+  anti_join(non_gfung_P) %>% 
+  select(.draw, disease, ends_with("effect")) %>% 
+  pivot_longer(cols = ends_with("effect"),
+               names_to = "effect") %>% 
+  mutate(competition = case_when(
+    str_detect(effect, "litter") ~ "litter",
+    str_detect(effect, "AA|PP") ~ "intrasp_density",
+    str_detect(effect, "AP|PA") ~ "intersp_density"),
+    species = case_when(
+      str_detect(effect, "litter_A|C_AA|C_PA") ~ "M. vimineum",
+      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus")) %>% 
+  select(-effect) %>% 
+  group_by(disease, species, competition) %>% 
+  summarize(median = median(value),
+            L95 = median_hdci(value)$ymin,
+            U95 = median_hdci(value)$ymax,
+            min = min(value),
+            max = max(value),
+            .groups = "drop") %>% 
+  pivot_wider(names_from = competition, 
+              values_from = c(median, L95, U95, min, max),
+              names_glue = "{competition}_{.value}")
+
+eq_infP2 <- eq_infP %>% 
+  anti_join(non_infP_A) %>% 
+  anti_join(non_gfung_P) %>% 
+  select(.draw, disease, ends_with("effect")) %>% 
+  pivot_longer(cols = ends_with("effect"),
+               names_to = "effect") %>% 
+  mutate(competition = case_when(
+    str_detect(effect, "litter") ~ "litter",
+    str_detect(effect, "AA|PP") ~ "intrasp_density",
+    str_detect(effect, "AP|PA") ~ "intersp_density"),
+    species = case_when(
+      str_detect(effect, "litter_A|C_AA|C_PA") ~ "M. vimineum",
+      str_detect(effect, "litter_P|C_PP|C_AP") ~ "E. virginicus")) %>% 
+  select(-effect) %>% 
+  group_by(disease, species, competition) %>% 
+  summarize(median = median(value),
+            L95 = median_hdci(value)$ymin,
+            U95 = median_hdci(value)$ymax,
+            min = min(value),
+            max = max(value),
+            .groups = "drop") %>% 
+  pivot_wider(names_from = competition, 
+              values_from = c(median, L95, U95, min, max),
+              names_glue = "{competition}_{.value}")
+
+# gfung figures
+eff_gfung_hle_fig <- eq_gfung2 %>% 
+  filter(disease == "h") %>% 
+  ggplot(aes(x = litter_median, y = intersp_density_median, color = species)) +
+  geom_errorbar(aes(xmin = litter_L95, xmax = litter_U95), 
+                linewidth = 0.3, width = 0) +
+  geom_errorbar(aes(ymin = intersp_density_L95, ymax = intersp_density_U95),
+                linewidth = 0.3, width = 0) +
+  geom_point(aes(shape = species), size = 2) +
+  scale_color_manual(values = spp_pal) +
+  scale_shape_manual(values = spp_shape_pal) +
+  scale_x_continuous(limits = c(min(eq_gfung2$litter_L95),
+                                max(eq_gfung2$litter_U95))) +
+  scale_y_continuous(limits = c(min(eq_gfung2$intersp_density_L95),
+                                max(eq_gfung2$intersp_density_U95))) +
+  labs(x = "Litter-mediated competition", 
+       y = "Interspecific density-mediated\ncompetition",
+       title = "Disease suppressed") +
+  fig_theme +
+  theme(legend.title = element_blank(),
+        legend.text = element_text(face = "italic"))
+
+eff_gfung_dle_fig <- eff_gfung_hle_fig +
+  filter(eq_gfung2, disease == "d") +
+  labs(title = "Ambient disease")
+
+eff_gfung_hea_fig <- eq_gfung2 %>% 
+  filter(disease == "h") %>% 
+  ggplot(aes(x = intersp_density_median, y = intrasp_density_median, color = species)) +
+  geom_errorbar(aes(xmin = intersp_density_L95, xmax = intersp_density_U95),
+                linewidth = 0.3, width = 0) +
+  geom_errorbar(aes(ymin = intrasp_density_L95, ymax = intrasp_density_U95),
+                linewidth = 0.3, width = 0) +
+  geom_point(aes(shape = species), size = 2) +
+  scale_color_manual(values = spp_pal) +
+  scale_shape_manual(values = spp_shape_pal) +
+  scale_x_continuous(limits = c(min(eq_gfung2$intersp_density_L95),
+                                max(eq_gfung2$intersp_density_U95))) +
+  scale_y_continuous(limits = c(min(eq_gfung2$intrasp_density_L95),
+                                max(eq_gfung2$intrasp_density_U95))) +
+  labs(x = "Interspecific density-mediated competition",
+       y = "Intraspecific density-mediated\ncompetition") +
+  fig_theme +
+  theme(legend.title = element_blank(),
+        legend.text = element_text(face = "italic"))
+
+eff_gfung_dea_fig <- eff_gfung_hea_fig +
+  filter(eq_gfung2, disease == "d")
+
+eff_gfung_hal_fig <- eq_gfung2 %>% 
+  filter(disease == "h") %>% 
+  ggplot(aes(x = intrasp_density_median, y = litter_median, color = species)) +
+  geom_errorbar(aes(xmin = intrasp_density_L95, xmax = intrasp_density_U95),
+                linewidth = 0.3, width = 0) +
+  geom_errorbar(aes(ymin = litter_L95, ymax = litter_U95), 
+                linewidth = 0.3, width = 0) +
+  geom_point(aes(shape = species), size = 2) +
+  scale_color_manual(values = spp_pal) +
+  scale_shape_manual(values = spp_shape_pal) +
+  scale_x_continuous(limits = c(min(eq_gfung2$intrasp_density_L95),
+                                max(eq_gfung2$intrasp_density_U95))) +
+  scale_y_continuous(limits = c(min(eq_gfung2$litter_L95),
+                                max(eq_gfung2$litter_U95))) +
+  labs(x = "Intraspecific density-mediated competition",
+       y = "Litter-mediated competition") +
+  fig_theme +
+  theme(legend.title = element_blank(),
+        legend.text = element_text(face = "italic"))
+
+eff_gfung_dal_fig <- eff_gfung_hal_fig +
+  filter(eq_gfung2, disease == "d")
+
+eff_gfung_fig <- eff_gfung_hle_fig + eff_gfung_dle_fig + 
+  eff_gfung_hea_fig + eff_gfung_dea_fig + 
+  eff_gfung_hal_fig + eff_gfung_dal_fig + 
+  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal") 
+
+# ginf figures
+eff_ginf_hle_fig <- eff_gfung_hle_fig +
+  filter(eq_ginf2, disease == "h") +
+  scale_x_continuous(limits = c(min(eq_ginf2$litter_L95),
+                                max(eq_ginf2$litter_U95))) +
+  scale_y_continuous(limits = c(min(eq_ginf2$intersp_density_L95),
+                                max(eq_ginf2$intersp_density_U95)))
+
+eff_ginf_dle_fig <- eff_ginf_hle_fig +
+  filter(eq_ginf2, disease == "d") +
+  labs(title = "Ambient disease")
+
+eff_ginf_hea_fig <- eff_gfung_hea_fig +
+  filter(eq_ginf2, disease == "h") + 
+  scale_x_continuous(limits = c(min(eq_ginf2$intersp_density_L95),
+                                max(eq_ginf2$intersp_density_U95))) +
+  scale_y_continuous(limits = c(min(eq_ginf2$intrasp_density_L95),
+                                max(eq_ginf2$intrasp_density_U95)))
+
+eff_ginf_dea_fig <- eff_ginf_hea_fig +
+  filter(eq_ginf2, disease == "d")
+
+eff_ginf_hal_fig <- eff_gfung_hal_fig +
+  filter(eq_ginf2, disease == "h") +
+  scale_x_continuous(limits = c(min(eq_ginf2$intrasp_density_L95),
+                                max(eq_ginf2$intrasp_density_U95))) +
+  scale_y_continuous(limits = c(min(eq_ginf2$litter_L95),
+                                max(eq_ginf2$litter_U95)))
+
+eff_ginf_dal_fig <- eff_ginf_hal_fig +
+  filter(eq_ginf2, disease == "d")
+
+eff_ginf_fig <- eff_ginf_hle_fig + eff_ginf_dle_fig + 
+  eff_ginf_hea_fig + eff_ginf_dea_fig + 
+  eff_ginf_hal_fig + eff_ginf_dal_fig + 
+  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal") 
+
+# infP figures
+eff_infP_hle_fig <- eff_gfung_hle_fig +
+  filter(eq_infP2, disease == "h") +
+  scale_x_continuous(limits = c(min(eq_infP2$litter_L95),
+                                max(eq_infP2$litter_U95))) +
+  scale_y_continuous(limits = c(min(eq_infP2$intersp_density_L95),
+                                max(eq_infP2$intersp_density_U95)))
+
+eff_infP_dle_fig <- eff_infP_hle_fig +
+  filter(eq_infP2, disease == "d") +
+  labs(title = "Ambient disease")
+
+eff_infP_hea_fig <- eff_gfung_hea_fig +
+  filter(eq_infP2, disease == "h") + 
+  scale_x_continuous(limits = c(min(eq_infP2$intersp_density_L95),
+                                max(eq_infP2$intersp_density_U95))) +
+  scale_y_continuous(limits = c(min(eq_infP2$intrasp_density_L95),
+                                max(eq_infP2$intrasp_density_U95)))
+
+eff_infP_dea_fig <- eff_infP_hea_fig +
+  filter(eq_infP2, disease == "d")
+
+eff_infP_hal_fig <- eff_gfung_hal_fig +
+  filter(eq_infP2, disease == "h") +
+  scale_x_continuous(limits = c(min(eq_infP2$intrasp_density_L95),
+                                max(eq_infP2$intrasp_density_U95))) +
+  scale_y_continuous(limits = c(min(eq_infP2$litter_L95),
+                                max(eq_infP2$litter_U95)))
+
+eff_infP_dal_fig <- eff_infP_hal_fig +
+  filter(eq_infP2, disease == "d")
+
+eff_infP_fig <- eff_infP_hle_fig + eff_infP_dle_fig + 
+  eff_infP_hea_fig + eff_infP_dea_fig + 
+  eff_infP_hal_fig + eff_infP_dal_fig + 
+  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal") 
+
+# save
+ggsave("output/effects_gfung_parms.png", eff_gfung_fig,
+       width = 6, height = 8)
+ggsave("output/effects_ginf_parms.png", eff_ginf_fig,
+       width = 6, height = 8)
+ggsave("output/effects_infP_parms.png", eff_infP_fig,
+       width = 6, height = 8)
+
+
+##### litter effect distributions - delete or appendix ######
+mv_litter_eff_dist <- ggplot(eq_gfung, aes(x = litter_A_effect)) +
+  stat_slab(aes(color = disease_name, fill = disease_name), alpha = 0.5) +
+  scale_fill_manual(values = dis_pal) +
+  scale_color_manual(values = dis_pal) +
+  scale_x_continuous(labels = scales::comma) +
+  labs(x = "*M. vimineum* effect on litter-mediated competition") +
+  fig_theme +
+  theme(axis.title.x = element_markdown(),
+        axis.title.y = element_blank(),
+        legend.title = element_blank())
+
+ev_litter_eff_dist <- mv_litter_eff_dist +
+  aes(x = litter_P_effect) +
+  labs(x = "*E. virginicus* effect on litter-mediated competition")
+
+mv_litter_eff_dist2 <- mv_litter_eff_dist +
+  eq_ginf
+
+ev_litter_eff_dist2 <- ev_litter_eff_dist +
+  eq_ginf
+
+mv_litter_eff_dist3 <- mv_litter_eff_dist +
+  eq_infP
+
+ev_litter_eff_dist3 <- ev_litter_eff_dist +
+  eq_infP
+
+##### competition effect distributions - delete or appendix #####
+mv_mv_comp_eff_dist <- mv_litter_eff_dist +
+  aes(x = C_AA_effect) +
+  labs(x = "*M. vimineum* effect on density-mediated intraspecific competition")
+
+ev_mv_comp_eff_dist <- mv_litter_eff_dist +
+  aes(x = C_PA_effect) +
+  labs(x = "*M. vimineum* effect on density-mediated interspecific competition")
+
+ev_ev_comp_eff_dist <- ev_litter_eff_dist +
+  aes(x = C_PP_effect) +
+  labs(x = "*E. virginicus* effect on density-mediated intraspecific competition")
+
+mv_ev_comp_eff_dist <- ev_litter_eff_dist +
+  aes(x = C_AP_effect) +
+  labs(x = "*E. virginicus* effect on density-mediated interspecific competition")
+
+mv_mv_comp_eff_dist2 <- mv_mv_comp_eff_dist +
+  eq_ginf
+
+ev_mv_comp_eff_dist2 <- ev_mv_comp_eff_dist +
+  eq_ginf
+
+ev_ev_comp_eff_dist2 <- ev_ev_comp_eff_dist +
+  eq_ginf
+
+mv_ev_comp_eff_dist2 <- mv_ev_comp_eff_dist +
+  eq_ginf
+
+mv_mv_comp_eff_dist3 <- mv_mv_comp_eff_dist +
+  eq_infP
+
+ev_mv_comp_eff_dist3 <- ev_mv_comp_eff_dist +
+  eq_infP
+
+ev_ev_comp_eff_dist3 <- ev_ev_comp_eff_dist +
+  eq_infP
+
+mv_ev_comp_eff_dist3 <- mv_ev_comp_eff_dist +
+  eq_infP
+
+##### litter effect points - delete or appendix #####
+mv_litter_eff_pt <- ggplot(eq_gfung, 
+                           aes(x = disease_name, y = litter_A_effect)) +
+  stat_pointinterval(aes(color = disease_name), point_size = 2,
+                     point_interval = median_hdci, .width = c(.66, .95)) +
+  scale_color_manual(values = c("goldenrod", "#7C9B5B"), guide = "none") +
+  scale_y_continuous(labels = scales::comma, n.breaks = 3) +
+  labs(y = "*M. vimineum* effect on litter-mediated competition") +
+  fig_theme +
+  theme(axis.title.y = element_markdown(),
+        axis.title.x = element_blank())
+
+ev_litter_eff_pt <- mv_litter_eff_pt +
+  aes(y = litter_P_effect) +
+  labs(y = "*E. virginicus* effect on litter-mediated competition")
+
+mv_litter_eff_pt2 <- mv_litter_eff_pt +
+  eq_ginf
+
+ev_litter_eff_pt2 <- ev_litter_eff_pt  +
+  eq_ginf
+
+mv_litter_eff_pt3 <- mv_litter_eff_pt +
+  eq_infP
+
+ev_litter_eff_pt3 <- ev_litter_eff_pt +
+  eq_infP
+
+##### competition effect points - delete or appendix #####
+mv_mv_comp_eff_pt <- mv_litter_eff_pt +
+  aes(y = C_AA_effect) +
+  labs(y = "*M. vimineum* effect on density-mediated intraspecific competition")
+
+ev_mv_comp_eff_pt <- mv_litter_eff_pt +
+  aes(y = C_PA_effect) +
+  labs(y = "*M. vimineum* effect on density-mediated interspecific competition")
+
+ev_ev_comp_eff_pt <- ev_litter_eff_pt +
+  aes(y = C_PP_effect) +
+  labs(y = "*E. virginicus* effect on density-mediated intraspecific competition")
+
+mv_ev_comp_eff_pt <- ev_litter_eff_pt +
+  aes(y = C_AP_effect) +
+  labs(y = "*E. virginicus* effect on density-mediated interspecific competition")
+
+mv_mv_comp_eff_pt2 <- mv_mv_comp_eff_pt +
+  eq_ginf
+
+ev_mv_comp_eff_pt2 <- ev_mv_comp_eff_pt +
+  eq_ginf
+
+ev_ev_comp_eff_pt2 <- ev_ev_comp_eff_pt +
+  eq_ginf
+
+mv_ev_comp_eff_pt2 <- mv_ev_comp_eff_pt +
+  eq_ginf
+
+mv_mv_comp_eff_pt3 <- mv_mv_comp_eff_pt +
+  eq_infP
+
+ev_mv_comp_eff_pt3 <- ev_mv_comp_eff_pt +
+  eq_infP
+
+ev_ev_comp_eff_pt3 <- ev_ev_comp_eff_pt +
+  eq_infP
+
+mv_ev_comp_eff_pt3 <- mv_ev_comp_eff_pt +
+  eq_infP
+
+
+#### combine litter and density figuresn - delete or appendix ####
 
 eff_resp_litter_fig <- mv_litter_eff_fig + ev_litter_eff_fig + mv_litter_resp_fig + 
   ev_litter_resp_fig +
