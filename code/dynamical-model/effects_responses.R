@@ -1,6 +1,3 @@
-#### status ####
-
-
 #### set-up ####
 
 # clear environment
@@ -1969,21 +1966,73 @@ resp_eff_gfung <- resp_gfung2 %>%
                      eff_U95 = U95,
                      species = species_eff))
 
+resp_eff_ginf <- resp_ginf2 %>% 
+  rename(resp_med = median,
+         resp_L95 = L95,
+         resp_U95 = U95) %>% 
+  full_join(eff_ginf %>% 
+              rename(eff_med = median,
+                     eff_L95 = L95,
+                     eff_U95 = U95,
+                     species = species_eff))
+
+resp_eff_infP <- resp_infP2 %>% 
+  rename(resp_med = median,
+         resp_L95 = L95,
+         resp_U95 = U95) %>% 
+  full_join(eff_infP %>% 
+              rename(eff_med = median,
+                     eff_L95 = L95,
+                     eff_U95 = U95,
+                     species = species_eff))
+
 # split by competition for figures
 resp_eff_inter_gfung <- resp_eff_gfung %>% 
   filter(comp_eff == "interspecific") %>% 
   mutate(label = if_else(disease == "h", 
-                         "Interspecific density-mediated competition",
+                         "Interspecific density",
                          ""))
 resp_eff_intra_gfung <- resp_eff_gfung %>% 
   filter(comp_eff == "intraspecific") %>% 
   mutate(label = if_else(disease == "h",
-                         "Intraspecific density-mediated competition",
+                         "Intraspecific density",
                          ""))
 resp_eff_lit_gfung <- resp_eff_gfung %>% 
   filter(comp_eff == "litter") %>% 
   mutate(label = if_else(disease == "h",
-                         "Litter-mediated competition",
+                         "Litter",
+                         ""))
+
+resp_eff_inter_ginf <- resp_eff_ginf %>% 
+  filter(comp_eff == "interspecific") %>% 
+  mutate(label = if_else(disease == "h", 
+                         "Interspecific density",
+                         ""))
+resp_eff_intra_ginf <- resp_eff_ginf %>% 
+  filter(comp_eff == "intraspecific") %>% 
+  mutate(label = if_else(disease == "h",
+                         "Intraspecific density",
+                         ""))
+resp_eff_lit_ginf <- resp_eff_ginf %>% 
+  filter(comp_eff == "litter") %>% 
+  mutate(label = if_else(disease == "h",
+                         "Litter",
+                         ""))
+
+resp_eff_inter_infP <- resp_eff_infP %>% 
+  filter(comp_eff == "interspecific") %>% 
+  mutate(label = if_else(disease == "h", 
+                         "Interspecific density",
+                         ""))
+resp_eff_intra_infP <- resp_eff_infP %>% 
+  filter(comp_eff == "intraspecific") %>% 
+  mutate(label = if_else(disease == "h",
+                         "Intraspecific density",
+                         ""))
+resp_eff_lit_infP <- resp_eff_infP %>% 
+  filter(comp_eff == "litter") %>% 
+  mutate(label = if_else(disease == "h",
+                         "Litter",
                          ""))
 
 # gfung figures
@@ -1999,7 +2048,7 @@ resp_eff_gfung_h_inter_fig <- resp_eff_inter_gfung %>%
   geom_point(aes(shape = species, color = species), size = 2,
              position = position_dodge(dodge_width)) +
   geom_text(aes(label = label), check_overlap = T,
-           x = -Inf, y = Inf, hjust = -0.02, vjust = 1.5,
+           x = -Inf, y = Inf, hjust = -0.05, vjust = 1.5,
            size = text_size) +
   scale_y_log10(limits = c(min(resp_eff_inter_gfung$resp_L95),
                                 max(resp_eff_inter_gfung$resp_U95))) +
@@ -2023,22 +2072,22 @@ resp_eff_gfung_h_intra_fig <- resp_eff_gfung_h_inter_fig +
   scale_y_log10(limits = c(min(resp_eff_intra_gfung$resp_L95),
                            max(resp_eff_intra_gfung$resp_U95))) +
   scale_x_continuous(limits = c(min(resp_eff_intra_gfung$eff_L95),
-                                max(resp_eff_intra_gfung$eff_U95)))
+                                max(resp_eff_intra_gfung$eff_U95))) +
+  theme(plot.title = element_blank())
 
 resp_eff_gfung_d_intra_fig <- resp_eff_gfung_h_intra_fig +
-  filter(resp_eff_intra_gfung, disease == "d") +
-  labs(title = "Ambient disease")
+  filter(resp_eff_intra_gfung, disease == "d")
 
 resp_eff_gfung_h_lit_fig <- resp_eff_gfung_h_inter_fig +
   filter(resp_eff_lit_gfung, disease == "h") +
   scale_y_log10(limits = c(min(resp_eff_lit_gfung$resp_L95),
                            max(resp_eff_lit_gfung$resp_U95))) +
   scale_x_continuous(limits = c(min(resp_eff_lit_gfung$eff_L95),
-                                max(resp_eff_lit_gfung$eff_U95)))
+                                max(resp_eff_lit_gfung$eff_U95))) +
+  theme(plot.title = element_blank())
 
 resp_eff_gfung_d_lit_fig <- resp_eff_gfung_h_lit_fig +
-  filter(resp_eff_lit_gfung, disease == "d") +
-  labs(title = "Ambient disease")
+  filter(resp_eff_lit_gfung, disease == "d")
 
 resp_eff_gfung_fig <- resp_eff_gfung_h_inter_fig + resp_eff_gfung_d_inter_fig + 
   resp_eff_gfung_h_intra_fig + resp_eff_gfung_d_intra_fig + 
@@ -2049,10 +2098,158 @@ resp_eff_gfung_fig <- resp_eff_gfung_h_inter_fig + resp_eff_gfung_d_inter_fig +
         legend.position = "bottom",
         legend.direction = "horizontal") 
 
-#### start here ####
-# make above for two other parameter sets
+# ginf figures
+resp_eff_ginf_h_inter_fig <- resp_eff_gfung_h_inter_fig +
+  filter(resp_eff_inter_ginf, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_inter_ginf$resp_L95),
+                           max(resp_eff_inter_ginf$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_inter_ginf$eff_L95),
+                                max(resp_eff_inter_ginf$eff_U95)))
+
+resp_eff_ginf_d_inter_fig <- resp_eff_ginf_h_inter_fig +
+  filter(resp_eff_inter_ginf, disease == "d") +
+  labs(title = "Ambient disease")
+
+resp_eff_ginf_h_intra_fig <- resp_eff_ginf_h_inter_fig +
+  filter(resp_eff_intra_ginf, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_intra_ginf$resp_L95),
+                           max(resp_eff_intra_ginf$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_intra_ginf$eff_L95),
+                                max(resp_eff_intra_ginf$eff_U95))) +
+  theme(plot.title = element_blank())
+
+resp_eff_ginf_d_intra_fig <- resp_eff_ginf_h_intra_fig +
+  filter(resp_eff_intra_ginf, disease == "d")
+
+resp_eff_ginf_h_lit_fig <- resp_eff_ginf_h_inter_fig +
+  filter(resp_eff_lit_ginf, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_lit_ginf$resp_L95),
+                           max(resp_eff_lit_ginf$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_lit_ginf$eff_L95),
+                                max(resp_eff_lit_ginf$eff_U95))) +
+  theme(plot.title = element_blank())
+
+resp_eff_ginf_d_lit_fig <- resp_eff_ginf_h_lit_fig +
+  filter(resp_eff_lit_ginf, disease == "d")
+
+resp_eff_ginf_fig <- resp_eff_ginf_h_inter_fig + resp_eff_ginf_d_inter_fig + 
+  resp_eff_ginf_h_intra_fig + resp_eff_ginf_d_intra_fig + 
+  resp_eff_ginf_h_lit_fig + resp_eff_ginf_d_lit_fig + 
+  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal")
+
+# infP figures
+resp_eff_infP_h_inter_fig <- resp_eff_gfung_h_inter_fig +
+  filter(resp_eff_inter_infP, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_inter_infP$resp_L95),
+                           max(resp_eff_inter_infP$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_inter_infP$eff_L95),
+                                max(resp_eff_inter_infP$eff_U95)))
+
+resp_eff_infP_d_inter_fig <- resp_eff_infP_h_inter_fig +
+  filter(resp_eff_inter_infP, disease == "d") +
+  labs(title = "Ambient disease")
+
+resp_eff_infP_h_intra_fig <- resp_eff_infP_h_inter_fig +
+  filter(resp_eff_intra_infP, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_intra_infP$resp_L95),
+                           max(resp_eff_intra_infP$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_intra_infP$eff_L95),
+                                max(resp_eff_intra_infP$eff_U95))) +
+  theme(plot.title = element_blank())
+
+resp_eff_infP_d_intra_fig <- resp_eff_infP_h_intra_fig +
+  filter(resp_eff_intra_infP, disease == "d")
+
+resp_eff_infP_h_lit_fig <- resp_eff_infP_h_inter_fig +
+  filter(resp_eff_lit_infP, disease == "h") +
+  scale_y_log10(limits = c(min(resp_eff_lit_infP$resp_L95),
+                           max(resp_eff_lit_infP$resp_U95))) +
+  scale_x_continuous(limits = c(min(resp_eff_lit_infP$eff_L95),
+                                max(resp_eff_lit_infP$eff_U95))) +
+  theme(plot.title = element_blank())
+
+resp_eff_infP_d_lit_fig <- resp_eff_infP_h_lit_fig +
+  filter(resp_eff_lit_infP, disease == "d")
+
+resp_eff_infP_fig <- resp_eff_infP_h_inter_fig + resp_eff_infP_d_inter_fig + 
+  resp_eff_infP_h_intra_fig + resp_eff_infP_d_intra_fig + 
+  resp_eff_infP_h_lit_fig + resp_eff_infP_d_lit_fig + 
+  plot_layout(nrow = 3, guides = "collect", axes = "collect") +
+  plot_annotation(tag_levels = "A")  &
+  theme(plot.tag = element_text(size = 9, face = "bold"),
+        legend.position = "bottom",
+        legend.direction = "horizontal")
+
 # save
-# write text: looks like litter is stabilizing but density isn't
+ggsave("output/response_effects_gfung_parms.png", resp_eff_gfung_fig,
+       width = 6, height = 6.5)
+ggsave("output/response_effects_ginf_parms.png", resp_eff_ginf_fig,
+       width = 6, height = 6.5)
+ggsave("output/response_effects_infP_parms.png", resp_eff_infP_fig,
+       width = 6, height = 6.5)
+
+
+#### response, effect, outcome figures ####
+# not sure what do do with these yet
+
+# combine data
+resp_eff_out_gfung <- resp_gfung %>% 
+  select(.draw, disease, starts_with("resp_")) %>% 
+  full_join(eq_gfung %>% 
+              select(.draw, disease, ends_with("effect"))) %>% 
+  full_join(inv_gfung %>% 
+              select(.draw, disease, outcome)) %>% 
+  filter(outcome != "non-establishment") %>% 
+  mutate(
+    litter_slope = (resp_LA - resp_LP) / (litter_A_effect - litter_P_effect),
+    intra_slope = (resp_CA - resp_CP) / (C_AA_effect - C_PP_effect),
+    inter_slope = (resp_CA - resp_CP) / (C_PA_effect - C_AP_effect))
+
+# summarize because extreme values make it hard to see what's happening around 0
+resp_eff_out_gfung_sum <- resp_eff_out_gfung %>% 
+  group_by(disease, outcome) %>% 
+  summarize(litter_median = median(litter_slope),
+            litter_L95 = median_hdci(litter_slope)$ymin,
+            litter_U95 = median_hdci(litter_slope)$ymax,
+            intra_median = median(intra_slope),
+            intra_L95 = median_hdci(intra_slope)$ymin,
+            intra_U95 = median_hdci(intra_slope)$ymax,
+            inter_median = median(inter_slope),
+            inter_L95 = median_hdci(inter_slope)$ymin,
+            inter_U95 = median_hdci(inter_slope)$ymax,
+            .groups = "drop")
+
+ggplot(resp_eff_out_gfung_sum, aes(x = outcome, y = litter_median)) +
+  geom_errorbar(aes(ymin = litter_L95, ymax = litter_U95)) +
+  geom_point() +
+  facet_wrap(~ disease) +
+  fig_theme
+  
+ggplot(resp_eff_out_gfung_sum, aes(x = outcome, y = intra_median)) +
+  geom_errorbar(aes(ymin = intra_L95, ymax = intra_U95)) +
+  geom_point() +
+  facet_wrap(~ disease) +
+  fig_theme
+
+ggplot(resp_eff_out_gfung_sum, aes(x = outcome, y = inter_median)) +
+  geom_errorbar(aes(ymin = inter_L95, ymax = inter_U95)) +
+  geom_point() +
+  facet_wrap(~ disease) +
+  fig_theme
+
+ggplot(resp_eff_out_gfung_sum, aes(x = inter_median, y = litter_median,
+                                   color = outcome)) +
+  geom_errorbar(aes(xmin = inter_L95, xmax = inter_U95)) +
+  geom_errorbar(aes(ymin = litter_L95, ymax = litter_U95)) +
+  geom_point(aes(shape = outcome)) +
+  facet_wrap(~ disease) +
+  fig_theme
+
+
 
 
 #### text values - old ####
